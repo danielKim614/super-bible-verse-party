@@ -70,6 +70,14 @@ export function starPriceFor(s: GameState, coupon: boolean): number {
   return coupon ? s.settings.couponStarPrice : s.settings.starPrice;
 }
 
+export function cheapestItemPrice(): number {
+  return Math.min(...Object.values(ITEMS).map((i) => i.price));
+}
+
+export function canShop(s: GameState, team: TeamState): boolean {
+  return team.items.length < s.settings.inventoryLimit && team.talents >= cheapestItemPrice();
+}
+
 export function canAffordStar(s: GameState, team: TeamState): boolean {
   if (team.talents >= s.settings.starPrice) return true;
   return team.items.includes("starCoupon") && team.talents >= s.settings.couponStarPrice;
@@ -334,13 +342,19 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
     }
 
     case "shop_buy": {
-      if (s.phase !== "resolve" || !ctx.reciteResult) return prev;
-      if (SPACE_BY_ID[ctx.landed!]?.type !== "shop") return prev;
+      if (s.phase !== "shop_offer") return prev;
       const def = ITEMS[ev.payload.item];
       if (!def || team.talents < def.price || team.items.length >= s.settings.inventoryLimit) return prev;
       team.items.push(def.id);
       credit(s, seq, tid, -def.price, `상점: ${def.name}`);
       feed(s, { seq, teamId: tid, kind: "cost", text: `${def.name} 구매`, amount: -def.price });
+      return s;
+    }
+
+    case "shop_leave": {
+      if (s.phase !== "shop_offer") return prev;
+      s.moveSeq = seq;
+      advance(s, tid, seq);
       return s;
     }
 
@@ -388,7 +402,15 @@ function advance(s: GameState, tid: string, seq: number) {
       return;
     }
     if (team.pos === FORK_FROM) ctx.forkChoice = undefined;
-    if (n === 1 && team.pos !== T) team.laps += 1;
+    if (n === 1 && team.pos !== T && !ctx.shopVisited) {
+      // 출발점(상점)을 지나감
+      ctx.shopVisited = true;
+      team.laps += 1;
+      if (canShop(s, team)) {
+        s.phase = "shop_offer";
+        return;
+      }
+    }
     team.pos = n;
     ctx.path.push(n);
     ctx.remaining -= 1;
@@ -440,7 +462,7 @@ function placeStar(s: GameState, r: () => number, buyerPos?: number) {
     for (const [sp, dist] of d) if (dist <= 6) blocked.add(sp);
     blocked.add(buyerPos);
   }
-  const base = SPACES.filter((sp) => sp.type !== "item" && sp.type !== "shop" && !blocked.has(sp.id)).map((sp) => sp.id);
+  const base = SPACES.filter((sp) => sp.type !== "item" && !blocked.has(sp.id)).map((sp) => sp.id);
   const gapOk = (c: number, gap: number) =>
     s.stars.every((st) => {
       const a = forwardDistances(st).get(c) ?? 99;

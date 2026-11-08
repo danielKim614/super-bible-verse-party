@@ -11,7 +11,6 @@ const TYPE_BG: Record<string, string> = {
   red: "bg-red-500",
   event: "bg-green-500",
   item: "bg-purple-500",
-  shop: "bg-orange-400",
 };
 
 export function ActionCard({
@@ -41,6 +40,16 @@ export function ActionCard({
           <div className={`ml-auto font-display ${big ? "text-4xl" : "text-xl"} bg-gradient-to-br from-slate-800 to-slate-600 text-white rounded-2xl px-4 py-1 shadow-md`}>🎲 {ctx.roll}</div>
         )}
       </div>
+
+      {state.phase === "shop_offer" && tid && (
+        <div className={`mt-3 flex flex-wrap gap-2 ${big ? "text-xl" : "text-sm"}`}>
+          {Object.values(ITEMS).map((d) => (
+            <span key={d.id} className="rounded-full bg-orange-50 border border-orange-200 px-3 py-1">
+              {d.icon} {d.name} <b className="text-orange-600">{d.price}</b>
+            </span>
+          ))}
+        </div>
+      )}
 
       {state.phase === "choose_path" && (
         <div className={`mt-3 grid grid-cols-2 gap-3 ${big ? "text-2xl" : "text-base"} font-display`}>

@@ -72,13 +72,21 @@ s = ev(s, { type: "end_turn", payload: {} });
 s = ev(s, { type: "end_turn", payload: {} }); // resolve가 아니면 무시되어야 함
 assert.equal(s.teamIndex, 4);
 
-// E팀: 상점 칸(10)에서 구매
-s = ev(s, { type: "override", payload: { action: "position", teamId: "E", pos: 7 } });
-s = ev(s, { type: "roll", payload: { value: 3 } });
-s = ev(s, { type: "recite_result", payload: { success: true, seed: 6 } });
+// E팀: 출발점(상점) 통과 → 구매 → 계속 이동
+s = ev(s, { type: "override", payload: { action: "position", teamId: "E", pos: 25 } });
+s = ev(s, { type: "roll", payload: { value: 2 } });
+assert.equal(s.phase, "shop_offer");
+assert.equal(s.teams.E.pos, 25);
 s = ev(s, { type: "shop_buy", payload: { item: "shield" } });
 assert.equal(s.teams.E.items[0], "shield");
-assert.equal(s.teams.E.talents, 10 + 3 - 5);
+assert.equal(s.teams.E.talents, 5);
+s = ev(s, { type: "shop_buy", payload: { item: "goldenPipe" } }); // 돈 부족 → 무시
+assert.equal(s.teams.E.items.length, 1);
+s = ev(s, { type: "shop_leave", payload: {} });
+assert.equal(s.teams.E.pos, 2);
+assert.equal(s.phase, "recite");
+assert.equal(s.teams.E.laps, 1);
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 6 } });
 s = ev(s, { type: "end_turn", payload: {} });
 
 // F팀: 스킵

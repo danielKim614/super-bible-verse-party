@@ -361,27 +361,33 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
         </div>
       );
     }
+    case "shop_offer":
+      return (
+        <div className="flex flex-col gap-3">
+          <div className="rounded-2xl bg-orange-50 border-2 border-orange-200 p-3">
+            <div className="font-display text-xl mb-1">🏪 출발점 상점 (보유 {team.items.length}/{state.settings.inventoryLimit}, 🪙{team.talents})</div>
+            <div className="text-sm text-slate-500 mb-2">원하는 만큼 산 뒤 “출발”을 누르면 남은 칸을 계속 이동합니다. (남은 {ctx.remaining}칸)</div>
+            <div className="flex flex-wrap gap-2">
+              {ITEM_IDS.map((id) => {
+                const d = ITEMS[id];
+                const ok = team.talents >= d.price && team.items.length < state.settings.inventoryLimit;
+                return (
+                  <button key={id} className={`${btn} bg-white border`} disabled={busy || !ok} onClick={() => send({ type: "shop_buy", payload: { item: id } })} title={d.desc}>
+                    {d.icon} {d.name} · {d.price}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <button className={`${btn} bg-sky-600 text-white font-display text-3xl py-5`} disabled={busy} onClick={() => send({ type: "shop_leave", payload: {} })}>
+            🏪 상점에서 출발 ▶
+          </button>
+        </div>
+      );
     case "resolve": {
-      const canShop = ctx.reciteResult && ctx.landed && SPACES[ctx.landed - 1]?.type === "shop";
       return (
         <div className="flex flex-col gap-3">
           {ctx.gainedItem === "full" && <div className="text-amber-700">아이템 가방이 가득 차서 아이템을 받지 못했어요.</div>}
-          {canShop && (
-            <div className="rounded-2xl bg-orange-50 border-2 border-orange-200 p-3">
-              <div className="font-display text-xl mb-2">🏪 상점 (보유 {team.items.length}/{state.settings.inventoryLimit}, 🪙{team.talents})</div>
-              <div className="flex flex-wrap gap-2">
-                {ITEM_IDS.map((id) => {
-                  const d = ITEMS[id];
-                  const ok = team.talents >= d.price && team.items.length < state.settings.inventoryLimit;
-                  return (
-                    <button key={id} className={`${btn} bg-white border`} disabled={busy || !ok} onClick={() => send({ type: "shop_buy", payload: { item: id } })} title={d.desc}>
-                      {d.icon} {d.name} · {d.price}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
           <button className={`${btn} bg-sky-600 text-white font-display text-3xl py-5`} disabled={busy} onClick={() => send({ type: "end_turn", payload: {} })}>
             다음 팀으로 ▶
           </button>

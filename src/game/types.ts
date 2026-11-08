@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   couponStarPrice: 10,
   starCount: 2,
   finalBoostTurns: 3,
-  rewards: { blue: 3, red: 6, event: 8, item: 3, shop: 3 },
+  rewards: { blue: 3, red: 6, event: 8, item: 3 },
   inventoryLimit: 3,
   itemRefund: 1,
   bonusStars: { recite: true, talent: true, challenge: true },
@@ -66,6 +66,7 @@ export type GameEventBody =
   | { type: "star_decision"; payload: { buy: boolean; coupon?: boolean; seed?: number } }
   | { type: "recite_result"; payload: { success: boolean; seed: number } }
   | { type: "shop_buy"; payload: { item: ItemId } }
+  | { type: "shop_leave"; payload: Record<string, never> }
   | { type: "end_turn"; payload: Record<string, never> }
   | { type: "pause"; payload: { paused: boolean } }
   | { type: "ceremony_next"; payload: Record<string, never> }
@@ -85,6 +86,7 @@ export type Phase =
   | "setup"
   | "pre_roll"
   | "choose_path"
+  | "shop_offer"
   | "star_offer"
   | "star_recite"
   | "recite"
@@ -114,6 +116,7 @@ export interface TurnCtx {
   forkChoice?: PathChoice;
   path: number[]; // 이번 턴에 지나간 칸 (애니메이션용)
   teleport?: boolean;
+  shopVisited?: boolean; // 이번 턴 상점(출발점) 통과 처리됨
   starAt?: number; // 스타 제안 중인 칸
   starLanding?: boolean; // 도착 칸 스타 (암송 후 구매)
   couponUsed?: boolean;

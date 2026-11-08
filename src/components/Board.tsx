@@ -10,7 +10,6 @@ const TYPE_FILL: Record<string, [string, string]> = {
   red: ["#ff6b6b", "#d93a3a"],
   event: ["#5ad66e", "#2fa84a"],
   item: ["#b47cf5", "#8a4fd3"],
-  shop: ["#ffb347", "#e08a1e"],
 };
 
 const ROAD_TINT: Record<RoadId, string> = {
@@ -127,14 +126,21 @@ export function Board({
           <stop offset="0%" stopColor="#fff6b0" stopOpacity={0.95} />
           <stop offset="100%" stopColor="#ffd84d" stopOpacity={0} />
         </radialGradient>
+        <linearGradient id="starFill" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0%" stopColor="#fff2a8" />
+          <stop offset="45%" stopColor="#ffd400" />
+          <stop offset="100%" stopColor="#f0a000" />
+        </linearGradient>
         <filter id="soft" x="-20%" y="-20%" width="140%" height="160%">
           <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#2a3f5f" floodOpacity="0.28" />
         </filter>
-        {state.teamIds.map((id) => (
-          <clipPath id={`clip-${id}`} key={id}>
-            <circle r={17} cx={0} cy={0} />
-          </clipPath>
-        ))}
+        {state.teamIds.flatMap((id) =>
+          [21, 17, 14].map((r) => (
+            <clipPath id={`clip-${id}-${r}`} key={`${id}-${r}`}>
+              <circle r={r - 3} cx={0} cy={0} />
+            </clipPath>
+          )),
+        )}
       </defs>
 
       {/* 배경 */}
@@ -180,8 +186,11 @@ export function Board({
       <g transform={`translate(${T_POS.x},${T_POS.y})`} filter="url(#soft)">
         <circle r={32} fill="#ffd23f" stroke="#fff" strokeWidth={4} />
         <circle r={24} fill="none" stroke="#e0a800" strokeWidth={2} strokeDasharray="4 4" />
-        <text textAnchor="middle" dy={7} fontSize={19} className="font-display" fill="#5a3500">
+        <text textAnchor="middle" dy={2} fontSize={17} className="font-display" fill="#5a3500">
           출발
+        </text>
+        <text textAnchor="middle" dy={19} fontSize={13} className="font-display" fill="#5a3500">
+          🏪 상점
         </text>
       </g>
       <g transform={`translate(${B_POS.x},${B_POS.y})`} filter="url(#soft)">
@@ -190,27 +199,6 @@ export function Board({
           갈림길
         </text>
       </g>
-
-      {/* 스타 */}
-      {state.stars.map((st) => {
-        const sp = SPACE_BY_ID[st];
-        if (!sp) return null;
-        return (
-          <g key={`star-${st}`} transform={`translate(${sp.x},${sp.y})`}>
-            <circle r={52} fill="url(#glow)" className="animate-ping-slow" />
-            <g className="animate-star">
-              <polygon
-                points="0,-38 11,-13 38,-13 16,4 24,31 0,16 -24,31 -16,4 -38,-13 -11,-13"
-                fill="#ffd700"
-                stroke="#fff"
-                strokeWidth={3}
-                strokeLinejoin="round"
-                filter="url(#soft)"
-              />
-            </g>
-          </g>
-        );
-      })}
 
       {/* 칸 */}
       {SPACES.map((sp) => {
@@ -230,11 +218,33 @@ export function Board({
                 🎁
               </text>
             )}
-            {sp.type === "shop" && (
-              <text textAnchor="middle" y={-23} fontSize={15}>
-                🏪
-              </text>
-            )}
+          </g>
+        );
+      })}
+
+      {/* 스타: 자체 디자인 금색 별, Y축 회전 */}
+      {state.stars.map((st) => {
+        const sp = SPACE_BY_ID[st];
+        if (!sp) return null;
+        return (
+          <g key={`star-${st}`} transform={`translate(${sp.x},${sp.y - 50})`}>
+            <circle r={40} fill="url(#glow)" className="animate-ping-slow" />
+            <ellipse cx={0} cy={50} rx={16} ry={5} fill="#2a3f5f" opacity={0.25} />
+            <g className="animate-star-spin">
+              <polygon
+                points="0,-30 8.6,-10 30,-10 12.8,2.6 19.1,24 0,12.4 -19.1,24 -12.8,2.6 -30,-10 -8.6,-10"
+                fill="url(#starFill)"
+                stroke="#fff"
+                strokeWidth={3}
+                strokeLinejoin="round"
+                filter="url(#soft)"
+              />
+              <polygon
+                points="0,-22 5,-9 19,-9 8,-1 0,-4 -8,-1 -19,-9 -5,-9"
+                fill="#fff"
+                opacity={0.35}
+              />
+            </g>
           </g>
         );
       })}
@@ -242,31 +252,34 @@ export function Board({
       {/* 말 */}
       {Object.entries(byPos).flatMap(([posStr, ids]) => {
         const base = posXY(Number(posStr));
+        const n = ids.length;
+        const atStart = Number(posStr) === 0;
+        // 혼자면 칸 위에 크게, 여럿이면 작게 칸 위쪽에 한 줄로
+        const r = n === 1 ? 21 : n === 2 ? 17 : 14;
+        const gap = r * 2 + 4;
         return ids.map((id, i) => {
-          const n = ids.length;
-          let x: number;
-          let y: number;
-          if (Number(posStr) === 0) {
-            x = base.x + (i - (n - 1) / 2) * 42;
-            y = base.y - 60;
-          } else {
-            const ang = (i / n) * Math.PI * 2 - Math.PI / 2;
-            const off = n > 1 ? 21 : 0;
-            x = base.x + Math.cos(ang) * off;
-            y = base.y + Math.sin(ang) * off - (n > 1 ? 0 : 4);
-          }
+          const x = base.x + (i - (n - 1) / 2) * (n === 1 ? 0 : gap);
+          const y = atStart ? base.y - 62 : n === 1 ? base.y - 4 : base.y - 30 - (n > 3 ? 4 : 0);
           const t = teamById[id];
           const isCur = id === cur && state.phase !== "ended";
           const isMine = highlightTeam === id;
           return (
             <g key={id} style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform 0.28s ease-out" }} filter="url(#soft)">
-              {isCur && <circle r={28} fill="none" stroke="#fff" strokeWidth={4} strokeDasharray="6 5" className="animate-spin-slow" />}
-              {isMine && <circle r={32} fill="none" stroke="#ffd23f" strokeWidth={4} />}
-              <circle r={21} fill={t?.color ?? "#888"} stroke="#fff" strokeWidth={3.5} />
+              {isCur && <circle r={r + 7} fill="none" stroke="#fff" strokeWidth={4} strokeDasharray="6 5" className="animate-spin-slow" />}
+              {isMine && <circle r={r + 11} fill="none" stroke="#ffd23f" strokeWidth={4} />}
+              <circle r={r} fill={t?.color ?? "#888"} stroke="#fff" strokeWidth={3} />
               {t?.image_url ? (
-                <image href={t.image_url} x={-17} y={-17} width={34} height={34} clipPath={`url(#clip-${id})`} preserveAspectRatio="xMidYMid slice" />
+                <image
+                  href={t.image_url}
+                  x={-(r - 3)}
+                  y={-(r - 3)}
+                  width={(r - 3) * 2}
+                  height={(r - 3) * 2}
+                  clipPath={`url(#clip-${id}-${r})`}
+                  preserveAspectRatio="xMidYMid slice"
+                />
               ) : (
-                <text textAnchor="middle" dy={6} fontSize={17} fontWeight={800} fill="#fff">
+                <text textAnchor="middle" dy={r * 0.3} fontSize={r * 0.8} fontWeight={800} fill="#fff">
                   {(t?.name ?? "?").slice(0, 1)}
                 </text>
               )}

@@ -18,6 +18,8 @@ export function describeEvent(e: GameEvent, teamById: Record<string, TeamInfo>):
       return `암송 ${e.payload.success ? "성공" : "실패"}`;
     case "shop_buy":
       return `상점 구매: ${ITEMS[e.payload.item]?.name}`;
+    case "shop_leave":
+      return "상점에서 출발";
     case "end_turn":
       return "다음 팀으로";
     case "pause":

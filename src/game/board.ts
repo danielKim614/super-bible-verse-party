@@ -2,7 +2,7 @@
 // 칸 id = 절 번호(1~39). 0 = T(출발·합류점, 암송 없음).
 // 칸 유형은 본문 길이를 받기 전의 임시 배치입니다. 확정 시 SPACE_TYPES만 고치면 됩니다.
 
-export type SpaceType = "blue" | "red" | "event" | "item" | "shop";
+export type SpaceType = "blue" | "red" | "event" | "item";
 export type RedMode = "blank" | "firstWord" | "noHint";
 export type EventMode = "relay" | "threeVerses";
 export type RoadId = 1 | 2 | 3 | 4 | 5;
@@ -17,7 +17,7 @@ export interface Space {
   y: number;
 }
 
-export const T = 0; // 출발·합류점
+export const T = 0; // 출발·합류점 (지나갈 때 상점 이용)
 export const FORK_FROM = 17; // 17절 다음이 갈림길 B
 export const CENTER_START = 18;
 export const LEFT_START = 26;
@@ -32,9 +32,9 @@ export const ROADS: { id: RoadId; name: string; verses: [number, number]; theme:
 
 const SPACE_TYPES: Record<number, SpaceType> = {
   1: "blue", 2: "blue", 3: "red", 4: "blue", 5: "item", 6: "blue", 7: "red", 8: "event",
-  9: "blue", 10: "shop", 11: "red", 12: "blue", 13: "item", 14: "blue", 15: "red", 16: "blue", 17: "blue",
+  9: "blue", 10: "blue", 11: "red", 12: "blue", 13: "item", 14: "blue", 15: "red", 16: "blue", 17: "blue",
   18: "red", 19: "blue", 20: "red", 21: "blue", 22: "red", 23: "red", 24: "blue", 25: "red",
-  26: "event", 27: "blue", 28: "item", 29: "blue", 30: "shop",
+  26: "event", 27: "blue", 28: "item", 29: "blue", 30: "blue",
   31: "event", 32: "blue", 33: "blue", 34: "item", 35: "event", 36: "blue", 37: "blue", 38: "red", 39: "blue",
 };
 
@@ -211,7 +211,6 @@ export const SPACE_LABEL: Record<SpaceType, string> = {
   red: "빨간 칸",
   event: "이벤트 칸",
   item: "아이템 칸",
-  shop: "상점 칸",
 };
 
 export const RED_MODE_LABEL: Record<RedMode, string> = {

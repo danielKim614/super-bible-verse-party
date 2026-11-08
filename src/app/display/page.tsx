@@ -58,7 +58,7 @@ export default function DisplayPage() {
           <section className="min-h-0 flex flex-col gap-3">
             <div className="relative flex-1 min-h-0 flex items-center justify-center rounded-[32px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] overflow-hidden">
               <Board state={state} teamById={teamById} />
-              <div className="absolute top-3 left-0 right-0 flex justify-center">
+              <div className="absolute top-3 left-4 flex justify-start">
                 <FeedToasts state={state} teamById={teamById} />
               </div>
             </div>
@@ -103,7 +103,6 @@ function Legend({ settings }: { settings: Settings }) {
     ["bg-red-500", `빨간 칸 +${r.red} 어려움`],
     ["bg-green-500", `이벤트 칸 +${r.event}`],
     ["bg-purple-500", `아이템 칸 +${r.item} 🎁`],
-    ["bg-orange-400", `상점 칸 +${r.shop} 🏪`],
   ];
   return (
     <div className="rounded-3xl bg-white/90 p-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[15px] shadow-md">
@@ -115,6 +114,9 @@ function Legend({ settings }: { settings: Settings }) {
       ))}
       <div className="flex items-center gap-2">
         <span className="text-base">⭐</span> 지나가며 구매 {settings.starPrice}
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-base">🏪</span> 출발점 지나며 상점
       </div>
     </div>
   );
