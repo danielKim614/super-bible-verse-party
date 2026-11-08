@@ -1,25 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BOARD_H, BOARD_W, B_POS, ROAD_LABEL_POS, ROAD_PATHS, ROADS, SPACES, SPACE_BY_ID, T_POS, type RoadId } from "@/game/board";
+import { BOARD_H, BOARD_W, B_POS, ROAD_D, ROAD_LABEL_POS, ROADS, SPACES, SPACE_BY_ID, T_POS, type RoadId } from "@/game/board";
 import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
-const TYPE_FILL: Record<string, string> = {
-  blue: "#2f80ed",
-  red: "#e5484d",
-  event: "#2fb344",
-  item: "#9b51e0",
-  shop: "#f2994a",
+const TYPE_FILL: Record<string, [string, string]> = {
+  blue: ["#4f9cf9", "#2b6fd6"],
+  red: ["#ff6b6b", "#d93a3a"],
+  event: ["#5ad66e", "#2fa84a"],
+  item: ["#b47cf5", "#8a4fd3"],
+  shop: ["#ffb347", "#e08a1e"],
 };
 
 const ROAD_TINT: Record<RoadId, string> = {
-  1: "#c9f29b",
-  2: "#ffe7a3",
-  3: "#d8cbb5",
-  4: "#bfe3ff",
-  5: "#e6d4ff",
+  1: "#f6e3b4",
+  2: "#f6e3b4",
+  3: "#d9cbb8",
+  4: "#f6e3b4",
+  5: "#f6e3b4",
 };
+
+const ROAD_IDS: RoadId[] = [1, 2, 3, 4, 5];
 
 function posXY(pos: number) {
   if (pos === 0) return T_POS;
@@ -67,6 +69,28 @@ function useAnimatedPositions(state: GameState, stepMs: number) {
   return shown;
 }
 
+function Cloud({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x},${y}) scale(${s})`} fill="#fff" opacity={0.85}>
+      <ellipse cx={0} cy={0} rx={38} ry={16} />
+      <circle cx={-14} cy={-10} r={16} />
+      <circle cx={10} cy={-14} r={20} />
+      <circle cx={26} cy={-4} r={13} />
+    </g>
+  );
+}
+
+function Tree({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x},${y}) scale(${s})`}>
+      <rect x={-4} y={-6} width={8} height={16} rx={2} fill="#8a5a2b" />
+      <circle cx={0} cy={-16} r={16} fill="#3fae5a" />
+      <circle cx={-10} cy={-8} r={11} fill="#4cc26a" />
+      <circle cx={10} cy={-8} r={11} fill="#4cc26a" />
+    </g>
+  );
+}
+
 export function Board({
   state,
   teamById,
@@ -83,81 +107,105 @@ export function Board({
   const focus =
     state.phase === "recite" ? state.ctx.landed : state.phase === "star_offer" || state.phase === "star_recite" ? state.ctx.starAt : undefined;
 
-  // 같은 칸의 말 겹침 처리
   const byPos: Record<number, string[]> = {};
   for (const id of state.teamIds) {
     const p = shown[id] ?? state.teams[id].pos;
     (byPos[p] ??= []).push(id);
   }
 
+  const roadW = compact ? 30 : 36;
+
   return (
     <svg viewBox={`0 0 ${BOARD_W} ${BOARD_H}`} className="w-full h-full select-none" role="img" aria-label="로마서 8장 보드">
       <defs>
-        <radialGradient id="sky" cx="50%" cy="40%" r="75%">
-          <stop offset="0%" stopColor="#bdf0ff" />
-          <stop offset="100%" stopColor="#6cc8f0" />
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8fd8ff" />
+          <stop offset="70%" stopColor="#d5f1ff" />
+          <stop offset="100%" stopColor="#bfe9a8" />
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fff6b0" stopOpacity={0.95} />
+          <stop offset="100%" stopColor="#ffd84d" stopOpacity={0} />
         </radialGradient>
+        <filter id="soft" x="-20%" y="-20%" width="140%" height="160%">
+          <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#2a3f5f" floodOpacity="0.28" />
+        </filter>
         {state.teamIds.map((id) => (
           <clipPath id={`clip-${id}`} key={id}>
             <circle r={17} cx={0} cy={0} />
           </clipPath>
         ))}
       </defs>
-      <rect width={BOARD_W} height={BOARD_H} rx={28} fill="url(#sky)" />
-      {/* 언덕 */}
-      <ellipse cx={180} cy={640} rx={260} ry={110} fill="#7ed957" opacity={0.6} />
-      <ellipse cx={820} cy={650} rx={300} ry={120} fill="#7ed957" opacity={0.6} />
-      <ellipse cx={500} cy={360} rx={110} ry={180} fill="#ffffff" opacity={0.18} />
+
+      {/* 배경 */}
+      <rect width={BOARD_W} height={BOARD_H} rx={32} fill="url(#sky)" />
+      <ellipse cx={200} cy={620} rx={330} ry={120} fill="#9ad95f" />
+      <ellipse cx={820} cy={635} rx={360} ry={130} fill="#8fd255" />
+      <ellipse cx={500} cy={660} rx={520} ry={110} fill="#7cc84a" />
+      <Cloud x={160} y={110} s={0.9} />
+      <Cloud x={830} y={95} s={1.1} />
+      <Cloud x={380} y={240} s={0.7} />
+      <Tree x={300} y={330} s={0.9} />
+      <Tree x={820} y={410} />
+      <Tree x={760} y={380} s={0.7} />
+      <Tree x={250} y={290} s={0.7} />
 
       {/* 길 */}
-      {(Object.keys(ROAD_PATHS) as unknown as RoadId[]).map((rid) => {
-        const pts = ROAD_PATHS[rid].map((p) => `${p.x},${p.y}`).join(" ");
-        return (
-          <g key={rid}>
-            <polyline points={pts} fill="none" stroke="#8a5a2b" strokeWidth={compact ? 30 : 34} strokeLinejoin="round" strokeLinecap="round" />
-            <polyline points={pts} fill="none" stroke={ROAD_TINT[rid]} strokeWidth={compact ? 24 : 28} strokeLinejoin="round" strokeLinecap="round" />
-          </g>
-        );
-      })}
+      {ROAD_IDS.map((rid) => (
+        <g key={rid}>
+          <path d={ROAD_D[rid]} fill="none" stroke="#2a3f5f" strokeOpacity={0.18} strokeWidth={roadW + 10} strokeLinecap="round" transform="translate(0,5)" />
+          <path d={ROAD_D[rid]} fill="none" stroke="#9c6b3a" strokeWidth={roadW + 6} strokeLinecap="round" />
+          <path d={ROAD_D[rid]} fill="none" stroke={ROAD_TINT[rid]} strokeWidth={roadW} strokeLinecap="round" />
+          <path d={ROAD_D[rid]} fill="none" stroke="#fff" strokeOpacity={0.55} strokeWidth={2.5} strokeDasharray="10 12" strokeLinecap="round" />
+        </g>
+      ))}
 
       {/* 길 이름 */}
       {!compact &&
         ROADS.map((r) => {
           const p = ROAD_LABEL_POS[r.id];
+          const label = `${r.name} ${r.verses[0]}~${r.verses[1]}`;
+          const w = label.length * 17 + 24;
           return (
-            <text key={r.id} x={p.x} y={p.y} textAnchor="middle" className="font-display" fontSize={20} fill="#3b2a14" opacity={0.7}>
-              {r.name} {r.verses[0]}~{r.verses[1]}
-            </text>
+            <g key={r.id} transform={`translate(${p.x},${p.y})`}>
+              <rect x={-w / 2} y={-16} width={w} height={32} rx={16} fill="#fff" opacity={0.75} />
+              <text textAnchor="middle" dy={6} className="font-display" fontSize={17} fill="#4a3620">
+                {label}
+              </text>
+            </g>
           );
         })}
 
       {/* T, B */}
-      <g transform={`translate(${T_POS.x},${T_POS.y})`}>
-        <circle r={30} fill="#ffd23f" stroke="#8a5a2b" strokeWidth={4} />
-        <text textAnchor="middle" dy={7} fontSize={18} className="font-display" fill="#5a3500">
+      <g transform={`translate(${T_POS.x},${T_POS.y})`} filter="url(#soft)">
+        <circle r={32} fill="#ffd23f" stroke="#fff" strokeWidth={4} />
+        <circle r={24} fill="none" stroke="#e0a800" strokeWidth={2} strokeDasharray="4 4" />
+        <text textAnchor="middle" dy={7} fontSize={19} className="font-display" fill="#5a3500">
           출발
         </text>
       </g>
-      <g transform={`translate(${B_POS.x},${B_POS.y})`}>
-        <rect x={-34} y={-22} width={68} height={44} rx={10} fill="#fff" stroke="#8a5a2b" strokeWidth={4} />
-        <text textAnchor="middle" dy={7} fontSize={17} className="font-display" fill="#5a3500">
+      <g transform={`translate(${B_POS.x},${B_POS.y})`} filter="url(#soft)">
+        <rect x={-38} y={-22} width={76} height={44} rx={22} fill="#fff" stroke="#9c6b3a" strokeWidth={3} />
+        <text textAnchor="middle" dy={7} fontSize={18} className="font-display" fill="#5a3500">
           갈림길
         </text>
       </g>
 
-      {/* 스타 (칸 뒤에 큰 별) */}
+      {/* 스타 */}
       {state.stars.map((st) => {
         const sp = SPACE_BY_ID[st];
         if (!sp) return null;
         return (
           <g key={`star-${st}`} transform={`translate(${sp.x},${sp.y})`}>
+            <circle r={52} fill="url(#glow)" className="animate-ping-slow" />
             <g className="animate-star">
               <polygon
-                points="0,-36 10,-12 36,-12 15,4 23,30 0,15 -23,30 -15,4 -36,-12 -10,-12"
+                points="0,-38 11,-13 38,-13 16,4 24,31 0,16 -24,31 -16,4 -38,-13 -11,-13"
                 fill="#ffd700"
-                stroke="#b8860b"
+                stroke="#fff"
                 strokeWidth={3}
                 strokeLinejoin="round"
+                filter="url(#soft)"
               />
             </g>
           </g>
@@ -167,20 +215,23 @@ export function Board({
       {/* 칸 */}
       {SPACES.map((sp) => {
         const isFocus = focus === sp.id;
+        const [light, dark] = TYPE_FILL[sp.type];
         return (
           <g key={sp.id} transform={`translate(${sp.x},${sp.y})`}>
-            {isFocus && <circle r={30} fill="none" stroke="#fff" strokeWidth={5} className="animate-ping-slow" />}
-            <circle r={19} fill={TYPE_FILL[sp.type]} stroke="#fff" strokeWidth={3} />
+            {isFocus && <circle r={32} fill="none" stroke="#fff" strokeWidth={5} className="animate-ping-slow" />}
+            <circle r={19} cy={3} fill={dark} />
+            <circle r={19} fill={light} stroke="#fff" strokeWidth={3} />
+            <ellipse cx={-5} cy={-8} rx={8} ry={4.5} fill="#fff" opacity={0.35} />
             <text textAnchor="middle" dy={6} fontSize={16} fontWeight={800} fill="#fff">
               {sp.id}
             </text>
             {sp.type === "item" && (
-              <text textAnchor="middle" y={-22} fontSize={14}>
+              <text textAnchor="middle" y={-23} fontSize={15}>
                 🎁
               </text>
             )}
             {sp.type === "shop" && (
-              <text textAnchor="middle" y={-22} fontSize={14}>
+              <text textAnchor="middle" y={-23} fontSize={15}>
                 🏪
               </text>
             )}
@@ -196,12 +247,11 @@ export function Board({
           let x: number;
           let y: number;
           if (Number(posStr) === 0) {
-            // 출발점: 위쪽에 한 줄로
-            x = base.x + (i - (n - 1) / 2) * 40;
-            y = base.y - 58;
+            x = base.x + (i - (n - 1) / 2) * 42;
+            y = base.y - 60;
           } else {
             const ang = (i / n) * Math.PI * 2 - Math.PI / 2;
-            const off = n > 1 ? 20 : 0;
+            const off = n > 1 ? 21 : 0;
             x = base.x + Math.cos(ang) * off;
             y = base.y + Math.sin(ang) * off - (n > 1 ? 0 : 4);
           }
@@ -209,14 +259,14 @@ export function Board({
           const isCur = id === cur && state.phase !== "ended";
           const isMine = highlightTeam === id;
           return (
-            <g key={id} style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform 0.28s ease-out" }}>
-              {isCur && <circle r={27} fill="none" stroke="#fff" strokeWidth={4} strokeDasharray="6 5" className="animate-spin-slow" />}
-              {isMine && <circle r={31} fill="none" stroke="#ffd23f" strokeWidth={4} />}
-              <circle r={20} fill={t?.color ?? "#888"} stroke="#fff" strokeWidth={3} />
+            <g key={id} style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform 0.28s ease-out" }} filter="url(#soft)">
+              {isCur && <circle r={28} fill="none" stroke="#fff" strokeWidth={4} strokeDasharray="6 5" className="animate-spin-slow" />}
+              {isMine && <circle r={32} fill="none" stroke="#ffd23f" strokeWidth={4} />}
+              <circle r={21} fill={t?.color ?? "#888"} stroke="#fff" strokeWidth={3.5} />
               {t?.image_url ? (
                 <image href={t.image_url} x={-17} y={-17} width={34} height={34} clipPath={`url(#clip-${id})`} preserveAspectRatio="xMidYMid slice" />
               ) : (
-                <text textAnchor="middle" dy={6} fontSize={16} fontWeight={800} fill="#fff">
+                <text textAnchor="middle" dy={6} fontSize={17} fontWeight={800} fill="#fff">
                   {(t?.name ?? "?").slice(0, 1)}
                 </text>
               )}

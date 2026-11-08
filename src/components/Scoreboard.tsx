@@ -30,11 +30,11 @@ export function Scoreboard({
         return (
           <li
             key={r.id}
-            className={`flex items-center gap-3 rounded-2xl px-3 ${compact ? "py-1.5" : "py-2.5"} bg-white/90 shadow-sm border-4 transition-all ${
-              isCur ? "scale-[1.03] border-yellow-300" : highlightTeam === r.id ? "border-sky-300" : "border-transparent"
+            className={`flex items-center gap-3 rounded-2xl px-3 ${compact ? "py-1.5" : "py-2.5"} bg-white/95 shadow-md border-[3px] transition-all ${
+              isCur ? "scale-[1.03] border-yellow-300 shadow-[0_0_0_4px_rgba(253,224,71,0.35)]" : highlightTeam === r.id ? "border-sky-300" : "border-white"
             }`}
           >
-            <span className={`font-display ${compact ? "text-lg w-6" : "text-2xl w-8"} text-center text-slate-500`}>{r.rank}</span>
+            <span className={`font-display ${compact ? "text-lg w-6" : "text-2xl w-8"} text-center ${r.rank === 1 ? "text-amber-500" : "text-slate-400"}`}>{r.rank}</span>
             <TeamAvatar team={t} size={compact ? 34 : 46} />
             <div className="min-w-0 flex-1">
               <div className={`font-display truncate ${compact ? "text-base" : "text-xl"}`} style={{ color: t?.color }}>

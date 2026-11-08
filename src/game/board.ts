@@ -44,66 +44,119 @@ const EVENT_MODES: EventMode[] = ["relay", "threeVerses"];
 // ---- 좌표 (viewBox 1000 x 640) ----
 export const BOARD_W = 1000;
 export const BOARD_H = 640;
-export const T_POS = { x: 500, y: 95 };
-export const B_POS = { x: 500, y: 578 };
+export const T_POS = { x: 500, y: 82 };
+export const B_POS = { x: 500, y: 572 };
 
 type Pt = { x: number; y: number };
-/** 경로 위에 n개 칸을 균등 배치. startPad/endPad: 양 끝점에서 띄울 거리 */
-function along(pts: Pt[], n: number, startPad: number, endPad: number): Pt[] {
-  const segs = pts.slice(0, -1).map((a, i) => [a, pts[i + 1]] as const);
-  const lens = segs.map(([a, b]) => Math.hypot(b.x - a.x, b.y - a.y));
-  const total = lens.reduce((s, l) => s + l, 0);
-  const usable = total - startPad - endPad;
-  const out: Pt[] = [];
-  for (let k = 0; k < n; k++) {
-    let d = startPad + (n === 1 ? usable / 2 : (usable * k) / (n - 1));
-    for (let i = 0; i < segs.length; i++) {
-      if (d <= lens[i] + 1e-9) {
-        const [a, b] = segs[i];
-        const t = d / lens[i];
-        out.push({ x: Math.round(a.x + (b.x - a.x) * t), y: Math.round(a.y + (b.y - a.y) * t) });
-        break;
-      }
-      d -= lens[i];
+/** 3차 베지어 곡선 하나 = [p0, c1, c2, p3] */
+type Cubic = [Pt, Pt, Pt, Pt];
+
+function cubicAt([p0, c1, c2, p3]: Cubic, t: number): Pt {
+  const u = 1 - t;
+  return {
+    x: u * u * u * p0.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * p3.x,
+    y: u * u * u * p0.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * p3.y,
+  };
+}
+
+/** 곡선들을 잇는 경로를 호 길이 기준으로 샘플링 */
+function samplePath(curves: Cubic[], steps = 120): { pts: Pt[]; cum: number[] } {
+  const pts: Pt[] = [];
+  const cum: number[] = [];
+  let acc = 0;
+  for (const c of curves) {
+    let prev = cubicAt(c, 0);
+    if (pts.length === 0) {
+      pts.push(prev);
+      cum.push(0);
+    }
+    for (let i = 1; i <= steps; i++) {
+      const q = cubicAt(c, i / steps);
+      acc += Math.hypot(q.x - prev.x, q.y - prev.y);
+      pts.push(q);
+      cum.push(acc);
+      prev = q;
     }
   }
+  return { pts, cum };
+}
+
+function pointAtLength(sp: { pts: Pt[]; cum: number[] }, d: number): Pt {
+  const { pts, cum } = sp;
+  if (d <= 0) return pts[0];
+  const total = cum[cum.length - 1];
+  if (d >= total) return pts[pts.length - 1];
+  let lo = 0;
+  let hi = cum.length - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (cum[mid] < d) lo = mid;
+    else hi = mid;
+  }
+  const t = (d - cum[lo]) / (cum[hi] - cum[lo] || 1);
+  return { x: Math.round(pts[lo].x + (pts[hi].x - pts[lo].x) * t), y: Math.round(pts[lo].y + (pts[hi].y - pts[lo].y) * t) };
+}
+
+/** 경로 위에 n개 칸을 균등 배치. startPad/endPad: 양 끝점에서 띄울 거리 */
+function along(curves: Cubic[], n: number, startPad: number, endPad: number): Pt[] {
+  const sp = samplePath(curves);
+  const total = sp.cum[sp.cum.length - 1];
+  const usable = total - startPad - endPad;
+  const out: Pt[] = [];
+  for (let k = 0; k < n; k++) out.push(pointAtLength(sp, startPad + (n === 1 ? usable / 2 : (usable * k) / (n - 1))));
   return out;
 }
 
-// 길 모양 (끝점 포함)
-const J_RIGHT = { x: 940, y: 400 }; // 11 ↔ 12 사이 꺾임
-const J_LEFT = { x: 60, y: 420 }; // 30 ↔ 31 사이 꺾임
-export const ROAD_PATHS: Record<RoadId, Pt[]> = {
-  1: [T_POS, { x: 800, y: 130 }, J_RIGHT],
-  2: [J_RIGHT, { x: 860, y: 540 }, { x: 700, y: 578 }, B_POS],
-  3: [B_POS, { x: 482, y: 335 }, T_POS],
-  4: [B_POS, { x: 280, y: 572 }, J_LEFT],
-  5: [J_LEFT, { x: 80, y: 200 }, { x: 240, y: 105 }, T_POS],
+// 길 모양 — 부드러운 타원형 고리 + 가운데 길
+const J_RIGHT = { x: 932, y: 330 }; // 11 ↔ 12 꺾임(곡선이라 눈에 안 띔)
+const J_LEFT = { x: 68, y: 330 }; // 30 ↔ 31
+const ROAD_CURVES: Record<RoadId, Cubic[]> = {
+  1: [[T_POS, { x: 700, y: 60 }, { x: 932, y: 150 }, J_RIGHT]],
+  2: [[J_RIGHT, { x: 932, y: 500 }, { x: 760, y: 585 }, B_POS]],
+  3: [[B_POS, { x: 560, y: 430 }, { x: 440, y: 230 }, T_POS]],
+  4: [[B_POS, { x: 240, y: 585 }, { x: 68, y: 500 }, J_LEFT]],
+  5: [[J_LEFT, { x: 68, y: 150 }, { x: 300, y: 60 }, T_POS]],
+};
+
+function toD(curves: Cubic[]): string {
+  const [first] = curves;
+  let d = `M ${first[0].x} ${first[0].y}`;
+  for (const [, c1, c2, p3] of curves) d += ` C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${p3.x} ${p3.y}`;
+  return d;
+}
+
+/** 렌더링용 SVG path d */
+export const ROAD_D: Record<RoadId, string> = {
+  1: toD(ROAD_CURVES[1]),
+  2: toD(ROAD_CURVES[2]),
+  3: toD(ROAD_CURVES[3]),
+  4: toD(ROAD_CURVES[4]),
+  5: toD(ROAD_CURVES[5]),
 };
 
 /** 길 이름 표시 위치 */
 export const ROAD_LABEL_POS: Record<RoadId, Pt> = {
-  1: { x: 755, y: 235 },
-  2: { x: 770, y: 480 },
-  3: { x: 605, y: 335 },
-  4: { x: 300, y: 485 },
-  5: { x: 245, y: 205 },
+  1: { x: 735, y: 215 },
+  2: { x: 780, y: 470 },
+  3: { x: 615, y: 330 },
+  4: { x: 275, y: 470 },
+  5: { x: 240, y: 215 },
 };
 
-const PAD_T = 64; // 출발점 주변 여백
-const PAD_B = 58; // 갈림길 주변 여백
-const PAD_J = 26; // 꺾임 지점 여백
+const PAD_T = 70;
+const PAD_B = 62;
+const PAD_J = 30;
 
 function buildSpaces(): Space[] {
   const coords: Record<number, Pt> = {};
   const assign = (road: RoadId, from: number, to: number, pts: Pt[]) => {
     for (let v = from; v <= to; v++) coords[v] = pts[v - from];
   };
-  assign(1, 1, 11, along(ROAD_PATHS[1], 11, PAD_T, PAD_J));
-  assign(2, 12, 17, along(ROAD_PATHS[2], 6, PAD_J, PAD_B));
-  assign(3, 18, 25, along(ROAD_PATHS[3], 8, PAD_B, PAD_T));
-  assign(4, 26, 30, along(ROAD_PATHS[4], 5, PAD_B, PAD_J));
-  assign(5, 31, 39, along(ROAD_PATHS[5], 9, PAD_J, PAD_T));
+  assign(1, 1, 11, along(ROAD_CURVES[1], 11, PAD_T, PAD_J));
+  assign(2, 12, 17, along(ROAD_CURVES[2], 6, PAD_J, PAD_B));
+  assign(3, 18, 25, along(ROAD_CURVES[3], 8, PAD_B, PAD_T));
+  assign(4, 26, 30, along(ROAD_CURVES[4], 5, PAD_B, PAD_J));
+  assign(5, 31, 39, along(ROAD_CURVES[5], 9, PAD_J, PAD_T));
 
   let red = 0;
   let ev = 0;

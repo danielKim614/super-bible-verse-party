@@ -33,12 +33,12 @@ export function ActionCard({
   const card = verseSpace ? verseCard(state, verseSpace) : null;
 
   return (
-    <div className={`rounded-3xl bg-white/95 shadow-xl border-4 ${big ? "p-5" : "p-3"}`} style={{ borderColor: team?.color }}>
+    <div className={`rounded-3xl bg-white/95 shadow-[0_10px_30px_rgba(0,0,0,0.2)] border-l-[10px] ${big ? "p-5" : "p-3"}`} style={{ borderColor: team?.color }}>
       <div className="flex items-center gap-3">
         <TeamAvatar team={team} size={big ? 56 : 38} />
         <div className={`font-display ${big ? "text-3xl" : "text-lg"} leading-tight`}>{phaseHeadline(state, teamById)}</div>
         {ctx.roll !== undefined && (
-          <div className={`ml-auto font-display ${big ? "text-4xl" : "text-xl"} bg-slate-900 text-white rounded-2xl px-4 py-1`}>🎲 {ctx.roll}</div>
+          <div className={`ml-auto font-display ${big ? "text-4xl" : "text-xl"} bg-gradient-to-br from-slate-800 to-slate-600 text-white rounded-2xl px-4 py-1 shadow-md`}>🎲 {ctx.roll}</div>
         )}
       </div>
 
