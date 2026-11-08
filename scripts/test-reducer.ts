@@ -1,0 +1,121 @@
+// 리듀서 시나리오 테스트: npm run test:reducer
+import assert from "node:assert/strict";
+import { applyEvent, finalRanking, initialState, replay } from "../src/game/reducer";
+import { DEFAULT_SETTINGS, type GameEvent, type GameEventBody, type GameState } from "../src/game/types";
+
+let seq = 0;
+const log: GameEvent[] = [];
+function ev(s: GameState, body: GameEventBody): GameState {
+  seq += 1;
+  const e = { ...body, id: seq, seq, voided: false } as GameEvent;
+  log.push(e);
+  return applyEvent(s, e);
+}
+
+const teams = ["A", "B", "C", "D", "E", "F"];
+let s = initialState();
+s = ev(s, { type: "start_game", payload: { teamIds: teams, settings: { ...DEFAULT_SETTINGS, starCount: 2 }, seed: 42 } });
+assert.equal(s.phase, "pre_roll");
+assert.equal(s.stars.length, 2);
+assert.ok(s.stars.every((x) => x >= 1 && x <= 39));
+for (const t of teams) assert.equal(s.teams[t].talents, 10);
+
+// 별이 경로에 없도록 고정 후 A팀 3칸
+s = ev(s, { type: "override", payload: { action: "starPositions", stars: [30, 38] } });
+s = ev(s, { type: "roll", payload: { value: 3 } });
+assert.equal(s.teams.A.pos, 3);
+assert.equal(s.phase, "recite");
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 1 } }); // 3절 = 빨간 칸 → +6
+assert.equal(s.teams.A.talents, 16);
+assert.equal(s.teams.A.challengeSuccess, 1);
+assert.equal(s.phase, "resolve");
+s = ev(s, { type: "end_turn", payload: {} });
+assert.equal(s.teamIndex, 1);
+
+// B팀: 위치를 15로 옮기고 4칸 → 17에서 갈림길
+s = ev(s, { type: "override", payload: { action: "position", teamId: "B", pos: 15 } });
+s = ev(s, { type: "roll", payload: { value: 4 } });
+assert.equal(s.phase, "choose_path");
+assert.equal(s.teams.B.pos, 17);
+s = ev(s, { type: "choose_path", payload: { path: "left" } });
+assert.equal(s.teams.B.pos, 27);
+assert.equal(s.phase, "recite");
+s = ev(s, { type: "recite_result", payload: { success: false, seed: 2 } });
+assert.equal(s.teams.B.talents, 10);
+s = ev(s, { type: "end_turn", payload: {} });
+
+// C팀: 스타 지나가기 → 구매 → 암송 성공 → 계속 이동
+s = ev(s, { type: "override", payload: { action: "talents", teamId: "C", delta: 20 } });
+s = ev(s, { type: "override", payload: { action: "position", teamId: "C", pos: 28 } });
+s = ev(s, { type: "roll", payload: { value: 4 } }); // 29, 30(★) 지나 31, 32
+assert.equal(s.phase, "star_offer");
+assert.equal(s.ctx.starAt, 30);
+s = ev(s, { type: "star_decision", payload: { buy: true } });
+assert.equal(s.phase, "star_recite");
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 3 } });
+assert.equal(s.teams.C.stars, 1);
+assert.equal(s.teams.C.talents, 10);
+assert.equal(s.teams.C.pos, 32);
+assert.equal(s.stars.length, 2);
+assert.ok(!s.stars.includes(30));
+assert.equal(s.phase, "recite");
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 4 } });
+assert.equal(s.teams.C.talents, 13);
+s = ev(s, { type: "end_turn", payload: {} });
+
+// D팀: 아이템 칸(5) 도착 → 아이템 획득, 더블 다이스 사용 다음 턴
+s = ev(s, { type: "override", payload: { action: "starPositions", stars: [20, 38] } });
+s = ev(s, { type: "roll", payload: { value: 5 } });
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 5 } });
+assert.equal(s.teams.D.items.length, 1);
+s = ev(s, { type: "end_turn", payload: {} });
+s = ev(s, { type: "end_turn", payload: {} }); // resolve가 아니면 무시되어야 함
+assert.equal(s.teamIndex, 4);
+
+// E팀: 상점 칸(10)에서 구매
+s = ev(s, { type: "override", payload: { action: "position", teamId: "E", pos: 7 } });
+s = ev(s, { type: "roll", payload: { value: 3 } });
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 6 } });
+s = ev(s, { type: "shop_buy", payload: { item: "shield" } });
+assert.equal(s.teams.E.items[0], "shield");
+assert.equal(s.teams.E.talents, 10 + 3 - 5);
+s = ev(s, { type: "end_turn", payload: {} });
+
+// F팀: 스킵
+s = ev(s, { type: "override", payload: { action: "skipTurn" } });
+assert.equal(s.turn, 2);
+assert.equal(s.teamIndex, 0);
+
+// Undo 재생: 마지막 이벤트 무효화
+const before = replay(log);
+assert.deepEqual(before.teams, s.teams);
+log[log.length - 1].voided = true;
+const undone = replay(log);
+assert.equal(undone.turn, 1);
+assert.equal(undone.teamIndex, 5);
+log[log.length - 1].voided = false;
+
+// 방패: A팀 빨간 칸(7) 도착 → 방패 → 파란 칸 보상
+s = ev(s, { type: "override", payload: { action: "addItem", teamId: "A", item: "shield" } });
+s = ev(s, { type: "roll", payload: { value: 4 } });
+assert.equal(s.teams.A.pos, 7);
+s = ev(s, { type: "use_item", payload: { item: "shield" } });
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 7 } });
+assert.equal(s.teams.A.talents, 16 + 3);
+s = ev(s, { type: "end_turn", payload: {} });
+
+// 종반 2배 & 종료
+s = ev(s, { type: "override", payload: { action: "setCurrent", turn: 8, teamIndex: 1 } });
+s = ev(s, { type: "override", payload: { action: "position", teamId: "B", pos: 0 } });
+s = ev(s, { type: "roll", payload: { value: 1 } }); // 1절 파란 → 3×2
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 8 } });
+assert.equal(s.ctx.payout, 6);
+s = ev(s, { type: "override", payload: { action: "endGame" } });
+assert.equal(s.phase, "ended");
+assert.equal(s.ceremony!.awards.length, 3);
+for (let i = 0; i < 4; i++) s = ev(s, { type: "ceremony_next", payload: {} });
+const rank = finalRanking(s);
+assert.equal(rank.length, 6);
+console.log("ranking", rank);
+console.log("awards", s.ceremony!.awards.map((a) => [a.title, a.winners]));
+console.log("✅ reducer tests passed");

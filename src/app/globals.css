@@ -1,0 +1,55 @@
+@import url("https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Noto Sans KR", system-ui, sans-serif;
+  --font-display: "Jua", "Noto Sans KR", system-ui, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #1f2937;
+  background: #e8f6ff;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 0.45s ease-out both; }
+
+@keyframes bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -6px; }
+}
+.animate-bob { animation: bob 1.4s ease-in-out infinite; }
+
+@keyframes ping-slow {
+  0% { opacity: 0.9; }
+  100% { opacity: 0.1; }
+}
+.animate-ping-slow { animation: ping-slow 1s ease-in-out infinite alternate; }
+
+@keyframes spin-slow { to { rotate: 360deg; } }
+.animate-spin-slow { animation: spin-slow 6s linear infinite; transform-box: fill-box; transform-origin: center; }
+
+@keyframes star-pulse {
+  0%, 100% { scale: 1; rotate: 0deg; }
+  50% { scale: 1.12; rotate: 8deg; }
+}
+.animate-star { animation: star-pulse 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star { animation: none; }
+}
