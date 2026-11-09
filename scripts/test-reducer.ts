@@ -1,6 +1,6 @@
 // 리듀서 시나리오 테스트: npm run test:reducer
 import assert from "node:assert/strict";
-import { applyEvent, finalRanking, initialState, replay } from "../src/game/reducer";
+import { applyEvent, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
 import { DEFAULT_SETTINGS, type GameEvent, type GameEventBody, type GameState } from "../src/game/types";
 
 let seq = 0;
@@ -97,13 +97,33 @@ s = ev(s, { type: "override", payload: { action: "skipTurn" } });
 assert.equal(s.turn, 2);
 assert.equal(s.teamIndex, 0);
 
-// Undo 재생: 마지막 이벤트 무효화
+// 축복 칸: F팀(꼴찌)이 아닌 팀이 15절에 멈추면 꼴찌에게 +5
+s = ev(s, { type: "override", payload: { action: "position", teamId: "A", pos: 14 } });
+const beforeBless = { ...Object.fromEntries(teams.map((t) => [t, s.teams[t].talents])) };
+s = ev(s, { type: "roll", payload: { value: 1 } });
+assert.equal(s.teams.A.pos, 15);
+assert.ok(s.ctx.blessTo);
+assert.equal(s.teams[s.ctx.blessTo!].talents, beforeBless[s.ctx.blessTo!] + 5);
+s = ev(s, { type: "recite_result", payload: { success: true, seed: 9 } });
+s = ev(s, { type: "end_turn", payload: {} });
+// 해프닝 칸: 24절
+s = ev(s, { type: "override", payload: { action: "position", teamId: "B", pos: 23 } });
+s = ev(s, { type: "roll", payload: { value: 1 } });
+assert.equal(s.teams.B.pos, 24);
+assert.ok(s.ctx.happening?.text);
+console.log("happening:", s.ctx.happening?.text);
+s = ev(s, { type: "recite_result", payload: { success: false, seed: 10 } });
+s = ev(s, { type: "end_turn", payload: {} });
+// 다시 A팀 차례로 되돌려 놓기
+s = ev(s, { type: "override", payload: { action: "setCurrent", turn: 2, teamIndex: 0 } });
+s = ev(s, { type: "override", payload: { action: "position", teamId: "A", pos: 3 } });
+
+// Undo 재생: 마지막 이벤트(A 위치 변경) 무효화
 const before = replay(log);
 assert.deepEqual(before.teams, s.teams);
 log[log.length - 1].voided = true;
 const undone = replay(log);
-assert.equal(undone.turn, 1);
-assert.equal(undone.teamIndex, 5);
+assert.equal(undone.teams.A.pos, 15);
 log[log.length - 1].voided = false;
 
 // 방패: A팀 빨간 칸(7) 도착 → 방패 → 파란 칸 보상
@@ -114,8 +134,10 @@ assert.equal(s.teams.A.pos, 4);
 s = ev(s, { type: "choose_path", payload: { option: 0 } });
 assert.equal(s.teams.A.pos, 7);
 s = ev(s, { type: "use_item", payload: { item: "shield" } });
+const beforeShield = s.teams.A.talents;
+const mult = isBoost(s) ? 2 : 1; // 해프닝 "황금 라운드"가 걸렸을 수 있음
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 7 } });
-assert.equal(s.teams.A.talents, 16 + 3);
+assert.equal(s.teams.A.talents, beforeShield + 3 * mult); // 방패 → 파란 칸 보상
 s = ev(s, { type: "end_turn", payload: {} });
 
 // 종반 2배 & 종료

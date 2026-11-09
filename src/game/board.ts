@@ -6,7 +6,7 @@
 //
 // 칸 유형은 본문 길이를 받기 전의 임시 배치입니다. 확정 시 SPACE_TYPES만 고치면 됩니다.
 
-export type SpaceType = "blue" | "red" | "event" | "item";
+export type SpaceType = "blue" | "red" | "event" | "item" | "happening" | "bless";
 export type RedMode = "blank" | "firstWord" | "noHint";
 export type EventMode = "relay" | "threeVerses";
 export type RouteId = "c0" | "a1" | "a2" | "c1" | "b1" | "b2" | "c2" | "d1" | "d2";
@@ -64,13 +64,13 @@ export const ROUTES: Route[] = [
 
 const SPACE_TYPES: Record<number, SpaceType> = {
   1: "blue", 2: "blue", 3: "red", 4: "blue",
-  5: "item", 6: "blue", 7: "red", 8: "event", 9: "blue",
+  5: "item", 6: "blue", 7: "red", 8: "event", 9: "happening",
   10: "red", 11: "red", 12: "event",
-  13: "blue", 14: "blue", 15: "blue", 16: "item", 17: "blue",
-  18: "blue", 19: "red", 20: "blue", 21: "event", 22: "blue", 23: "red", 24: "blue", 25: "blue",
+  13: "blue", 14: "blue", 15: "bless", 16: "item", 17: "blue",
+  18: "blue", 19: "red", 20: "blue", 21: "event", 22: "blue", 23: "red", 24: "happening", 25: "blue",
   26: "red", 27: "blue", 28: "red", 29: "red", 30: "item",
   31: "blue", 32: "red", 33: "blue",
-  34: "blue", 35: "event", 36: "blue",
+  34: "blue", 35: "event", 36: "bless",
   37: "item", 38: "red", 39: "blue",
 };
 
@@ -253,6 +253,8 @@ export const SPACE_LABEL: Record<SpaceType, string> = {
   red: "빨간 칸",
   event: "이벤트 칸",
   item: "아이템 칸",
+  happening: "해프닝 칸",
+  bless: "축복 칸",
 };
 
 export const RED_MODE_LABEL: Record<RedMode, string> = {

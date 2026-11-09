@@ -12,6 +12,8 @@ const TYPE_BG: Record<string, string> = {
   red: "bg-rose-400 text-rose-950",
   event: "bg-emerald-400 text-emerald-950",
   item: "bg-violet-400 text-violet-950",
+  happening: "bg-cyan-300 text-cyan-950",
+  bless: "bg-pink-300 text-pink-950",
 };
 
 export function ActionCard({
@@ -62,6 +64,17 @@ export function ActionCard({
               <span className={`text-base ${i === 0 ? "text-sky-200" : "text-amber-200"}`}>{f.desc}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {state.phase === "recite" && ctx.happening && (
+        <div className={`mt-3 rounded-2xl bg-cyan-300/20 border border-cyan-200/40 px-4 py-2 font-display animate-pop ${big ? "text-2xl" : "text-base"}`}>
+          ❔ {ctx.happening.text}
+        </div>
+      )}
+      {state.phase === "recite" && ctx.blessTo && (
+        <div className={`mt-3 rounded-2xl bg-pink-300/20 border border-pink-200/40 px-4 py-2 font-display animate-pop ${big ? "text-2xl" : "text-base"}`}>
+          🕊️ 축복! {teamById[ctx.blessTo]?.name} 팀에게 +5 달란트
         </div>
       )}
 

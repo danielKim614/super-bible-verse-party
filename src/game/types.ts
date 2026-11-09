@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   couponStarPrice: 10,
   starCount: 2,
   finalBoostTurns: 3,
-  rewards: { blue: 3, red: 6, event: 8, item: 3 },
+  rewards: { blue: 3, red: 6, event: 8, item: 3, happening: 3, bless: 3 },
   inventoryLimit: 3,
   itemRefund: 1,
   bonusStars: { recite: true, talent: true, challenge: true },
@@ -106,6 +106,8 @@ export interface TeamState {
   recited: number[];
 }
 
+export type HappeningKind = "stars" | "rain" | "golden" | "gift";
+
 export interface TurnCtx {
   startSeq?: number; // 이 팀 턴이 시작된 이벤트 seq
   moveItem?: ItemId;
@@ -124,6 +126,8 @@ export interface TurnCtx {
   doubleTalentOn?: boolean;
   hintUsed?: boolean;
   landed?: number;
+  happening?: { kind: HappeningKind; text: string };
+  blessTo?: string; // 축복 받은 팀
   reciteResult?: boolean;
   payout?: number;
   gainedItem?: ItemId | "full";
@@ -143,7 +147,7 @@ export interface LedgerEntry {
 export interface FeedEntry {
   seq: number;
   teamId?: string;
-  kind: "payout" | "star" | "item" | "fail" | "info" | "boost" | "cost";
+  kind: "payout" | "star" | "item" | "fail" | "info" | "boost" | "cost" | "happening" | "bless";
   text: string;
   amount?: number;
 }
@@ -174,6 +178,7 @@ export interface GameState {
   ctx: TurnCtx;
   paused: boolean;
   boostOverride: boolean | null;
+  goldenRound: number | null; // 해프닝 "황금 라운드"가 적용되는 턴
   ledger: LedgerEntry[];
   feed: FeedEntry[];
   ceremony: Ceremony | null;

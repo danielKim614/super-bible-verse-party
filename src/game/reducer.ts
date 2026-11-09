@@ -4,6 +4,7 @@ import { pick, rng } from "./rng";
 import {
   DEFAULT_SETTINGS,
   type Award,
+  type HappeningKind,
   type GameEvent,
   type GameEventBody,
   type GameState,
@@ -27,6 +28,7 @@ export function initialState(): GameState {
     ctx: freshCtx(),
     paused: false,
     boostOverride: null,
+    goldenRound: null,
     ledger: [],
     feed: [],
     ceremony: null,
@@ -56,7 +58,14 @@ export function currentTeamId(s: GameState): string | undefined {
 
 export function isBoost(s: GameState): boolean {
   if (s.boostOverride !== null) return s.boostOverride;
+  if (s.goldenRound === s.turn) return true;
   return s.turn > s.settings.totalTurns - s.settings.finalBoostTurns;
+}
+
+/** 꼴찌 팀 (스타 → 달란트 기준, 동점이면 턴 순서 뒤쪽) */
+export function lastPlaceTeam(s: GameState): string | undefined {
+  const rows = finalRanking(s);
+  return rows[rows.length - 1]?.id;
 }
 
 /** 칸의 실제 암송 규칙 (방패 적용 시 빨간 칸 → 파란 칸) */
@@ -422,13 +431,61 @@ function advance(s: GameState, tid: string, seq: number) {
       return;
     }
   }
-  land(s, tid, team.pos);
-  void seq;
+  land(s, tid, team.pos, seq);
 }
 
-function land(s: GameState, _tid: string, space: number) {
+function land(s: GameState, tid: string, space: number, seq: number) {
   s.ctx.landed = space;
   s.phase = "recite";
+  const t = SPACE_BY_ID[space]?.type;
+  if (t === "bless") {
+    const last = lastPlaceTeam(s);
+    if (last) {
+      s.ctx.blessTo = last;
+      credit(s, seq, last, 5, "축복 칸 (꼴찌 응원)");
+      feed(s, { seq, teamId: last, kind: "bless", text: "축복! 꼴찌 팀에게", amount: 5 });
+    }
+  }
+  if (t === "happening") applyHappening(s, tid, seq);
+}
+
+const HAPPENINGS: HappeningKind[] = ["stars", "rain", "golden", "gift"];
+
+function applyHappening(s: GameState, tid: string, seq: number) {
+  const r = rng(seq * 104729 + 7);
+  const kind = pick(r, HAPPENINGS);
+  let text = "";
+  switch (kind) {
+    case "stars": {
+      const n = s.stars.length;
+      s.stars = [];
+      for (let i = 0; i < n; i++) placeStar(s, r);
+      text = "스타 대이동! 스타가 모두 다른 곳으로";
+      break;
+    }
+    case "rain":
+      for (const id of s.teamIds) credit(s, seq, id, 2, "해프닝: 달란트 비");
+      text = "달란트 비! 모든 팀 +2";
+      break;
+    case "golden":
+      s.goldenRound = s.turn;
+      text = "황금 라운드! 이번 라운드 보상 2배";
+      break;
+    case "gift": {
+      const item = pick(r, RANDOM_ITEM_POOL);
+      const team = s.teams[tid];
+      if (team.items.length < s.settings.inventoryLimit) {
+        team.items.push(item);
+        text = `깜짝 선물! ${ITEMS[item].name}`;
+      } else {
+        credit(s, seq, tid, 3, "해프닝: 깜짝 선물(가방 가득 → 달란트)");
+        text = "깜짝 선물! 가방이 가득 차서 +3 달란트";
+      }
+      break;
+    }
+  }
+  s.ctx.happening = { kind, text };
+  feed(s, { seq, teamId: tid, kind: "happening", text });
 }
 
 function teleport(s: GameState, tid: string, target: number, seq: number) {
@@ -438,7 +495,7 @@ function teleport(s: GameState, tid: string, target: number, seq: number) {
   s.ctx.teleport = true;
   s.ctx.remaining = 0;
   s.moveSeq = seq;
-  land(s, tid, target);
+  land(s, tid, target, seq);
 }
 
 function buyStar(s: GameState, tid: string, seq: number, opts: { seed?: number }) {

@@ -183,7 +183,7 @@ function ControlTab({ game, admin, goSettings }: { game: GameData; admin: Admin;
   const team = state.teams[tid];
   const info = teamById[tid];
   const ctx = state.ctx;
-  const turnLedger = state.ledger.filter((l) => l.seq > (ctx.startSeq ?? 0) && l.teamId === tid);
+  const turnLedger = state.ledger.filter((l) => l.seq > (ctx.startSeq ?? 0));
 
   return (
     <div className="grid lg:grid-cols-[1fr_420px] gap-4">
@@ -217,6 +217,7 @@ function ControlTab({ game, admin, goSettings }: { game: GameData; admin: Admin;
             <div className="text-xs font-bold text-amber-800">💰 MC 실물 달란트 안내 (이번 턴)</div>
             {turnLedger.map((l, i) => (
               <div key={i} className="font-display text-2xl">
+                {l.teamId !== tid && <span className="text-lg mr-1" style={{ color: teamById[l.teamId]?.color }}>{teamName(teamById, l.teamId)}</span>}
                 {l.delta > 0 ? "지급" : "회수"} {Math.abs(l.delta)}달란트 <span className="text-lg text-slate-600">({payoutText(l.delta)}) · {l.reason}</span>
               </div>
             ))}

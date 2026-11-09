@@ -11,7 +11,10 @@ const TYPE_FILL: Record<string, [string, string]> = {
   red: ["#ff5c7a", "#d1294b"],
   event: ["#3ee07a", "#17a84f"],
   item: ["#c084fc", "#8b3fe0"],
+  happening: ["#2dd4bf", "#0d9488"],
+  bless: ["#f472b6", "#be185d"],
 };
+const TYPE_ICON: Record<string, string> = { item: "🎁", happening: "❔", bless: "🕊️" };
 
 const ROUTE_IDS: RouteId[] = ["c0", "a1", "a2", "c1", "b1", "b2", "c2", "d1", "d2"];
 const HARD_ROUTES: RouteId[] = ["a2", "b2"];
@@ -207,9 +210,9 @@ export function Board({
             <text textAnchor="middle" dy={6} fontSize={16} fontWeight={800} fill="#fff">
               {sp.id}
             </text>
-            {sp.type === "item" && (
+            {TYPE_ICON[sp.type] && (
               <text textAnchor="middle" y={-24} fontSize={15}>
-                🎁
+                {TYPE_ICON[sp.type]}
               </text>
             )}
           </g>

@@ -12,6 +12,8 @@ const KIND_STYLE: Record<FeedEntry["kind"], string> = {
   info: "bg-white text-slate-800",
   boost: "bg-rose-500 text-white",
   cost: "bg-amber-300 text-amber-950",
+  happening: "bg-cyan-300 text-cyan-950",
+  bless: "bg-pink-300 text-pink-950",
 };
 
 /** 새로 생긴 피드 항목을 잠깐 띄움 (Undo로 사라진 항목은 무시) */
