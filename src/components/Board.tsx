@@ -137,7 +137,7 @@ function useForkFlash(state: GameState) {
   return flash;
 }
 
-const DICE_MS = 1100;
+const DICE_MS = 1300;
 
 /** 주사위 입력 직후 굴러가는 연출 */
 function useDiceRoll(state: GameState) {
@@ -167,7 +167,7 @@ function useDiceRoll(state: GameState) {
         clearInterval(iv);
         setDice((d) => (d && d.key === key ? { ...d, show: d.faces } : d));
       }
-    }, 80);
+    }, 100);
     const t = setTimeout(() => setDice((d) => (d && d.key === key ? null : d)), DICE_MS + 500);
     return () => {
       clearInterval(iv);
@@ -187,13 +187,16 @@ const PIPS: Record<number, [number, number][]> = {
   6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
 };
 
-function Die({ face, settled }: { face: number; settled: boolean }) {
+function Die({ face, settled, delay }: { face: number; settled: boolean; delay: number }) {
+  // 바깥 g: 왼쪽에서 굴러 들어오는 이동, 안쪽 g: 구르는 회전 → 멈추면 튕김
   return (
-    <g className={settled ? "animate-die-settle" : "animate-die-roll"}>
-      <rect x={-34} y={-34} width={68} height={68} rx={14} fill="#fff" stroke="#cbd5e1" strokeWidth={3} filter="url(#soft)" />
-      {(PIPS[face] ?? PIPS[1]).map(([px, py], i) => (
-        <circle key={i} cx={px * 18} cy={py * 18} r={6.5} fill="#1e293b" />
-      ))}
+    <g className="animate-die-travel" style={{ animationDelay: `${delay}ms` }}>
+      <g className={settled ? "animate-die-settle" : "animate-die-tumble"} style={{ animationDelay: settled ? "0ms" : `${delay}ms` }}>
+        <rect x={-34} y={-34} width={68} height={68} rx={14} fill="#fff" stroke="#cbd5e1" strokeWidth={3} filter="url(#soft)" />
+        {(PIPS[face] ?? PIPS[1]).map(([px, py], i) => (
+          <circle key={i} cx={px * 18} cy={py * 18} r={6.5} fill="#1e293b" />
+        ))}
+      </g>
     </g>
   );
 }
@@ -472,7 +475,7 @@ export function Board({
             const settled = dice.show[i] === dice.faces[i] && dice.show.every((x, j) => x === dice.faces[j]);
             return (
               <g key={i} transform={`translate(${off},0)`}>
-                <Die face={f} settled={settled} />
+                <Die face={f} settled={settled} delay={i * 120} />
               </g>
             );
           })}
