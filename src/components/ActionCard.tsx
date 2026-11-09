@@ -2,7 +2,7 @@
 
 import { FORKS } from "@/game/board";
 import { ITEMS } from "@/game/items";
-import { currentTeamId, payoutText } from "@/game/reducer";
+import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 import type { VerseMap } from "@/game/verses";
 import { phaseHeadline, verseCard } from "./describe";
@@ -100,7 +100,7 @@ export function ActionCard({
         <div className="mt-3 flex flex-wrap items-center gap-3">
           {ctx.reciteResult ? (
             <span className={`font-display text-emerald-300 ${big ? "text-5xl" : "text-2xl"}`}>
-              +{ctx.payout ?? 0} 달란트 <span className={`${big ? "text-2xl" : "text-sm"} text-white/50`}>({payoutText(ctx.payout ?? 0)})</span>
+              +{ctx.payout ?? 0} 달란트
             </span>
           ) : (
             <span className={`font-display text-white/50 ${big ? "text-4xl" : "text-xl"}`}>획득 없음</span>
