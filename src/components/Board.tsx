@@ -186,11 +186,11 @@ export function Board({
       <g transform={`translate(${T_POS.x},${T_POS.y})`} filter="url(#soft)">
         <circle r={32} fill="#ffd23f" stroke="#fff" strokeWidth={4} />
         <circle r={24} fill="none" stroke="#e0a800" strokeWidth={2} strokeDasharray="4 4" />
-        <text textAnchor="middle" dy={2} fontSize={17} className="font-display" fill="#5a3500">
+        <text textAnchor="middle" dy={-2} fontSize={18} className="font-display" fill="#5a3500">
           출발
         </text>
-        <text textAnchor="middle" dy={19} fontSize={13} className="font-display" fill="#5a3500">
-          🏪 상점
+        <text textAnchor="middle" dy={17} fontSize={15}>
+          🏪
         </text>
       </g>
       <g transform={`translate(${B_POS.x},${B_POS.y})`} filter="url(#soft)">

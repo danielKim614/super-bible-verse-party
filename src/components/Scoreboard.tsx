@@ -40,11 +40,7 @@ export function Scoreboard({
               <div className={`font-display truncate ${compact ? "text-base" : "text-xl"}`} style={{ color: t?.color }}>
                 {t?.name ?? "?"}
               </div>
-              {!compact && (
-                <div className="text-sm text-slate-500 truncate">
-                  {ts.items.length ? ts.items.map((i) => ITEMS[i].icon).join(" ") : "아이템 없음"}
-                </div>
-              )}
+              {!compact && ts.items.length > 0 && <div className="text-sm truncate">{ts.items.map((i) => ITEMS[i].icon).join(" ")}</div>}
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <span className={`font-display ${compact ? "text-lg" : "text-2xl"}`}>⭐{stars}</span>

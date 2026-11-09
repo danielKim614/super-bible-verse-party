@@ -3,7 +3,7 @@
 import { ITEMS } from "@/game/items";
 import { currentTeamId, payoutText } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
-import { phaseHeadline, roadName, verseCard } from "./describe";
+import { phaseHeadline, verseCard } from "./describe";
 import { TeamAvatar } from "./TeamAvatar";
 
 const TYPE_BG: Record<string, string> = {
@@ -53,8 +53,8 @@ export function ActionCard({
 
       {state.phase === "choose_path" && (
         <div className={`mt-3 grid grid-cols-2 gap-3 ${big ? "text-2xl" : "text-base"} font-display`}>
-          <div className="rounded-2xl bg-stone-200 p-3 text-center">가운데 길 · 탄식과 소망 (18~25)<br /><span className="text-base text-stone-600">짧지만 어려움</span></div>
-          <div className="rounded-2xl bg-sky-100 p-3 text-center">왼쪽 길 · 성령의 간구 (26~39)<br /><span className="text-base text-sky-700">길지만 보상 많음</span></div>
+          <div className="rounded-2xl bg-stone-200 p-3 text-center">탄식과 소망 18~25<br /><span className="text-base text-stone-600">짧고 어려운 길</span></div>
+          <div className="rounded-2xl bg-sky-100 p-3 text-center">성령의 간구 26~39<br /><span className="text-base text-sky-700">길고 넉넉한 길</span></div>
         </div>
       )}
 
@@ -63,11 +63,10 @@ export function ActionCard({
           <div className="flex flex-wrap items-center gap-2">
             <span className={`font-display ${big ? "text-5xl" : "text-2xl"}`}>{card.ref}</span>
             <span className={`rounded-full px-3 py-1 text-white font-bold ${TYPE_BG[card.type]} ${big ? "text-lg" : "text-xs"}`}>{card.typeLabel}</span>
-            <span className={`rounded-full px-3 py-1 bg-slate-100 ${big ? "text-lg" : "text-xs"}`}>{roadName(card.space)}</span>
             {ctx.doubleTalentOn && state.phase === "recite" && <span className="rounded-full px-3 py-1 bg-amber-300 font-bold">✖️2 달란트</span>}
             {ctx.hintUsed && <span className="rounded-full px-3 py-1 bg-yellow-200 font-bold">💡 힌트 사용</span>}
           </div>
-          <div className={`${big ? "text-2xl" : "text-sm"} text-slate-600`}>암송 방식: <b>{card.modeLabel}</b></div>
+          <div className={`inline-flex self-start rounded-full bg-slate-800 text-white px-3 py-1 ${big ? "text-xl" : "text-xs"}`}>{card.modeLabel}</div>
           {card.prompt && (
             <div className={`rounded-2xl bg-amber-50 border-2 border-amber-200 p-3 ${big ? "text-3xl leading-relaxed" : "text-base"}`}>{card.prompt}</div>
           )}

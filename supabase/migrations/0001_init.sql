@@ -184,5 +184,19 @@ insert into public.games (id, admin_passcode_hash)
 values ('main', extensions.crypt('change-me', extensions.gen_salt('bf')))
 on conflict (id) do nothing;
 
+-- 초기 팀 (이름만. 말 이미지와 색은 어드민에서)
+insert into public.teams (game_id, slot, name, color)
+select 'main', v.slot, v.name, v.color
+from (values
+  (1, '기도하는', '#e5484d'),
+  (2, '공동육아', '#f76b15'),
+  (3, '아둘람',   '#ffc53d'),
+  (4, '벧엘',     '#30a46c'),
+  (5, '말랑',     '#0090ff'),
+  (6, '그따무',   '#8e4ec6'),
+  (7, '여호수아', '#d6409f')
+) as v(slot, name, color)
+where not exists (select 1 from public.teams t where t.game_id = 'main');
+
 -- 패스코드를 나중에 바꿀 때:
 -- update public.games set admin_passcode_hash = extensions.crypt('새패스코드', extensions.gen_salt('bf')) where id = 'main';

@@ -7,9 +7,9 @@ import { Scoreboard } from "@/components/Scoreboard";
 import { ActionCard } from "@/components/ActionCard";
 import { FeedToasts } from "@/components/FeedToasts";
 import { Ceremony } from "@/components/Ceremony";
+import { TeamAvatar } from "@/components/TeamAvatar";
 import { isBoost } from "@/game/reducer";
 import { useGame } from "@/lib/useGame";
-import type { Settings } from "@/game/types";
 
 export default function DisplayPage() {
   const game = useGame();
@@ -35,13 +35,9 @@ export default function DisplayPage() {
         <div className="ml-auto flex items-center gap-3">
           {game.backend?.mode === "local" && <span className="rounded-full bg-yellow-200 px-3 py-1 text-sm shadow">로컬 데모</span>}
           {joinUrl && (
-            <div className="flex items-center gap-3 rounded-2xl bg-white/95 p-2 pr-4 shadow-md">
-              <QRCodeSVG value={joinUrl} size={64} />
-              <div className="font-display text-lg leading-tight text-slate-700">
-                폰으로
-                <br />
-                참가하기
-              </div>
+            <div className="flex items-center gap-2 rounded-2xl bg-white/95 p-1.5 pr-3 shadow-md">
+              <QRCodeSVG value={joinUrl} size={56} />
+              <div className="font-display text-base leading-tight text-slate-600">참가</div>
             </div>
           )}
         </div>
@@ -70,19 +66,18 @@ export default function DisplayPage() {
             {state.started ? (
               <Scoreboard state={state} teamById={teamById} />
             ) : (
-              <div className="rounded-3xl bg-white/95 p-5 shadow-md">
-                <div className="font-display text-3xl mb-3">참가 팀</div>
-                <ul className="flex flex-col gap-2">
-                  {teams.map((t) => (
-                    <li key={t.id} className="flex items-center gap-2 font-display text-2xl" style={{ color: t.color }}>
-                      ● {t.name}
-                      <span className="ml-auto text-lg text-slate-500">{game.members.filter((m) => m.team_id === t.id).length}명</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ul className="flex flex-col gap-2">
+                {teams.map((t) => (
+                  <li key={t.id} className="flex items-center gap-3 rounded-2xl bg-white/95 px-3 py-2 shadow-md">
+                    <TeamAvatar team={t} size={44} />
+                    <span className="font-display text-2xl" style={{ color: t.color }}>
+                      {t.name}
+                    </span>
+                    <span className="ml-auto font-display text-xl text-slate-400">{game.members.filter((m) => m.team_id === t.id).length}</span>
+                  </li>
+                ))}
+              </ul>
             )}
-            <Legend settings={state.settings} />
           </aside>
         </div>
       )}
@@ -93,31 +88,5 @@ export default function DisplayPage() {
         </div>
       )}
     </main>
-  );
-}
-
-function Legend({ settings }: { settings: Settings }) {
-  const r = settings.rewards;
-  const items = [
-    ["bg-blue-500", `파란 칸 +${r.blue}`],
-    ["bg-red-500", `빨간 칸 +${r.red} 어려움`],
-    ["bg-green-500", `이벤트 칸 +${r.event}`],
-    ["bg-purple-500", `아이템 칸 +${r.item} 🎁`],
-  ];
-  return (
-    <div className="rounded-3xl bg-white/90 p-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[15px] shadow-md">
-      {items.map(([c, l]) => (
-        <div key={l} className="flex items-center gap-2">
-          <span className={`inline-block w-4 h-4 rounded-full ${c} ring-2 ring-white shadow`} />
-          {l}
-        </div>
-      ))}
-      <div className="flex items-center gap-2">
-        <span className="text-base">⭐</span> 지나가며 구매 {settings.starPrice}
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-base">🏪</span> 출발점 지나며 상점
-      </div>
-    </div>
   );
 }

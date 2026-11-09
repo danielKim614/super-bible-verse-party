@@ -405,9 +405,9 @@ function PreStart({ game, admin, goSettings }: { game: GameData; admin: Admin; g
     <div className="flex flex-col gap-4 max-w-2xl">
       <h2 className="font-display text-3xl">게임 시작 전 준비</h2>
       <ol className="list-decimal pl-5 text-slate-600 space-y-1">
-        <li>“팀·참가자” 탭에서 6팀을 등록 (이름·색·리더 사진 URL)</li>
-        <li>참가자들은 메인 스크린 QR로 /join 에 접속해 팀 선택</li>
-        <li>“설정” 탭에서 턴 수 등 확인</li>
+        <li>“팀·참가자” 탭에서 팀 이름과 말 이미지 등록</li>
+        <li>참가자들은 메인 스크린 QR로 접속해 팀 선택</li>
+        <li>“설정” 탭에서 턴 수 확인</li>
       </ol>
       <div className="rounded-2xl bg-slate-50 p-3">
         <div className="font-bold mb-2">참가 팀 ({teams.length})</div>
@@ -479,69 +479,76 @@ function TeamsTab({ game, admin }: { game: GameData; admin: Admin }) {
   const teams = game.teams;
   return (
     <div className="flex flex-col gap-4">
-      {game.state.started && <div className="rounded-xl bg-amber-50 p-2 text-sm text-amber-800">게임이 시작된 뒤에는 이름·색·사진만 바꾸세요. 팀 추가/삭제는 진행 중인 게임에 반영되지 않습니다.</div>}
-      <table className="w-full text-left">
-        <thead className="text-sm text-slate-500">
-          <tr>
-            <th>순서</th>
-            <th>팀</th>
-            <th>색</th>
-            <th>사진 URL</th>
-            <th>참가자</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {teams.map((t) => (
-            <tr key={t.id} className="border-t">
-              <td>{t.slot}</td>
-              <td className="py-2">
-                <span className="flex items-center gap-2">
-                  <TeamAvatar team={t} size={32} /> {t.name}
-                </span>
-              </td>
-              <td>
-                <span className="inline-block w-6 h-6 rounded-full" style={{ background: t.color }} />
-              </td>
-              <td className="text-xs text-slate-500 max-w-[200px] truncate">{t.image_url}</td>
-              <td className="text-sm">
-                {game.members
-                  .filter((m) => m.team_id === t.id)
-                  .map((m) => (
-                    <span key={m.id} className="inline-flex items-center gap-1 mr-1 rounded-full bg-slate-100 px-2">
-                      {m.nickname}
-                      <button className="text-red-500" onClick={() => confirm(`${m.nickname} 님을 삭제할까요?`) && admin.deleteMember(m.id)}>
-                        ×
-                      </button>
-                    </span>
-                  ))}
-              </td>
-              <td className="text-right whitespace-nowrap">
-                <button className="underline mr-2" onClick={() => setDraft(t)}>
-                  수정
-                </button>
-                <button className="underline text-red-600" onClick={() => confirm(`${t.name} 팀을 삭제할까요? (참가자도 삭제)`) && admin.deleteTeam(t.id)}>
-                  삭제
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {game.state.started && <div className="rounded-xl bg-amber-50 p-2 text-sm text-amber-800">게임 중에는 이름·이미지만 바꾸세요. 팀 추가/삭제는 진행 중인 게임에 반영되지 않습니다.</div>}
+      <ul className="flex flex-col gap-2">
+        {teams.map((t) => (
+          <li key={t.id} className="flex items-center gap-3 rounded-2xl border px-3 py-2">
+            <span className="w-6 text-center text-slate-400">{t.slot}</span>
+            <TeamAvatar team={t} size={44} />
+            <span className="font-display text-xl" style={{ color: t.color }}>
+              {t.name}
+            </span>
+            <span className="flex flex-wrap gap-1 text-sm">
+              {game.members
+                .filter((m) => m.team_id === t.id)
+                .map((m) => (
+                  <span key={m.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2">
+                    {m.nickname}
+                    <button className="text-red-500" onClick={() => confirm(`${m.nickname} 님을 삭제할까요?`) && admin.deleteMember(m.id)}>
+                      ×
+                    </button>
+                  </span>
+                ))}
+            </span>
+            <span className="ml-auto flex gap-3 text-sm whitespace-nowrap">
+              <button className="underline" onClick={() => setDraft(t)}>
+                수정
+              </button>
+              <button className="underline text-red-600" onClick={() => confirm(`${t.name} 팀을 삭제할까요?`) && admin.deleteTeam(t.id)}>
+                삭제
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
       {!draft && (
-        <button
-          className={`${btn} bg-slate-900 text-white self-start`}
-          onClick={() => setDraft({ slot: teams.length + 1, name: "", color: PALETTE[teams.length % PALETTE.length], image_url: "" })}
-        >
+        <button className={`${btn} bg-slate-900 text-white self-start`} onClick={() => setDraft({ slot: teams.length + 1, name: "", color: PALETTE[teams.length % PALETTE.length], image_url: "" })}>
           + 팀 추가
         </button>
       )}
-      {draft && <TeamForm draft={draft} onCancel={() => setDraft(null)} onSave={async (t) => { await admin.upsertTeam(t); setDraft(null); }} />}
-      <p className="text-xs text-slate-500">
-        리더 사진: 이미지 파일을 프로젝트의 <code>public/teams/</code> 폴더에 넣고 <code>/teams/파일명.jpg</code> 처럼 입력하거나, 웹 이미지 주소를 붙여 넣으세요.
-      </p>
+      {draft && (
+        <TeamForm
+          draft={draft}
+          onCancel={() => setDraft(null)}
+          onSave={async (t) => {
+            await admin.upsertTeam(t);
+            setDraft(null);
+          }}
+        />
+      )}
     </div>
   );
+}
+
+/** 이미지 파일을 정사각형 160px 데이터 URL로 축소 */
+function fileToAvatar(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const size = 160;
+      const c = document.createElement("canvas");
+      c.width = size;
+      c.height = size;
+      const g = c.getContext("2d")!;
+      const m = Math.min(img.width, img.height);
+      g.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => reject(new Error("이미지를 읽을 수 없어요"));
+    img.src = url;
+  });
 }
 
 function TeamForm({
@@ -555,31 +562,54 @@ function TeamForm({
 }) {
   const [v, setV] = useState(draft);
   const [err, setErr] = useState<string | null>(null);
+  const preview: TeamInfo = { id: "", slot: v.slot ?? 1, name: v.name || "?", color: v.color ?? "#888", image_url: v.image_url || null };
   return (
     <form
-      className="rounded-2xl border-2 p-3 grid sm:grid-cols-[80px_1fr_80px_1fr_auto] gap-2 items-end"
+      className="rounded-2xl border-2 p-4 flex flex-wrap items-center gap-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (!v.name?.trim()) return setErr("팀 이름을 입력하세요");
-        if (!v.slot || v.slot < 1) return setErr("순서는 1 이상");
-        onSave({ id: v.id, slot: v.slot, name: v.name.trim(), color: v.color || "#888", image_url: v.image_url?.trim() || null });
+        onSave({ id: v.id, slot: v.slot ?? 1, name: v.name.trim(), color: v.color || "#888", image_url: v.image_url?.trim() || null });
       }}
     >
-      <label className="text-sm">
-        순서
-        <input type="number" min={1} value={v.slot ?? 1} onChange={(e) => setV({ ...v, slot: Number(e.target.value) })} className="w-full rounded-lg border px-2 py-1" />
+      <label className="cursor-pointer flex flex-col items-center gap-1 text-xs text-slate-500">
+        <TeamAvatar team={preview} size={72} />
+        말 이미지
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            try {
+              setV({ ...v, image_url: await fileToAvatar(f) });
+              setErr(null);
+            } catch (e2) {
+              setErr(e2 instanceof Error ? e2.message : String(e2));
+            }
+          }}
+        />
       </label>
-      <label className="text-sm">
+      <label className="flex flex-col text-sm flex-1 min-w-[160px]">
         팀 이름
-        <input value={v.name ?? ""} onChange={(e) => { setV({ ...v, name: e.target.value }); setErr(null); }} className="w-full rounded-lg border px-2 py-1" />
+        <input
+          autoFocus
+          value={v.name ?? ""}
+          onChange={(e) => {
+            setV({ ...v, name: e.target.value });
+            setErr(null);
+          }}
+          className="rounded-lg border px-3 py-2 text-lg"
+        />
       </label>
-      <label className="text-sm">
+      <label className="flex flex-col text-sm">
         색
-        <input type="color" value={v.color ?? "#888888"} onChange={(e) => setV({ ...v, color: e.target.value })} className="w-full h-9 rounded-lg border" />
+        <input type="color" value={v.color ?? "#888888"} onChange={(e) => setV({ ...v, color: e.target.value })} className="w-12 h-10 rounded-lg border" />
       </label>
-      <label className="text-sm">
-        사진 URL
-        <input value={v.image_url ?? ""} onChange={(e) => setV({ ...v, image_url: e.target.value })} className="w-full rounded-lg border px-2 py-1" placeholder="/teams/leader1.jpg" />
+      <label className="flex flex-col text-sm">
+        순서
+        <input type="number" min={1} value={v.slot ?? 1} onChange={(e) => setV({ ...v, slot: Number(e.target.value) })} className="w-16 rounded-lg border px-2 py-2" />
       </label>
       <div className="flex gap-2">
         <button className={`${btn} bg-slate-900 text-white`}>저장</button>
@@ -587,7 +617,7 @@ function TeamForm({
           취소
         </button>
       </div>
-      {err && <p className="text-sm text-red-600 sm:col-span-5">{err}</p>}
+      {err && <p className="text-sm text-red-600 w-full">{err}</p>}
     </form>
   );
 }
