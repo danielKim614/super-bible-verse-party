@@ -68,7 +68,7 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
     case "choose_path":
       return `${name} — 갈림길! 어느 길로?`;
     case "shop_offer":
-      return `${name} — 🏪 출발점 상점! 아이템을 살까요?`;
+      return `${name} — 🏪 상점! 아이템을 살까요?`;
     case "star_offer": {
       const team = tid ? s.teams[tid] : undefined;
       const coupon = team?.items.includes("starCoupon");

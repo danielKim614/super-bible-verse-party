@@ -1,4 +1,4 @@
-import { FORKS, SPACE_BY_ID, SPACES, T, forwardDistances, nextSpace, type SpaceType } from "./board";
+import { FORKS, SHOP_AT, SPACE_BY_ID, SPACES, T, forwardDistances, nextSpace, type SpaceType } from "./board";
 import { ITEMS, RANDOM_ITEM_POOL, type ItemId } from "./items";
 import { pick, rng } from "./rng";
 import {
@@ -412,10 +412,10 @@ function advance(s: GameState, tid: string, seq: number) {
       return;
     }
     if (FORKS[team.pos]) ctx.forkChoice = undefined;
-    if (n === 1 && team.pos !== T && !ctx.shopVisited) {
-      // 출발점(상점)을 지나감
+    if (n === 1 && team.pos !== T) team.laps += 1;
+    if (n === SHOP_AT && !ctx.shopVisited) {
+      // 상점(30절→31절 사이)을 지나감
       ctx.shopVisited = true;
-      team.laps += 1;
       if (canShop(s, team)) {
         s.phase = "shop_offer";
         return;

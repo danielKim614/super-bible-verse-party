@@ -373,8 +373,8 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       return (
         <div className="flex flex-col gap-3">
           <div className="rounded-2xl bg-orange-50 border-2 border-orange-200 p-3">
-            <div className="font-display text-xl mb-1">🏪 출발점 상점 (보유 {team.items.length}/{state.settings.inventoryLimit}, 🪙{team.talents})</div>
-            <div className="text-sm text-slate-500 mb-2">원하는 만큼 산 뒤 “출발”을 누르면 남은 칸을 계속 이동합니다. (남은 {ctx.remaining}칸)</div>
+            <div className="font-display text-xl mb-1">🏪 상점 (보유 {team.items.length}/{state.settings.inventoryLimit}, 🪙{team.talents})</div>
+            <div className="text-sm text-slate-500 mb-2">원하는 만큼 산 뒤 “나가기”를 누르면 남은 칸을 계속 이동합니다. (남은 {ctx.remaining}칸)</div>
             <div className="flex flex-wrap gap-2">
               {ITEM_IDS.map((id) => {
                 const d = ITEMS[id];
@@ -388,7 +388,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
             </div>
           </div>
           <button className={`${btn} bg-sky-600 text-white font-display text-3xl py-5`} disabled={busy} onClick={() => send({ type: "shop_leave", payload: {} })}>
-            🏪 상점에서 출발 ▶
+            🏪 상점 나가기 ▶
           </button>
         </div>
       );

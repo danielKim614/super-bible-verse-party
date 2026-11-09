@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BOARD_H, BOARD_W, FORK_POINTS, ROUTE_D, SPACES, SPACE_BY_ID, T_POS, type RouteId } from "@/game/board";
+import { BOARD_H, BOARD_W, ROUTE_D, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId } from "@/game/board";
 import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
@@ -177,24 +177,20 @@ export function Board({
         </g>
       ))}
 
-      {/* T, B */}
+      {/* 출발점 */}
       <g transform={`translate(${T_POS.x},${T_POS.y})`} filter="url(#soft)">
-        <circle r={36} fill="#ffd23f" stroke="#fff" strokeWidth={4} />
-        <text textAnchor="middle" dy={-1} fontSize={19} className="font-display" fill="#5a3500">
+        <circle r={34} fill="#ffd23f" stroke="#fff" strokeWidth={4} />
+        <text textAnchor="middle" dy={7} fontSize={19} className="font-display" fill="#5a3500">
           출발
         </text>
-        <text textAnchor="middle" dy={19} fontSize={15}>
+      </g>
+      {/* 상점 (지나가며 이용) */}
+      <g transform={`translate(${SHOP_POS.x},${SHOP_POS.y})`} filter="url(#soft)">
+        <rect x={-24} y={-24} width={48} height={48} rx={12} fill="#fff" stroke="#f59e0b" strokeWidth={3} />
+        <text textAnchor="middle" dy={9} fontSize={26}>
           🏪
         </text>
       </g>
-      {Object.values(FORK_POINTS).map((p, i) => (
-        <g key={i} transform={`translate(${p.x},${p.y})`} filter="url(#soft)">
-          <polygon points="0,-22 22,0 0,22 -22,0" fill="#fff" stroke="#7f8fd6" strokeWidth={3} />
-          <text textAnchor="middle" dy={5} fontSize={13} className="font-display" fill="#26315f">
-            갈림
-          </text>
-        </g>
-      ))}
 
       {/* 칸 */}
       {SPACES.map((sp) => {

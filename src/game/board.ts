@@ -1,8 +1,8 @@
 // 로마서 8장 보드 — 마리오 파티식 그래프 맵 (갈림길 3개)
 // 칸 id = 절 번호(1~39). 0 = T(출발점·상점, 암송 없음).
 //
-//   T ─ 1~4 ─┬─ 5~9 (윗길) ──┬─ 13~17 ─┬─ 18~25 (바깥길) ─┬─ 31~33 ─┬─ 34~36 ─┬─ T
-//            └─ 10~12 (아랫길)┘          └─ 26~30 (지름길) ─┘          └─ 37~39 ─┘
+//   T ─ 1~3 ─┬─ 4~7 (윗길) ──┬─ 12~16 ─┬─ 17~23 (바깥길) ─┬─ 🏪 ─ 29~30 ─┬─ 31~35 ─┬─ T
+//            └─ 8~11 (아랫길)┘          └─ 24~28 (지름길) ─┘              └─ 36~39 ─┘
 //
 // 칸 유형은 본문 길이를 받기 전의 임시 배치입니다. 확정 시 SPACE_TYPES만 고치면 됩니다.
 
@@ -21,7 +21,8 @@ export interface Space {
   y: number;
 }
 
-export const T = 0; // 출발점·상점
+export const T = 0; // 출발점
+export const SHOP_AT = 29; // 이 칸으로 들어가기 직전(합류점, 28절→29절·23절→29절 사이)에 상점
 
 export interface ForkOption {
   to: number;
@@ -30,17 +31,17 @@ export interface ForkOption {
 }
 /** 갈림길: 이 칸 다음에 선택. 옵션 순서 = choose_path.option */
 export const FORKS: Record<number, ForkOption[]> = {
-  4: [
-    { to: 5, label: "윗길", desc: "5칸 · 보통" },
-    { to: 10, label: "아랫길", desc: "3칸 · 어려움" },
+  3: [
+    { to: 4, label: "윗길", desc: "4칸 · 보통" },
+    { to: 8, label: "아랫길", desc: "4칸 · 어려움" },
   ],
-  17: [
-    { to: 18, label: "바깥길", desc: "8칸 · 넉넉함" },
-    { to: 26, label: "지름길", desc: "5칸 · 어려움" },
+  16: [
+    { to: 17, label: "바깥길", desc: "7칸 · 넉넉함" },
+    { to: 24, label: "지름길", desc: "5칸 · 어려움" },
   ],
-  33: [
-    { to: 34, label: "왼쪽길", desc: "3칸 · 이벤트" },
-    { to: 37, label: "안쪽길", desc: "3칸 · 아이템" },
+  30: [
+    { to: 31, label: "왼쪽길", desc: "5칸 · 축복" },
+    { to: 36, label: "안쪽길", desc: "4칸 · 아이템" },
   ],
 };
 
@@ -51,29 +52,29 @@ interface Route {
   next: number;
 }
 export const ROUTES: Route[] = [
-  { id: "c0", verses: [1, 4], next: -1 }, // 4는 갈림길
-  { id: "a1", verses: [5, 9], next: 13 },
-  { id: "a2", verses: [10, 12], next: 13 },
-  { id: "c1", verses: [13, 17], next: -1 },
-  { id: "b1", verses: [18, 25], next: 31 },
-  { id: "b2", verses: [26, 30], next: 31 },
-  { id: "c2", verses: [31, 33], next: -1 },
-  { id: "d1", verses: [34, 36], next: 0 },
-  { id: "d2", verses: [37, 39], next: 0 },
+  { id: "c0", verses: [1, 3], next: -1 }, // 3은 갈림길
+  { id: "a1", verses: [4, 7], next: 12 },
+  { id: "a2", verses: [8, 11], next: 12 },
+  { id: "c1", verses: [12, 16], next: -1 },
+  { id: "b1", verses: [17, 23], next: 29 },
+  { id: "b2", verses: [24, 28], next: 29 },
+  { id: "c2", verses: [29, 30], next: -1 },
+  { id: "d1", verses: [31, 35], next: 0 },
+  { id: "d2", verses: [36, 39], next: 0 },
 ];
 
 // 본문 길이 기준 배치 (긴 절 → 빨간 칸). 길이 순: 3,11,26,29,15,17,9,27,35,23,12,34,20,30 …
 // 어려운 길(10~12, 26~30)은 빨간 칸 비중을 높게.
 const SPACE_TYPES: Record<number, SpaceType> = {
-  1: "blue", 2: "blue", 3: "red", 4: "blue",
-  5: "item", 6: "blue", 7: "blue", 8: "event", 9: "happening",
-  10: "red", 11: "red", 12: "red",
-  13: "blue", 14: "blue", 15: "bless", 16: "item", 17: "red",
-  18: "blue", 19: "blue", 20: "red", 21: "event", 22: "blue", 23: "red", 24: "happening", 25: "blue",
-  26: "red", 27: "red", 28: "blue", 29: "red", 30: "item",
-  31: "blue", 32: "blue", 33: "blue",
-  34: "red", 35: "event", 36: "bless",
-  37: "item", 38: "blue", 39: "blue",
+  1: "blue", 2: "blue", 3: "red",
+  4: "item", 5: "blue", 6: "event", 7: "blue",
+  8: "blue", 9: "red", 10: "red", 11: "red",
+  12: "blue", 13: "blue", 14: "bless", 15: "red", 16: "item",
+  17: "red", 18: "blue", 19: "happening", 20: "blue", 21: "event", 22: "blue", 23: "red",
+  24: "happening", 25: "item", 26: "red", 27: "red", 28: "blue",
+  29: "red", 30: "blue",
+  31: "blue", 32: "blue", 33: "bless", 34: "red", 35: "event",
+  36: "item", 37: "blue", 38: "event", 39: "blue",
 };
 
 const RED_MODES: RedMode[] = ["blank", "firstWord", "noHint"];
@@ -143,11 +144,11 @@ function along(curves: Cubic[], n: number, startPad: number, endPad: number): Pt
 }
 
 // 분기·합류 지점 (칸이 아니라 길이 만나는 곳)
-const F1 = { x: 330, y: 110 }; // 4 다음
-const M1 = { x: 640, y: 150 }; // 13 앞
-const F2 = { x: 920, y: 330 }; // 17 다음
-const M2 = { x: 420, y: 530 }; // 31 앞
-const F3 = { x: 200, y: 520 }; // 33 다음
+const F1 = { x: 300, y: 105 }; // 3 다음
+const M1 = { x: 640, y: 150 }; // 12 앞
+const F2 = { x: 920, y: 330 }; // 16 다음
+const M2 = { x: 430, y: 530 }; // 29 앞 (상점)
+const F3 = { x: 210, y: 500 }; // 30 다음
 
 // 각 길의 곡선 (시작점·끝점은 분기/합류 지점 또는 T)
 const ROUTE_CURVES: Record<RouteId, Cubic[]> = {
@@ -158,12 +159,13 @@ const ROUTE_CURVES: Record<RouteId, Cubic[]> = {
   b1: [[F2, { x: 960, y: 560 }, { x: 700, y: 650 }, M2]], // 바깥길: 오른쪽 아래를 크게 돎
   b2: [[F2, { x: 780, y: 400 }, { x: 560, y: 380 }, M2]], // 지름길: 안쪽으로 질러감
   c2: [[M2, { x: 340, y: 560 }, { x: 270, y: 560 }, F3]],
-  d1: [[F3, { x: 20, y: 470 }, { x: 20, y: 220 }, T_POS]], // 왼쪽길: 가장자리
-  d2: [[F3, { x: 230, y: 420 }, { x: 240, y: 230 }, T_POS]], // 안쪽길
+  d1: [[F3, { x: 50, y: 470 }, { x: 40, y: 220 }, T_POS]], // 왼쪽길: 가장자리
+  d2: [[F3, { x: 250, y: 410 }, { x: 250, y: 230 }, T_POS]], // 안쪽길
 };
 
 const PAD_T = 64; // 출발점 주변
 const PAD_J = 34; // 분기/합류 지점 주변
+const PAD_SHOP = 56; // 상점(합류점) 주변
 
 function toD(curves: Cubic[]): string {
   const [first] = curves;
@@ -177,15 +179,16 @@ export const ROUTE_D: Record<RouteId, string> = Object.fromEntries(
 ) as Record<RouteId, string>;
 
 export const JUNCTIONS = { F1, M1, F2, M2, F3 };
-export const FORK_POINTS: Record<number, Pt> = { 4: F1, 17: F2, 33: F3 };
+export const SHOP_POS = M2;
+export const FORK_POINTS: Record<number, Pt> = { 3: F1, 16: F2, 30: F3 };
 
 function buildSpaces(): Space[] {
   const coords: Record<number, Pt> = {};
   for (const r of ROUTES) {
     const [a, b] = r.verses;
     const n = b - a + 1;
-    const startPad = r.id === "c0" ? PAD_T : PAD_J;
-    const endPad = r.next === 0 ? PAD_T : PAD_J;
+    const startPad = r.id === "c0" ? PAD_T : r.id === "c2" ? PAD_SHOP : PAD_J;
+    const endPad = r.next === 0 ? PAD_T : r.next === SHOP_AT ? PAD_SHOP : PAD_J;
     const pts = along(ROUTE_CURVES[r.id], n, startPad, endPad);
     for (let v = a; v <= b; v++) coords[v] = pts[v - a];
   }
@@ -227,10 +230,9 @@ export function nextOptions(pos: number): number[] {
   return n === null ? [] : [n];
 }
 
-/** 이 칸 다음에 T(출발점·상점)를 지나는가 */
-export function passesStart(pos: number): boolean {
-  const r = ROUTES.find((x) => pos >= x.verses[0] && pos <= x.verses[1]);
-  return !!r && pos === r.verses[1] && r.next === 0;
+/** 이 칸에서 다음 칸으로 갈 때 상점을 지나는가 */
+export function passesShop(pos: number): boolean {
+  return nextOptions(pos).includes(SHOP_AT) && pos !== SHOP_AT;
 }
 
 /** pos에서 앞으로 BFS 거리 (갈림길은 양쪽 다 탐색) */
