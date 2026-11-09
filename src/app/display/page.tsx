@@ -15,7 +15,7 @@ export default function DisplayPage() {
   const game = useGame();
   const { state, teamById, teams } = game;
   const [joinUrl, setJoinUrl] = useState("");
-  useEffect(() => setJoinUrl(`${window.location.origin}/join${window.location.search}`), []);
+  useEffect(() => setJoinUrl(`${window.location.origin}/${window.location.search}`), []);
 
   const boost = state.started && state.phase !== "ended" && isBoost(state);
 
