@@ -171,9 +171,6 @@ export function Board({
           <stop offset="0%" stopColor="#3b4a86" />
           <stop offset="100%" stopColor="#26315f" />
         </linearGradient>
-        <marker id="arrowhead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-          <path d="M1 1L8 5L1 9Z" fill="#fff" />
-        </marker>
         <filter id="soft" x="-30%" y="-30%" width="160%" height="180%">
           <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.45" />
         </filter>
@@ -308,19 +305,21 @@ export function Board({
             const len = Math.hypot(dx, dy) || 1;
             const ux = dx / len;
             const uy = dy / len;
-            const x1 = from.x + ux * 34;
-            const y1 = from.y + uy * 34;
-            const x2 = from.x + ux * 120;
-            const y2 = from.y + uy * 120;
+            const angle = (Math.atan2(uy, ux) * 180) / Math.PI;
             const color = i === 0 ? "#7dd3fc" : "#fcd34d";
-            const lx = from.x + ux * 158;
-            const ly = from.y + uy * 158;
+            const lx = from.x + ux * 128;
+            const ly = from.y + uy * 128;
             const picked = forkFlash ? forkFlash.chosen === i : null;
             const cls = picked === null ? "animate-pulse-fast" : picked ? "animate-fork-pick" : "animate-fork-drop";
+            // 짧고 통통한 화살표: 갈림길 칸에서 34px 떨어진 곳부터 길이 56px
+            const body = "M0 -14 L24 -14 L24 -30 L56 0 L24 30 L24 14 L0 14 Z";
             return (
-              <g key={o.to} className={cls} style={{ transformOrigin: `${(x1 + x2) / 2}px ${(y1 + y2) / 2}px` }}>
-                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={picked ? 16 : 10} strokeLinecap="round" opacity={0.4} filter="url(#neon)" />
-                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth={picked ? 6 : 4} strokeLinecap="round" markerEnd="url(#arrowhead)" />
+              <g key={o.to} className={cls} style={{ transformOrigin: `${from.x + ux * 62}px ${from.y + uy * 62}px` }}>
+                <g transform={`translate(${from.x + ux * 34},${from.y + uy * 34}) rotate(${angle})`}>
+                  <path d={body} fill={color} opacity={0.5} filter="url(#neon)" transform="scale(1.12)" />
+                  <path d={body} fill="#fff" stroke={color} strokeWidth={5} strokeLinejoin="round" />
+                  <path d="M8 -5 L22 -5" stroke={color} strokeWidth={3} strokeLinecap="round" opacity={0.5} />
+                </g>
                 <g transform={`translate(${lx},${ly})`}>
                   <rect x={-34} y={-14} width={68} height={28} rx={14} fill={color} />
                   <text textAnchor="middle" dy={5} fontSize={14} className="font-display" fill="#1e1b4b">
