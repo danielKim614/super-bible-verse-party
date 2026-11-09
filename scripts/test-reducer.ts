@@ -37,7 +37,7 @@ s = ev(s, { type: "override", payload: { action: "position", teamId: "B", pos: 1
 s = ev(s, { type: "roll", payload: { value: 4 } });
 assert.equal(s.phase, "choose_path");
 assert.equal(s.teams.B.pos, 17);
-s = ev(s, { type: "choose_path", payload: { path: "left" } });
+s = ev(s, { type: "choose_path", payload: { option: 1 } });
 assert.equal(s.teams.B.pos, 27);
 assert.equal(s.phase, "recite");
 s = ev(s, { type: "recite_result", payload: { success: false, seed: 2 } });
@@ -60,12 +60,15 @@ assert.equal(s.stars.length, 2);
 assert.ok(!s.stars.includes(30));
 assert.equal(s.phase, "recite");
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 4 } });
-assert.equal(s.teams.C.talents, 13);
+assert.equal(s.teams.C.talents, 16); // 32절 빨간 칸 +6
 s = ev(s, { type: "end_turn", payload: {} });
 
 // D팀: 아이템 칸(5) 도착 → 아이템 획득, 더블 다이스 사용 다음 턴
 s = ev(s, { type: "override", payload: { action: "starPositions", stars: [20, 38] } });
 s = ev(s, { type: "roll", payload: { value: 5 } });
+assert.equal(s.phase, "choose_path"); // 4절 갈림길
+s = ev(s, { type: "choose_path", payload: { option: 0 } }); // 윗길 → 5절(아이템 칸)
+assert.equal(s.teams.D.pos, 5);
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 5 } });
 assert.equal(s.teams.D.items.length, 1);
 s = ev(s, { type: "end_turn", payload: {} });
@@ -73,10 +76,10 @@ s = ev(s, { type: "end_turn", payload: {} }); // resolve가 아니면 무시되�
 assert.equal(s.teamIndex, 4);
 
 // E팀: 출발점(상점) 통과 → 구매 → 계속 이동
-s = ev(s, { type: "override", payload: { action: "position", teamId: "E", pos: 25 } });
+s = ev(s, { type: "override", payload: { action: "position", teamId: "E", pos: 39 } });
 s = ev(s, { type: "roll", payload: { value: 2 } });
 assert.equal(s.phase, "shop_offer");
-assert.equal(s.teams.E.pos, 25);
+assert.equal(s.teams.E.pos, 39);
 s = ev(s, { type: "shop_buy", payload: { item: "shield" } });
 assert.equal(s.teams.E.items[0], "shield");
 assert.equal(s.teams.E.talents, 5);
@@ -106,6 +109,9 @@ log[log.length - 1].voided = false;
 // 방패: A팀 빨간 칸(7) 도착 → 방패 → 파란 칸 보상
 s = ev(s, { type: "override", payload: { action: "addItem", teamId: "A", item: "shield" } });
 s = ev(s, { type: "roll", payload: { value: 4 } });
+assert.equal(s.phase, "choose_path"); // 4절 갈림길
+assert.equal(s.teams.A.pos, 4);
+s = ev(s, { type: "choose_path", payload: { option: 0 } });
 assert.equal(s.teams.A.pos, 7);
 s = ev(s, { type: "use_item", payload: { item: "shield" } });
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 7 } });

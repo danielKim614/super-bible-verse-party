@@ -1,4 +1,4 @@
-import { EVENT_MODE_LABEL, RED_MODE_LABEL, SPACE_BY_ID, SPACE_LABEL, ROADS } from "@/game/board";
+import { EVENT_MODE_LABEL, RED_MODE_LABEL, SPACE_BY_ID, SPACE_LABEL } from "@/game/board";
 import { currentTeamId, effectiveType, starPriceFor } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 import { blanked, firstWord, verseText } from "@/game/verses";
@@ -10,11 +10,6 @@ export function teamName(teamById: Record<string, TeamInfo>, id?: string) {
 
 export function teamColor(teamById: Record<string, TeamInfo>, id?: string) {
   return (id && teamById[id]?.color) || "#888";
-}
-
-export function roadName(space: number) {
-  const s = SPACE_BY_ID[space];
-  return s ? ROADS.find((r) => r.id === s.road)!.name : "출발";
 }
 
 export interface VerseCardInfo {
@@ -71,7 +66,7 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
       if (ctx.rollMode === "high") return `${name} — 선택 다이스(높음 4~6)를 굴려 주세요`;
       return `${name} — 주사위를 굴려 주세요`;
     case "choose_path":
-      return `${name} — 갈림길! 지름길 vs 우회로`;
+      return `${name} — 갈림길! 어느 길로?`;
     case "shop_offer":
       return `${name} — 🏪 출발점 상점! 아이템을 살까요?`;
     case "star_offer": {

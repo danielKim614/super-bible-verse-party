@@ -1,5 +1,5 @@
 import type { ItemId } from "./items";
-import type { PathChoice, SpaceType } from "./board";
+import type { SpaceType } from "./board";
 
 export interface Settings {
   totalTurns: number;
@@ -62,7 +62,7 @@ export type GameEventBody =
   | { type: "start_game"; payload: { teamIds: string[]; settings: Settings; seed: number } }
   | { type: "use_item"; payload: { item: ItemId; choice?: "low" | "high"; seed?: number } }
   | { type: "roll"; payload: { value: number } }
-  | { type: "choose_path"; payload: { path: PathChoice } }
+  | { type: "choose_path"; payload: { option: number; label?: string } }
   | { type: "star_decision"; payload: { buy: boolean; coupon?: boolean; seed?: number } }
   | { type: "recite_result"; payload: { success: boolean; seed: number } }
   | { type: "shop_buy"; payload: { item: ItemId } }
@@ -113,7 +113,7 @@ export interface TurnCtx {
   rollMode: "normal" | "double" | "low" | "high";
   roll?: number;
   remaining: number;
-  forkChoice?: PathChoice;
+  forkChoice?: number;
   path: number[]; // 이번 턴에 지나간 칸 (애니메이션용)
   teleport?: boolean;
   shopVisited?: boolean; // 이번 턴 상점(출발점) 통과 처리됨

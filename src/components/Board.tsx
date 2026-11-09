@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BOARD_H, BOARD_W, B_POS, ROAD_D, SPACES, SPACE_BY_ID, T_POS, type RoadId } from "@/game/board";
+import { BOARD_H, BOARD_W, FORK_POINTS, ROUTE_D, SPACES, SPACE_BY_ID, T_POS, type RouteId } from "@/game/board";
 import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
@@ -13,7 +13,8 @@ const TYPE_FILL: Record<string, [string, string]> = {
   item: ["#c084fc", "#8b3fe0"],
 };
 
-const ROAD_IDS: RoadId[] = [1, 2, 3, 4, 5];
+const ROUTE_IDS: RouteId[] = ["c0", "a1", "a2", "c1", "b1", "b2", "c2", "d1", "d2"];
+const HARD_ROUTES: RouteId[] = ["a2", "b2"];
 
 function posXY(pos: number) {
   if (pos === 0) return T_POS;
@@ -155,15 +156,15 @@ export function Board({
       ))}
 
       {/* 길 */}
-      {ROAD_IDS.map((rid) => (
+      {ROUTE_IDS.map((rid) => (
         <g key={rid}>
-          <path d={ROAD_D[rid]} fill="none" stroke="#000" strokeOpacity={0.35} strokeWidth={roadW + 10} strokeLinecap="round" transform="translate(0,6)" />
-          <path d={ROAD_D[rid]} fill="none" stroke="#7f8fd6" strokeOpacity={0.9} strokeWidth={roadW + 5} strokeLinecap="round" />
-          <path d={ROAD_D[rid]} fill="none" stroke="url(#roadFill)" strokeWidth={roadW} strokeLinecap="round" />
+          <path d={ROUTE_D[rid]} fill="none" stroke="#000" strokeOpacity={0.35} strokeWidth={roadW + 10} strokeLinecap="round" transform="translate(0,6)" />
+          <path d={ROUTE_D[rid]} fill="none" stroke="#7f8fd6" strokeOpacity={0.9} strokeWidth={roadW + 5} strokeLinecap="round" />
+          <path d={ROUTE_D[rid]} fill="none" stroke="url(#roadFill)" strokeWidth={roadW} strokeLinecap="round" />
           <path
-            d={ROAD_D[rid]}
+            d={ROUTE_D[rid]}
             fill="none"
-            stroke={rid === 3 ? "#ffb15c" : "#cfe3ff"}
+            stroke={HARD_ROUTES.includes(rid) ? "#ffb15c" : "#cfe3ff"}
             strokeOpacity={0.7}
             strokeWidth={2.5}
             strokeDasharray="8 14"
@@ -183,12 +184,14 @@ export function Board({
           🏪
         </text>
       </g>
-      <g transform={`translate(${B_POS.x},${B_POS.y})`} filter="url(#soft)">
-        <polygon points="0,-30 30,0 0,30 -30,0" fill="#fff" stroke="#7f8fd6" strokeWidth={3} />
-        <text textAnchor="middle" dy={6} fontSize={15} className="font-display" fill="#26315f">
-          갈림
-        </text>
-      </g>
+      {Object.values(FORK_POINTS).map((p, i) => (
+        <g key={i} transform={`translate(${p.x},${p.y})`} filter="url(#soft)">
+          <polygon points="0,-22 22,0 0,22 -22,0" fill="#fff" stroke="#7f8fd6" strokeWidth={3} />
+          <text textAnchor="middle" dy={5} fontSize={13} className="font-display" fill="#26315f">
+            갈림
+          </text>
+        </g>
+      ))}
 
       {/* 칸 */}
       {SPACES.map((sp) => {

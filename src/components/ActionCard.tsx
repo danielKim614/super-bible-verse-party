@@ -1,5 +1,6 @@
 "use client";
 
+import { FORKS } from "@/game/board";
 import { ITEMS } from "@/game/items";
 import { currentTeamId, payoutText } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
@@ -52,18 +53,15 @@ export function ActionCard({
         </div>
       )}
 
-      {state.phase === "choose_path" && (
+      {state.phase === "choose_path" && tid && (
         <div className={`mt-3 grid grid-cols-2 gap-3 ${big ? "text-2xl" : "text-base"} font-display`}>
-          <div className="rounded-2xl bg-amber-400/20 border border-amber-300/40 p-3 text-center">
-            지름길 18~25
-            <br />
-            <span className="text-base text-amber-200">짧고 어려운 길</span>
-          </div>
-          <div className="rounded-2xl bg-sky-400/20 border border-sky-300/40 p-3 text-center">
-            우회로 26~39
-            <br />
-            <span className="text-base text-sky-200">길고 넉넉한 길</span>
-          </div>
+          {(FORKS[state.teams[tid].pos] ?? []).map((f, i) => (
+            <div key={f.to} className={`rounded-2xl p-3 text-center border ${i === 0 ? "bg-sky-400/20 border-sky-300/40" : "bg-amber-400/20 border-amber-300/40"}`}>
+              {f.label} {f.to}~
+              <br />
+              <span className={`text-base ${i === 0 ? "text-sky-200" : "text-amber-200"}`}>{f.desc}</span>
+            </div>
+          ))}
         </div>
       )}
 

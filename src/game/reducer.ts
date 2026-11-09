@@ -1,4 +1,4 @@
-import { FORK_FROM, SPACE_BY_ID, SPACES, T, forwardDistances, nextSpace, type SpaceType } from "./board";
+import { FORKS, SPACE_BY_ID, SPACES, T, forwardDistances, nextSpace, type SpaceType } from "./board";
 import { ITEMS, RANDOM_ITEM_POOL, type ItemId } from "./items";
 import { pick, rng } from "./rng";
 import {
@@ -247,7 +247,8 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
 
     case "choose_path": {
       if (s.phase !== "choose_path") return prev;
-      ctx.forkChoice = ev.payload.path;
+      if (!FORKS[team.pos]?.[ev.payload.option]) return prev;
+      ctx.forkChoice = ev.payload.option;
       s.moveSeq = seq;
       advance(s, tid, seq);
       return s;
@@ -396,12 +397,12 @@ function advance(s: GameState, tid: string, seq: number) {
   const team = s.teams[tid];
   const ctx = s.ctx;
   while (ctx.remaining > 0) {
-    const n = nextSpace(team.pos, team.pos === FORK_FROM ? ctx.forkChoice : undefined);
+    const n = nextSpace(team.pos, FORKS[team.pos] ? ctx.forkChoice : undefined);
     if (n === null) {
       s.phase = "choose_path";
       return;
     }
-    if (team.pos === FORK_FROM) ctx.forkChoice = undefined;
+    if (FORKS[team.pos]) ctx.forkChoice = undefined;
     if (n === 1 && team.pos !== T && !ctx.shopVisited) {
       // 출발점(상점)을 지나감
       ctx.shopVisited = true;
@@ -462,7 +463,7 @@ function placeStar(s: GameState, r: () => number, buyerPos?: number) {
     for (const [sp, dist] of d) if (dist <= 6) blocked.add(sp);
     blocked.add(buyerPos);
   }
-  const base = SPACES.filter((sp) => sp.type !== "item" && !blocked.has(sp.id)).map((sp) => sp.id);
+  const base = SPACES.filter((sp) => sp.type !== "item" && sp.id !== 1 && !blocked.has(sp.id)).map((sp) => sp.id);
   const gapOk = (c: number, gap: number) =>
     s.stars.every((st) => {
       const a = forwardDistances(st).get(c) ?? 99;

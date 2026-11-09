@@ -5,7 +5,7 @@ import { Board } from "@/components/Board";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { describeEvent } from "@/components/describeEvent";
 import { phaseHeadline, teamName, verseCard } from "@/components/describe";
-import { SPACES, SPACE_LABEL } from "@/game/board";
+import { FORKS, SPACES, SPACE_LABEL } from "@/game/board";
 import { ITEMS, ITEM_IDS, type ItemId } from "@/game/items";
 import {
   canAffordStar,
@@ -292,16 +292,20 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
     case "choose_path":
       return (
         <div className="grid grid-cols-2 gap-3">
-          <button className={`${btn} bg-stone-300 font-display text-2xl py-6`} disabled={busy} onClick={() => send({ type: "choose_path", payload: { path: "center" } })}>
-            지름길
-            <br />
-            <span className="text-base">18~25 (짧고 어려움)</span>
-          </button>
-          <button className={`${btn} bg-sky-200 font-display text-2xl py-6`} disabled={busy} onClick={() => send({ type: "choose_path", payload: { path: "left" } })}>
-            우회로
-            <br />
-            <span className="text-base">26~39 (길고 넉넉함)</span>
-          </button>
+          {(FORKS[team.pos] ?? []).map((f, i) => (
+            <button
+              key={f.to}
+              className={`${btn} ${i === 0 ? "bg-sky-200" : "bg-amber-200"} font-display text-2xl py-6`}
+              disabled={busy}
+              onClick={() => send({ type: "choose_path", payload: { option: i, label: f.label } })}
+            >
+              {f.label}
+              <br />
+              <span className="text-base">
+                {f.to}절부터 · {f.desc}
+              </span>
+            </button>
+          ))}
         </div>
       );
     case "star_offer": {
