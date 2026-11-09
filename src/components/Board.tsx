@@ -272,9 +272,9 @@ export function Board({
         const sp = SPACE_BY_ID[st];
         if (!sp) return null;
         return (
-          <g key={`star-${st}`} transform={`translate(${sp.x},${sp.y - 50})`}>
+          <g key={`star-${st}`} transform={`translate(${sp.x},${sp.y - 40})`}>
             <circle r={44} fill="url(#glow)" className="animate-ping-slow" />
-            <ellipse cx={0} cy={50} rx={16} ry={5} fill="#000" opacity={0.35} />
+            <ellipse cx={0} cy={40} rx={16} ry={5} fill="#000" opacity={0.35} />
             <g className="animate-star-spin">
               <polygon
                 points="0,-30 8.6,-10 30,-10 12.8,2.6 19.1,24 0,12.4 -19.1,24 -12.8,2.6 -30,-10 -8.6,-10"
