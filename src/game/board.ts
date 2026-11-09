@@ -22,12 +22,12 @@ export const FORK_FROM = 17; // 17절 다음이 갈림길 B
 export const CENTER_START = 18;
 export const LEFT_START = 26;
 
-export const ROADS: { id: RoadId; name: string; verses: [number, number]; theme: string }[] = [
-  { id: 1, name: "생명의 법", verses: [1, 11], theme: "들판" },
-  { id: 2, name: "자녀의 길", verses: [12, 17], theme: "마을" },
-  { id: 3, name: "탄식과 소망", verses: [18, 25], theme: "광야" },
-  { id: 4, name: "성령의 간구", verses: [26, 30], theme: "산길" },
-  { id: 5, name: "끊을 수 없는 사랑", verses: [31, 39], theme: "성" },
+export const ROADS: { id: RoadId; name: string; verses: [number, number] }[] = [
+  { id: 1, name: "본길", verses: [1, 11] },
+  { id: 2, name: "본길", verses: [12, 17] },
+  { id: 3, name: "지름길", verses: [18, 25] },
+  { id: 4, name: "우회로", verses: [26, 30] },
+  { id: 5, name: "우회로", verses: [31, 39] },
 ];
 
 const SPACE_TYPES: Record<number, SpaceType> = {
@@ -44,8 +44,8 @@ const EVENT_MODES: EventMode[] = ["relay", "threeVerses"];
 // ---- 좌표 (viewBox 1000 x 640) ----
 export const BOARD_W = 1000;
 export const BOARD_H = 640;
-export const T_POS = { x: 500, y: 82 };
-export const B_POS = { x: 500, y: 572 };
+export const T_POS = { x: 150, y: 120 };
+export const B_POS = { x: 650, y: 578 };
 
 type Pt = { x: number; y: number };
 /** 3차 베지어 곡선 하나 = [p0, c1, c2, p3] */
@@ -107,15 +107,19 @@ function along(curves: Cubic[], n: number, startPad: number, endPad: number): Pt
   return out;
 }
 
-// 길 모양 — 부드러운 타원형 고리 + 가운데 길
-const J_RIGHT = { x: 932, y: 330 }; // 11 ↔ 12 꺾임(곡선이라 눈에 안 띔)
-const J_LEFT = { x: 68, y: 330 }; // 30 ↔ 31
+// 길 모양 — 비대칭 코스. 위쪽을 S자로 가로지른 뒤 오른쪽으로 내려와 갈림길,
+// 지름길은 가운데를 대각선으로 질러 출발점으로, 우회로는 아래·왼쪽을 크게 돌아 출발점으로.
+const J_RIGHT = { x: 905, y: 330 };
+const J_LEFT = { x: 215, y: 560 };
 const ROAD_CURVES: Record<RoadId, Cubic[]> = {
-  1: [[T_POS, { x: 700, y: 60 }, { x: 932, y: 150 }, J_RIGHT]],
-  2: [[J_RIGHT, { x: 932, y: 500 }, { x: 760, y: 585 }, B_POS]],
-  3: [[B_POS, { x: 560, y: 430 }, { x: 440, y: 230 }, T_POS]],
-  4: [[B_POS, { x: 240, y: 585 }, { x: 68, y: 500 }, J_LEFT]],
-  5: [[J_LEFT, { x: 68, y: 150 }, { x: 300, y: 60 }, T_POS]],
+  1: [
+    [T_POS, { x: 300, y: 20 }, { x: 440, y: 250 }, { x: 600, y: 140 }],
+    [{ x: 600, y: 140 }, { x: 760, y: 30 }, { x: 930, y: 160 }, J_RIGHT],
+  ],
+  2: [[J_RIGHT, { x: 880, y: 450 }, { x: 840, y: 585 }, B_POS]],
+  3: [[B_POS, { x: 560, y: 470 }, { x: 250, y: 330 }, T_POS]],
+  4: [[B_POS, { x: 560, y: 650 }, { x: 350, y: 640 }, J_LEFT]],
+  5: [[J_LEFT, { x: 40, y: 480 }, { x: 10, y: 200 }, T_POS]],
 };
 
 function toD(curves: Cubic[]): string {
@@ -134,14 +138,6 @@ export const ROAD_D: Record<RoadId, string> = {
   5: toD(ROAD_CURVES[5]),
 };
 
-/** 길 이름 표시 위치 */
-export const ROAD_LABEL_POS: Record<RoadId, Pt> = {
-  1: { x: 735, y: 215 },
-  2: { x: 780, y: 470 },
-  3: { x: 615, y: 330 },
-  4: { x: 275, y: 470 },
-  5: { x: 240, y: 215 },
-};
 
 const PAD_T = 70;
 const PAD_B = 62;

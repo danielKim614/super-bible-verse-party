@@ -5,13 +5,13 @@ import type { FeedEntry, GameState, TeamInfo } from "@/game/types";
 import { TeamAvatar } from "./TeamAvatar";
 
 const KIND_STYLE: Record<FeedEntry["kind"], string> = {
-  payout: "bg-green-500 text-white",
+  payout: "bg-emerald-400 text-emerald-950",
   star: "bg-yellow-300 text-yellow-900",
-  item: "bg-purple-500 text-white",
-  fail: "bg-slate-500 text-white",
+  item: "bg-violet-400 text-violet-950",
+  fail: "bg-slate-200 text-slate-800",
   info: "bg-white text-slate-800",
-  boost: "bg-red-500 text-white",
-  cost: "bg-orange-400 text-white",
+  boost: "bg-rose-500 text-white",
+  cost: "bg-amber-300 text-amber-950",
 };
 
 /** 새로 생긴 피드 항목을 잠깐 띄움 (Undo로 사라진 항목은 무시) */
@@ -34,7 +34,7 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
   }, [state.feed]);
 
   return (
-    <div className="pointer-events-none flex flex-col items-center gap-2">
+    <div className="pointer-events-none flex flex-col items-start gap-2">
       {shown.map((f) => (
         <div
           key={f.key}

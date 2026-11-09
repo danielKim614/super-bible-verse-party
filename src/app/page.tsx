@@ -8,11 +8,11 @@ const LINKS = [
 
 export default function Home() {
   return (
-    <main className="min-h-full flex flex-col items-center justify-center gap-8 p-6 bg-gradient-to-b from-sky-300 to-sky-100">
+    <main className="min-h-full flex flex-col items-center justify-center gap-8 p-6 bg-[#0b1033] text-white">
       <div className="text-center">
         <div className="text-6xl">⭐📖🎲</div>
-        <h1 className="font-display text-5xl mt-3 text-slate-800">로마서 8장 암송 파티</h1>
-        <p className="mt-2 text-slate-600">달란트를 모아 스타를 얻어라!</p>
+        <h1 className="font-display text-5xl mt-3">로마서 8장 암송 파티</h1>
+        <p className="mt-2 text-white/60">달란트를 모아 스타를 얻어라!</p>
       </div>
       <div className="grid gap-4 w-full max-w-md">
         {LINKS.map((l) => (

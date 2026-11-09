@@ -27,24 +27,26 @@ export function Scoreboard({
         const ts = state.teams[r.id];
         const stars = hideBonus && state.phase !== "ended" ? ts.stars : ts.stars + ts.bonusStars;
         const isCur = r.id === cur && state.phase !== "ended";
+        const isMine = highlightTeam === r.id;
         return (
           <li
             key={r.id}
-            className={`flex items-center gap-3 rounded-2xl px-3 ${compact ? "py-1.5" : "py-2.5"} bg-white/95 shadow-md border-[3px] transition-all ${
-              isCur ? "scale-[1.03] border-yellow-300 shadow-[0_0_0_4px_rgba(253,224,71,0.35)]" : highlightTeam === r.id ? "border-sky-300" : "border-white"
+            className={`glass relative flex items-center gap-3 px-3 ${compact ? "py-1.5" : "py-2.5"} transition-all overflow-hidden ${
+              isCur ? "scale-[1.02] ring-2 ring-yellow-300/80 shadow-[0_0_24px_rgba(253,224,71,0.35)]" : isMine ? "ring-2 ring-sky-300/70" : ""
             }`}
           >
-            <span className={`font-display ${compact ? "text-lg w-6" : "text-2xl w-8"} text-center ${r.rank === 1 ? "text-amber-500" : "text-slate-400"}`}>{r.rank}</span>
-            <TeamAvatar team={t} size={compact ? 34 : 46} />
+            <span className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: t?.color }} />
+            <span className={`font-display ${compact ? "text-lg w-6" : "text-2xl w-8"} text-center ${r.rank === 1 ? "text-yellow-300" : "text-white/40"}`}>{r.rank}</span>
+            <TeamAvatar team={t} size={compact ? 34 : 44} />
             <div className="min-w-0 flex-1">
-              <div className={`font-display truncate ${compact ? "text-base" : "text-xl"}`} style={{ color: t?.color }}>
-                {t?.name ?? "?"}
-              </div>
-              {!compact && ts.items.length > 0 && <div className="text-sm truncate">{ts.items.map((i) => ITEMS[i].icon).join(" ")}</div>}
+              <div className={`font-display truncate ${compact ? "text-base" : "text-xl"}`}>{t?.name ?? "?"}</div>
+              {!compact && ts.items.length > 0 && <div className="text-sm truncate opacity-80">{ts.items.map((i) => ITEMS[i].icon).join(" ")}</div>}
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <span className={`font-display ${compact ? "text-lg" : "text-2xl"}`}>⭐{stars}</span>
-              <span className={`font-display ${compact ? "text-lg" : "text-2xl"} text-amber-600`}>🪙{ts.talents}</span>
+            <div className="flex items-center gap-3 shrink-0 font-display">
+              <span className={`${compact ? "text-lg" : "text-2xl"} text-yellow-300`}>★{stars}</span>
+              <span className={`${compact ? "text-lg" : "text-2xl"} text-amber-200`}>
+                <span className="text-sm align-middle opacity-70">달란트</span> {ts.talents}
+              </span>
             </div>
           </li>
         );

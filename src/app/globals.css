@@ -14,13 +14,32 @@ body {
 body {
   font-family: var(--font-sans);
   color: #1f2937;
-  background: #e8f6ff;
+  background: #0b1033;
 }
 
 .font-display {
   font-family: var(--font-display);
   letter-spacing: -0.01em;
 }
+
+/* 유리 패널 (다크 배경 위) */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
+}
+.animate-twinkle { animation: twinkle 2.8s ease-in-out infinite; }
+
+@keyframes dash { to { stroke-dashoffset: -44; } }
+.animate-dash { animation: dash 2.2s linear infinite; }
 
 @keyframes pop {
   0% { transform: scale(0.6); opacity: 0; }
@@ -62,5 +81,5 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin { animation: none; }
+  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash { animation: none; }
 }

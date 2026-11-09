@@ -65,15 +65,15 @@ export default function JoinPage() {
     }
   }
 
-  if (game.loading) return <Center>불러오는 중…</Center>;
+  if (game.loading) return <main className="min-h-full bg-[#0b1033]"><Center>불러오는 중…</Center></main>;
 
   // ------------------------- 팀 선택 -------------------------
   if (!me) {
     return (
-      <main className="min-h-full bg-gradient-to-b from-sky-300 to-sky-100 p-5">
-        <h1 className="font-display text-3xl text-center text-slate-800">⭐ 로마서 8장 암송 파티</h1>
-        <p className="text-center text-slate-600 mt-1">우리 팀을 골라 주세요</p>
-        {teams.length === 0 && <p className="text-center mt-8 text-slate-500">아직 팀이 등록되지 않았어요. 잠시 후 다시 열어 주세요.</p>}
+      <main className="min-h-full bg-[#0b1033] text-white p-5">
+        <h1 className="font-display text-3xl text-center"><span className="text-yellow-300">★</span> 로마서 8장 암송 파티</h1>
+        <p className="text-center text-white/60 mt-1">우리 팀을 골라 주세요</p>
+        {teams.length === 0 && <p className="text-center mt-8 text-white/50">아직 팀이 등록되지 않았어요. 잠시 후 다시 열어 주세요.</p>}
         <div className="grid grid-cols-2 gap-3 mt-5">
           {teams.map((t) => (
             <button
@@ -82,7 +82,7 @@ export default function JoinPage() {
                 setPicked(t.id);
                 setErr(null);
               }}
-              className={`rounded-3xl p-4 flex flex-col items-center gap-2 bg-white shadow border-4 transition ${
+              className={`glass p-4 flex flex-col items-center gap-2 transition border-2 ${
                 picked === t.id ? "scale-[1.03]" : "border-transparent"
               }`}
               style={{ borderColor: picked === t.id ? t.color : undefined }}
@@ -91,12 +91,12 @@ export default function JoinPage() {
               <span className="font-display text-2xl" style={{ color: t.color }}>
                 {t.name}
               </span>
-              <span className="text-sm text-slate-500">{game.members.filter((m) => m.team_id === t.id).length}명 참가</span>
+              <span className="text-sm text-white/50">{game.members.filter((m) => m.team_id === t.id).length}명 참가</span>
             </button>
           ))}
         </div>
         {picked && (
-          <div className="mt-5 rounded-3xl bg-white p-4 shadow flex flex-col gap-3">
+          <div className="mt-5 glass p-4 flex flex-col gap-3">
             <label className="font-display text-xl">내 이름</label>
             <input
               value={nickname}
@@ -106,9 +106,9 @@ export default function JoinPage() {
               }}
               maxLength={30}
               placeholder="예: 김다니엘"
-              className="rounded-2xl border-2 border-slate-200 px-4 py-3 text-lg"
+              className="rounded-2xl bg-white text-slate-900 px-4 py-3 text-lg"
             />
-            {err && <p className="text-sm text-red-600">{err}</p>}
+            {err && <p className="text-sm text-rose-300">{err}</p>}
             <button
               onClick={join}
               disabled={busy}
@@ -128,14 +128,14 @@ export default function JoinPage() {
   const myState = state.teams[me.teamId];
 
   return (
-    <main className="min-h-full bg-gradient-to-b from-sky-300 to-sky-100 pb-8">
-      <header className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 bg-white/90 backdrop-blur shadow-sm">
+    <main className="min-h-full bg-[#0b1033] text-white pb-8">
+      <header className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 bg-[#0b1033]/85 backdrop-blur border-b border-white/10">
         <TeamAvatar team={myTeam} size={36} />
         <div className="min-w-0">
           <div className="font-display text-lg leading-tight truncate" style={{ color: myTeam?.color }}>
             {myTeam?.name}
           </div>
-          <div className="text-xs text-slate-500 truncate">{me.nickname}</div>
+          <div className="text-xs text-white/50 truncate">{me.nickname}</div>
         </div>
         {state.started && state.phase !== "ended" && (
           <div className="ml-auto font-display text-lg">
@@ -143,7 +143,7 @@ export default function JoinPage() {
           </div>
         )}
         <button
-          className="ml-2 text-xs text-slate-400 underline"
+          className="ml-2 text-xs text-white/40 underline"
           onClick={() => {
             if (confirm("팀을 다시 고를까요?")) {
               localStorage.removeItem(ME_KEY);
@@ -168,14 +168,14 @@ export default function JoinPage() {
       ) : (
         <div className="flex flex-col gap-3 p-3">
           {myState && (
-            <div className="rounded-3xl bg-white p-3 shadow flex items-center justify-around font-display text-2xl">
+            <div className="glass p-3 flex items-center justify-around font-display text-2xl">
               <span>⭐ {myState.stars}</span>
-              <span className="text-amber-600">🪙 {myState.talents}</span>
+              <span className="text-amber-200">🪙 {myState.talents}</span>
               <span className="text-base">{myState.items.length ? myState.items.map((i) => ITEMS[i].icon).join(" ") : "아이템 없음"}</span>
             </div>
           )}
           <ActionCard state={state} teamById={teamById} size="sm" />
-          <div className="relative rounded-3xl overflow-hidden shadow">
+          <div className="relative rounded-3xl overflow-hidden shadow-lg ring-1 ring-white/10">
             <Board state={state} teamById={teamById} highlightTeam={me.teamId} compact />
             <div className="absolute top-2 left-0 right-0 flex justify-center">
               <FeedToasts state={state} teamById={teamById} big={false} />
@@ -185,11 +185,11 @@ export default function JoinPage() {
         </div>
       )}
 
-      {state.paused && <div className="fixed bottom-4 left-4 right-4 rounded-2xl bg-black/70 text-white text-center py-3 font-display text-xl">잠시만요… ⏸</div>}
+      {state.paused && <div className="fixed bottom-4 left-4 right-4 rounded-2xl bg-black/70 text-white text-center py-3 font-display text-xl">잠시만요 ⏸</div>}
     </main>
   );
 }
 
 function Center({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-[60vh] flex flex-col items-center justify-center text-center font-display text-2xl text-slate-600 p-6">{children}</div>;
+  return <div className="min-h-[60vh] flex flex-col items-center justify-center text-center font-display text-2xl text-white/80 p-6">{children}</div>;
 }

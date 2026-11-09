@@ -13,7 +13,7 @@ export function Ceremony({ state, teamById, big = true }: { state: GameState; te
   const refunds = Object.entries(c.refunds).filter(([, v]) => v > 0);
 
   return (
-    <div className={`w-full h-full overflow-auto rounded-3xl bg-gradient-to-b from-indigo-900 to-purple-800 text-white ${big ? "p-10" : "p-4"}`}>
+    <div className={`w-full h-full overflow-auto rounded-3xl bg-[radial-gradient(ellipse_at_top,#2b3a8f_0%,#141b4d_60%,#0a0f2e_100%)] ring-1 ring-white/10 text-white ${big ? "p-10" : "p-4"}`}>
       <h2 className={`font-display text-center text-yellow-300 ${big ? "text-6xl mb-8" : "text-3xl mb-4"}`}>🏆 시상식</h2>
 
       {c.step === 0 && (

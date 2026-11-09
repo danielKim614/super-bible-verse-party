@@ -11,7 +11,7 @@ export function describeEvent(e: GameEvent, teamById: Record<string, TeamInfo>):
     case "roll":
       return `주사위 ${e.payload.value}`;
     case "choose_path":
-      return `갈림길: ${e.payload.path === "center" ? "가운데 길" : "왼쪽 길"}`;
+      return `갈림길: ${e.payload.path === "center" ? "지름길" : "우회로"}`;
     case "star_decision":
       return e.payload.buy ? `스타 구매 시도${e.payload.coupon ? " (할인권)" : ""}` : "스타 구매 안 함";
     case "recite_result":

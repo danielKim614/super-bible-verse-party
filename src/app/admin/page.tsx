@@ -36,7 +36,7 @@ export default function AdminPage() {
   const { state } = game;
 
   return (
-    <main className="min-h-full bg-slate-100">
+    <main className="min-h-full bg-slate-100 text-slate-800">
       <header className="sticky top-0 z-20 bg-slate-900 text-white px-4 py-2 flex flex-wrap items-center gap-2">
         <span className="font-display text-xl">🎛️ 어드민</span>
         <span className={`rounded-full px-2 py-0.5 text-xs ${game.backend?.mode === "local" ? "bg-yellow-400 text-black" : "bg-emerald-500"}`}>
@@ -100,7 +100,7 @@ function Login({ admin, game }: { admin: Admin; game: GameData }) {
   const [p, setP] = useState("");
   const [err, setErr] = useState<string | null>(null);
   return (
-    <main className="min-h-full flex items-center justify-center bg-slate-100 p-6">
+    <main className="min-h-full flex items-center justify-center bg-slate-100 text-slate-800 p-6">
       <form
         className="bg-white rounded-3xl shadow p-6 w-full max-w-sm flex flex-col gap-3"
         onSubmit={async (e) => {
@@ -293,14 +293,14 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       return (
         <div className="grid grid-cols-2 gap-3">
           <button className={`${btn} bg-stone-300 font-display text-2xl py-6`} disabled={busy} onClick={() => send({ type: "choose_path", payload: { path: "center" } })}>
-            가운데 길
+            지름길
             <br />
-            <span className="text-base">탄식과 소망 18~25 (짧고 어려움)</span>
+            <span className="text-base">18~25 (짧고 어려움)</span>
           </button>
           <button className={`${btn} bg-sky-200 font-display text-2xl py-6`} disabled={busy} onClick={() => send({ type: "choose_path", payload: { path: "left" } })}>
-            왼쪽 길
+            우회로
             <br />
-            <span className="text-base">성령의 간구 26~39 (길고 보상 많음)</span>
+            <span className="text-base">26~39 (길고 넉넉함)</span>
           </button>
         </div>
       );
