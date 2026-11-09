@@ -70,11 +70,12 @@ s = ev(s, { type: "recite_result", payload: { success: true, seed: 4 } });
 assert.equal(s.teams.C.talents, cBefore + reward(30, s));
 s = ev(s, { type: "end_turn", payload: {} });
 
-// D팀: 출발 → 3(갈림) → 윗길 → 4절(아이템 칸) 도착 → 아이템 획득
-s = ev(s, { type: "roll", payload: { value: 4 } });
+// D팀: 출발 → 3(갈림) → 윗길 → 7절(아이템 칸) 도착 → 아이템 획득
+s = ev(s, { type: "override", payload: { action: "position", teamId: "D", pos: 2 } });
+s = ev(s, { type: "roll", payload: { value: 5 } }); // 3(갈림),4,5,6,7
 assert.equal(s.phase, "choose_path");
 s = ev(s, { type: "choose_path", payload: { option: 0 } });
-assert.equal(s.teams.D.pos, 4);
+assert.equal(s.teams.D.pos, 7);
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 5 } });
 assert.equal(s.teams.D.items.length, 1);
 s = ev(s, { type: "end_turn", payload: {} });

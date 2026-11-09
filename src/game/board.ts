@@ -67,14 +67,14 @@ export const ROUTES: Route[] = [
 // 어려운 길(10~12, 26~30)은 빨간 칸 비중을 높게.
 const SPACE_TYPES: Record<number, SpaceType> = {
   1: "blue", 2: "blue", 3: "red",
-  4: "item", 5: "blue", 6: "event", 7: "blue",
+  4: "blue", 5: "blue", 6: "event", 7: "item",
   8: "blue", 9: "red", 10: "red", 11: "red",
-  12: "blue", 13: "blue", 14: "bless", 15: "red", 16: "item",
+  12: "blue", 13: "blue", 14: "bless", 15: "red", 16: "blue",
   17: "red", 18: "blue", 19: "happening", 20: "blue", 21: "event", 22: "blue", 23: "red",
   24: "happening", 25: "item", 26: "red", 27: "red", 28: "blue",
   29: "red", 30: "blue",
   31: "blue", 32: "blue", 33: "bless", 34: "red", 35: "event",
-  36: "item", 37: "blue", 38: "event", 39: "blue",
+  36: "blue", 37: "item", 38: "event", 39: "blue",
 };
 
 const RED_MODES: RedMode[] = ["blank", "firstWord", "noHint"];
