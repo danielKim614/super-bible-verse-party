@@ -321,8 +321,8 @@ export function Board({
                   <path d="M8 -5 L22 -5" stroke={color} strokeWidth={3} strokeLinecap="round" opacity={0.5} />
                 </g>
                 <g transform={`translate(${lx},${ly})`}>
-                  <rect x={-34} y={-14} width={68} height={28} rx={14} fill={color} />
-                  <text textAnchor="middle" dy={5} fontSize={14} className="font-display" fill="#1e1b4b">
+                  <rect x={-34} y={-14} width={68} height={28} rx={14} fill={i === 0 ? "#0369a1" : "#b45309"} stroke="#fff" strokeWidth={2} />
+                  <text textAnchor="middle" dy={5} fontSize={14} className="font-display" fill="#fff">
                     {o.label}
                   </text>
                 </g>
