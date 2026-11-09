@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BOARD_H, BOARD_W, ROUTE_D, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId } from "@/game/board";
+import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId } from "@/game/board";
 import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
@@ -26,7 +26,7 @@ function posXY(pos: number) {
 }
 
 /** 말 이동 애니메이션: 현재 팀은 이번 턴 경로(ctx.path)를 따라 한 칸씩 이동 */
-function useAnimatedPositions(state: GameState, stepMs: number) {
+function useAnimatedPositions(state: GameState, stepMs: number, initialDelayMs: number) {
   const [shown, setShown] = useState<Record<string, number>>({});
   const shownRef = useRef(shown);
   shownRef.current = shown;
@@ -55,7 +55,7 @@ function useAnimatedPositions(state: GameState, stepMs: number) {
       setShown((s) => ({ ...s, [cur]: p }));
       if (queue.length) timer.current = setTimeout(stepFn, stepMs);
     };
-    if (queue.length) timer.current = setTimeout(stepFn, stepMs);
+    if (queue.length) timer.current = setTimeout(stepFn, stepMs + initialDelayMs);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
@@ -63,6 +63,45 @@ function useAnimatedPositions(state: GameState, stepMs: number) {
   }, [state.moveSeq, state.lastSeq, state.teamIds.join(",")]);
 
   return shown;
+}
+
+/** 갈림길 선택 직후 잠깐 보여줄 연출 정보 */
+function useForkFlash(state: GameState) {
+  const [flash, setFlash] = useState<{ pos: number; chosen: number } | null>(null);
+  const prevPhase = useRef(state.phase);
+  useEffect(() => {
+    const was = prevPhase.current;
+    prevPhase.current = state.phase;
+    if (was !== "choose_path" || state.phase === "choose_path") return;
+    const path = state.ctx.path;
+    // 경로에서 갈림길 칸 바로 다음 칸이 선택된 길의 첫 칸
+    for (let i = 0; i < path.length; i++) {
+      const fork = FORKS[path[i]];
+      if (fork && path[i + 1] !== undefined) {
+        const idx = fork.findIndex((o) => o.to === path[i + 1]);
+        if (idx >= 0) {
+          setFlash({ pos: path[i], chosen: idx });
+          const t = setTimeout(() => setFlash(null), 900);
+          return () => clearTimeout(t);
+        }
+      }
+    }
+    // 경로가 갈림길 칸에서 시작하는 경우 (갈림길 칸에 멈춰 있다가 출발)
+    const cur = currentTeamId(state);
+    if (cur) {
+      const start = path[0];
+      for (const [k, fork] of Object.entries(FORKS)) {
+        const idx = fork.findIndex((o) => o.to === start);
+        if (idx >= 0) {
+          setFlash({ pos: Number(k), chosen: idx });
+          const t = setTimeout(() => setFlash(null), 900);
+          return () => clearTimeout(t);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase, state.moveSeq]);
+  return flash;
 }
 
 /** 배경 별빛 (결정적) */
@@ -88,7 +127,8 @@ export function Board({
   highlightTeam?: string;
   compact?: boolean;
 }) {
-  const shown = useAnimatedPositions(state, compact ? 200 : 320);
+  const forkFlash = useForkFlash(state);
+  const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : 0);
   const sparkles = useSparkles(70);
   const cur = currentTeamId(state);
   const focus =
@@ -131,6 +171,9 @@ export function Board({
           <stop offset="0%" stopColor="#3b4a86" />
           <stop offset="100%" stopColor="#26315f" />
         </linearGradient>
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M1 1L8 5L1 9Z" fill="#fff" />
+        </marker>
         <filter id="soft" x="-30%" y="-30%" width="160%" height="180%">
           <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.45" />
         </filter>
@@ -184,11 +227,23 @@ export function Board({
           출발
         </text>
       </g>
-      {/* 상점 (지나가며 이용) */}
-      <g transform={`translate(${SHOP_POS.x},${SHOP_POS.y})`} filter="url(#soft)">
-        <rect x={-24} y={-24} width={48} height={48} rx={12} fill="#fff" stroke="#f59e0b" strokeWidth={3} />
-        <text textAnchor="middle" dy={9} fontSize={26}>
-          🏪
+      {/* 상점 (지나가며 이용) — 자체 SVG */}
+      <g transform={`translate(${SHOP_POS.x},${SHOP_POS.y - 6})`} filter="url(#soft)">
+        {/* 몸체 */}
+        <rect x={-26} y={-6} width={52} height={30} rx={4} fill="#fde68a" stroke="#b45309" strokeWidth={2} />
+        {/* 문·창 */}
+        <rect x={-18} y={4} width={12} height={20} rx={2} fill="#7c2d12" />
+        <rect x={2} y={4} width={16} height={11} rx={2} fill="#bfdbfe" stroke="#1e3a8a" strokeWidth={1.5} />
+        {/* 차양 */}
+        <path d="M-32 -6 L32 -6 L26 -20 L-26 -20 Z" fill="#ef4444" />
+        {[-26, -14, -2, 10].map((x) => (
+          <path key={x} d={`M${x} -20 L${x + 6} -20 L${x + 7} -6 L${x} -6 Z`} fill="#fff" opacity={0.9} />
+        ))}
+        <path d="M-32 -6 Q-28 2 -24 -6 Q-20 2 -16 -6 Q-12 2 -8 -6 Q-4 2 0 -6 Q4 2 8 -6 Q12 2 16 -6 Q20 2 24 -6 Q28 2 32 -6 Z" fill="#dc2626" />
+        {/* 간판 */}
+        <rect x={-20} y={-34} width={40} height={14} rx={4} fill="#fff" stroke="#b45309" strokeWidth={1.5} />
+        <text textAnchor="middle" y={-23} fontSize={10} className="font-display" fill="#7c2d12">
+          상점
         </text>
       </g>
 
@@ -237,6 +292,45 @@ export function Board({
           </g>
         );
       })}
+
+      {/* 갈림길 화살표: 선택 대기 중 + 선택 직후 연출 */}
+      {cur &&
+        (state.phase === "choose_path" || forkFlash) &&
+        (() => {
+          const pos = forkFlash ? forkFlash.pos : state.teams[cur].pos;
+          const from = posXY(pos);
+          const opts = FORKS[pos] ?? [];
+          return opts.map((o, i) => {
+            // 방향은 그 길의 두 번째 칸 쪽으로, 길이는 고정
+            const aim = posXY(SPACE_BY_ID[o.to + 1] ? o.to + 1 : o.to);
+            const dx = aim.x - from.x;
+            const dy = aim.y - from.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const ux = dx / len;
+            const uy = dy / len;
+            const x1 = from.x + ux * 34;
+            const y1 = from.y + uy * 34;
+            const x2 = from.x + ux * 120;
+            const y2 = from.y + uy * 120;
+            const color = i === 0 ? "#7dd3fc" : "#fcd34d";
+            const lx = from.x + ux * 158;
+            const ly = from.y + uy * 158;
+            const picked = forkFlash ? forkFlash.chosen === i : null;
+            const cls = picked === null ? "animate-pulse-fast" : picked ? "animate-fork-pick" : "animate-fork-drop";
+            return (
+              <g key={o.to} className={cls} style={{ transformOrigin: `${(x1 + x2) / 2}px ${(y1 + y2) / 2}px` }}>
+                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={picked ? 16 : 10} strokeLinecap="round" opacity={0.4} filter="url(#neon)" />
+                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth={picked ? 6 : 4} strokeLinecap="round" markerEnd="url(#arrowhead)" />
+                <g transform={`translate(${lx},${ly})`}>
+                  <rect x={-34} y={-14} width={68} height={28} rx={14} fill={color} />
+                  <text textAnchor="middle" dy={5} fontSize={14} className="font-display" fill="#1e1b4b">
+                    {o.label}
+                  </text>
+                </g>
+              </g>
+            );
+          });
+        })()}
 
       {/* 말 */}
       {Object.entries(byPos).flatMap(([posStr, ids]) => {
