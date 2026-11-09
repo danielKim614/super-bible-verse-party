@@ -187,7 +187,7 @@ function buildSpaces(): Space[] {
   for (const r of ROUTES) {
     const [a, b] = r.verses;
     const n = b - a + 1;
-    const startPad = r.id === "c0" ? PAD_T : r.id === "c2" ? PAD_SHOP : PAD_J;
+    const startPad = r.id === "c0" ? PAD_T : r.id === "c2" ? PAD_SHOP : r.id === "b2" ? 64 : PAD_J;
     const endPad = r.next === 0 ? PAD_T : r.next === SHOP_AT ? PAD_SHOP : PAD_J;
     const pts = along(ROUTE_CURVES[r.id], n, startPad, endPad);
     for (let v = a; v <= b; v++) coords[v] = pts[v - a];

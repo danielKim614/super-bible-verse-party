@@ -14,10 +14,43 @@ const TYPE_FILL: Record<string, [string, string]> = {
   happening: ["#2dd4bf", "#0d9488"],
   bless: ["#f472b6", "#be185d"],
 };
-const TYPE_ICON: Record<string, string> = { item: "🎁", happening: "❔", bless: "🕊️" };
 
 const ROUTE_IDS: RouteId[] = ["c0", "a1", "a2", "c1", "b1", "b2", "c2", "d1", "d2"];
 const HARD_ROUTES: RouteId[] = ["a2", "b2"];
+
+/** 칸 위 아이콘 (자체 SVG). 원점이 아이콘 중심 */
+function GiftIcon() {
+  return (
+    <g>
+      <rect x={-13} y={-6} width={26} height={18} rx={3} fill="#e11d48" stroke="#fff" strokeWidth={1.5} />
+      <rect x={-15} y={-12} width={30} height={9} rx={3} fill="#fb7185" stroke="#fff" strokeWidth={1.5} />
+      <rect x={-3} y={-12} width={6} height={24} fill="#fde047" />
+      <path d="M-3 -12 C-10 -22 -16 -16 -8 -12 Z" fill="#fde047" />
+      <path d="M3 -12 C10 -22 16 -16 8 -12 Z" fill="#fde047" />
+    </g>
+  );
+}
+function BlessIcon() {
+  return (
+    <g>
+      <circle r={13} fill="#f9a8d4" stroke="#fff" strokeWidth={1.5} />
+      <path d="M0 7 C-9 0 -9 -8 -4 -8 C-1 -8 0 -5 0 -4 C0 -5 1 -8 4 -8 C9 -8 9 0 0 7 Z" fill="#be185d" />
+      <path d="M-11 -14 l2 -4 l2 4 l4 2 l-4 2 l-2 4 l-2 -4 l-4 -2 z" fill="#fff" />
+      <path d="M12 -12 l1.5 -3 l1.5 3 l3 1.5 l-3 1.5 l-1.5 3 l-1.5 -3 l-3 -1.5 z" fill="#fff" />
+    </g>
+  );
+}
+function HappeningIcon() {
+  return (
+    <g>
+      <polygon points="0,-15 13,-7 13,7 0,15 -13,7 -13,-7" fill="#14b8a6" stroke="#fff" strokeWidth={1.5} />
+      <text textAnchor="middle" dy={6} fontSize={17} fontWeight={900} fill="#fff">
+        ?
+      </text>
+    </g>
+  );
+}
+const SPACE_ICON: Record<string, () => React.JSX.Element> = { item: GiftIcon, bless: BlessIcon, happening: HappeningIcon };
 
 function posXY(pos: number) {
   if (pos === 0) return T_POS;
@@ -258,10 +291,10 @@ export function Board({
             <text textAnchor="middle" dy={6} fontSize={16} fontWeight={800} fill="#fff">
               {sp.id}
             </text>
-            {TYPE_ICON[sp.type] && (
-              <text textAnchor="middle" y={-24} fontSize={15}>
-                {TYPE_ICON[sp.type]}
-              </text>
+            {SPACE_ICON[sp.type] && (
+              <g transform="translate(0,-34)" filter="url(#soft)" className="animate-bob">
+                {SPACE_ICON[sp.type]()}
+              </g>
             )}
           </g>
         );
