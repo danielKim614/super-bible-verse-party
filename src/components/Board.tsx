@@ -137,6 +137,67 @@ function useForkFlash(state: GameState) {
   return flash;
 }
 
+const DICE_MS = 1100;
+
+/** 주사위 입력 직후 굴러가는 연출 */
+function useDiceRoll(state: GameState) {
+  const [dice, setDice] = useState<{ key: number; faces: number[]; show: number[] } | null>(null);
+  const prevRoll = useRef<number | undefined>(state.ctx.roll);
+  const prevSeq = useRef(state.ctx.startSeq);
+  useEffect(() => {
+    const hadRoll = prevRoll.current !== undefined && prevSeq.current === state.ctx.startSeq;
+    prevRoll.current = state.ctx.roll;
+    prevSeq.current = state.ctx.startSeq;
+    if (state.ctx.roll === undefined || hadRoll || state.ctx.teleport) return;
+    const v = state.ctx.roll;
+    // 더블 다이스(7 이상 또는 rollMode double)면 두 개로 나눠 표시
+    const two = state.ctx.rollMode === "double";
+    let faces: number[];
+    if (two) {
+      const a = Math.max(1, Math.min(6, Math.ceil(v / 2)));
+      faces = [a, v - a];
+    } else faces = [v];
+    const key = Date.now();
+    setDice({ key, faces, show: faces.map(() => 1 + Math.floor(Math.random() * 6)) });
+    let n = 0;
+    const iv = setInterval(() => {
+      n += 1;
+      setDice((d) => (d && d.key === key ? { ...d, show: d.faces.map(() => 1 + Math.floor(Math.random() * 6)) } : d));
+      if (n >= 9) {
+        clearInterval(iv);
+        setDice((d) => (d && d.key === key ? { ...d, show: d.faces } : d));
+      }
+    }, 80);
+    const t = setTimeout(() => setDice((d) => (d && d.key === key ? null : d)), DICE_MS + 500);
+    return () => {
+      clearInterval(iv);
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ctx.roll, state.ctx.startSeq]);
+  return dice;
+}
+
+const PIPS: Record<number, [number, number][]> = {
+  1: [[0, 0]],
+  2: [[-1, -1], [1, 1]],
+  3: [[-1, -1], [0, 0], [1, 1]],
+  4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+  5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
+  6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
+};
+
+function Die({ face, settled }: { face: number; settled: boolean }) {
+  return (
+    <g className={settled ? "animate-die-settle" : "animate-die-roll"}>
+      <rect x={-34} y={-34} width={68} height={68} rx={14} fill="#fff" stroke="#cbd5e1" strokeWidth={3} filter="url(#soft)" />
+      {(PIPS[face] ?? PIPS[1]).map(([px, py], i) => (
+        <circle key={i} cx={px * 18} cy={py * 18} r={6.5} fill="#1e293b" />
+      ))}
+    </g>
+  );
+}
+
 /** 배경 별빛 (결정적) */
 function useSparkles(n: number) {
   return useMemo(() => {
@@ -161,7 +222,8 @@ export function Board({
   compact?: boolean;
 }) {
   const forkFlash = useForkFlash(state);
-  const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : 0);
+  const dice = useDiceRoll(state);
+  const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : dice ? DICE_MS : 0);
   const sparkles = useSparkles(70);
   const cur = currentTeamId(state);
   const focus =
@@ -401,6 +463,21 @@ export function Board({
           );
         });
       })}
+      {/* 주사위 연출 */}
+      {dice && (
+        <g transform={`translate(${BOARD_W / 2},${BOARD_H / 2})`}>
+          <circle r={110} fill="#000" opacity={0.35} />
+          {dice.show.map((f, i) => {
+            const off = (i - (dice.show.length - 1) / 2) * 90;
+            const settled = dice.show[i] === dice.faces[i] && dice.show.every((x, j) => x === dice.faces[j]);
+            return (
+              <g key={i} transform={`translate(${off},0)`}>
+                <Die face={f} settled={settled} />
+              </g>
+            );
+          })}
+        </g>
+      )}
     </svg>
   );
 }
