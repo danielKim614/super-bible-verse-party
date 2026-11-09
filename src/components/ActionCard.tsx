@@ -4,6 +4,7 @@ import { FORKS } from "@/game/board";
 import { ITEMS } from "@/game/items";
 import { currentTeamId, payoutText } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
+import type { VerseMap } from "@/game/verses";
 import { phaseHeadline, verseCard } from "./describe";
 import { TeamAvatar } from "./TeamAvatar";
 
@@ -19,10 +20,12 @@ const TYPE_BG: Record<string, string> = {
 export function ActionCard({
   state,
   teamById,
+  verses,
   size = "lg",
 }: {
   state: GameState;
   teamById: Record<string, TeamInfo>;
+  verses: VerseMap;
   size?: "lg" | "sm";
 }) {
   const tid = currentTeamId(state);
@@ -32,7 +35,7 @@ export function ActionCard({
   if (!state.started || state.phase === "ended") return null;
 
   const verseSpace = state.phase === "recite" ? ctx.landed : state.phase === "star_recite" ? ctx.starAt : undefined;
-  const card = verseSpace ? verseCard(state, verseSpace) : null;
+  const card = verseSpace ? verseCard(state, verseSpace, verses) : null;
 
   return (
     <div className={`glass relative overflow-hidden ${big ? "p-5 pl-7" : "p-3 pl-5"}`}>

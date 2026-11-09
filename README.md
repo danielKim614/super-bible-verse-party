@@ -103,12 +103,13 @@ npm run dev
 1. Supabase 프로젝트 생성 (Data API 켜기, 새 테이블 자동 노출은 끄기, 자동 RLS 켜기)
 2. **SQL Editor**에 [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql)을 붙여 넣고 실행
    - 맨 아래 `'change-me'` 를 원하는 **어드민 패스코드**로 바꾼 뒤 실행하세요
+   - 이어서 [`0002_verses.sql`](supabase/migrations/0002_verses.sql)도 실행
 3. `.env.local`에 Project URL과 anon(publishable) key 입력
 
 ### 3. 본문 입력
 
 저작권 때문에 새번역 본문은 저장소에 포함되어 있지 않습니다.
-[`src/game/verses.ts`](src/game/verses.ts)에 1~39절 본문을 넣어 주세요. (비어 있어도 게임은 동작합니다)
+`supabase/migrations/0002_verses.sql`도 SQL Editor에서 실행한 뒤, 어드민 > **본문** 탭에 새번역 로마서 8장을 통째로 붙여 넣고 저장하세요. (각주 번호·소제목은 자동 제거)
 
 ### 4. 팀 사진
 
@@ -134,7 +135,7 @@ src/
     items.ts       아이템 정의
     reducer.ts     이벤트 → 상태 (이동, 갈림길, 스타, 암송, 보상, 시상식)
     types.ts       설정·이벤트·상태 타입
-    verses.ts      본문 (직접 입력)
+    verses.ts      본문 도우미 (본문 자체는 DB verses 테이블)
   lib/
     backend.ts     Supabase / 로컬 데모 백엔드
     useGame.ts     실시간 구독 + 어드민 동작(되돌리기 등)

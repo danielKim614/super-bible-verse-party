@@ -1,7 +1,7 @@
 import { EVENT_MODE_LABEL, RED_MODE_LABEL, SPACE_BY_ID, SPACE_LABEL } from "@/game/board";
 import { currentTeamId, effectiveType, starPriceFor } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
-import { blanked, firstWord, verseText } from "@/game/verses";
+import { blanked, firstWord, verseText, type VerseMap } from "@/game/verses";
 
 export function teamName(teamById: Record<string, TeamInfo>, id?: string) {
   if (!id) return "";
@@ -22,7 +22,7 @@ export interface VerseCardInfo {
   fullText: string; // 어드민 판정용 전체 본문
 }
 
-export function verseCard(s: GameState, space: number): VerseCardInfo {
+export function verseCard(s: GameState, space: number, verses: VerseMap): VerseCardInfo {
   const sp = SPACE_BY_ID[space];
   const eff = effectiveType(s, space);
   let modeLabel = "장절을 보고 그대로 암송";
@@ -30,8 +30,8 @@ export function verseCard(s: GameState, space: number): VerseCardInfo {
   let ref = `로마서 8:${space}`;
   if (eff === "red" && sp.redMode) {
     modeLabel = RED_MODE_LABEL[sp.redMode];
-    if (sp.redMode === "blank") prompt = blanked(space) || null;
-    if (sp.redMode === "firstWord") prompt = firstWord(space) ? `${firstWord(space)} …` : null;
+    if (sp.redMode === "blank") prompt = blanked(verses, space) || null;
+    if (sp.redMode === "firstWord") prompt = firstWord(verses, space) ? `${firstWord(verses, space)} …` : null;
   }
   if (eff === "event" && sp.eventMode) {
     modeLabel = EVENT_MODE_LABEL[sp.eventMode];
@@ -41,11 +41,11 @@ export function verseCard(s: GameState, space: number): VerseCardInfo {
       ref = `로마서 8:${a}~${b}`;
     }
   }
-  let fullText = verseText(space);
+  let fullText = verseText(verses, space);
   if (eff === "event" && sp.eventMode === "threeVerses") {
     fullText = [space - 1, space, space + 1]
       .filter((v) => v >= 1 && v <= 39)
-      .map((v) => `${v} ${verseText(v)}`)
+      .map((v) => `${v} ${verseText(verses, v)}`)
       .join("\n");
   }
   const typeLabel = sp.type === "red" && eff === "blue" ? "빨간 칸 (방패 → 파란 칸 규칙)" : SPACE_LABEL[sp.type];

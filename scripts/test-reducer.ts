@@ -60,7 +60,7 @@ assert.equal(s.stars.length, 2);
 assert.ok(!s.stars.includes(30));
 assert.equal(s.phase, "recite");
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 4 } });
-assert.equal(s.teams.C.talents, 16); // 32절 빨간 칸 +6
+assert.equal(s.teams.C.talents, 13); // 32절 파란 칸 +3
 s = ev(s, { type: "end_turn", payload: {} });
 
 // D팀: 아이템 칸(5) 도착 → 아이템 획득, 더블 다이스 사용 다음 턴
@@ -116,7 +116,7 @@ s = ev(s, { type: "recite_result", payload: { success: false, seed: 10 } });
 s = ev(s, { type: "end_turn", payload: {} });
 // 다시 A팀 차례로 되돌려 놓기
 s = ev(s, { type: "override", payload: { action: "setCurrent", turn: 2, teamIndex: 0 } });
-s = ev(s, { type: "override", payload: { action: "position", teamId: "A", pos: 3 } });
+s = ev(s, { type: "override", payload: { action: "position", teamId: "A", pos: 3 } }); // 3→4(갈림)→5,6,7
 
 // Undo 재생: 마지막 이벤트(A 위치 변경) 무효화
 const before = replay(log);

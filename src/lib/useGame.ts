@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { replay } from "@/game/reducer";
 import type { GameEvent, GameEventBody, GameState, MemberInfo, TeamInfo } from "@/game/types";
 import { getBackend, type Backend, type TeamInput } from "./backend";
+import type { VerseMap } from "@/game/verses";
 
 export interface GameData {
   backend: Backend | null;
   events: GameEvent[];
   teams: TeamInfo[];
   members: MemberInfo[];
+  verses: VerseMap;
   state: GameState;
   teamById: Record<string, TeamInfo>;
   loading: boolean;
@@ -22,6 +24,7 @@ export function useGame(): GameData {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [teams, setTeams] = useState<TeamInfo[]>([]);
   const [members, setMembers] = useState<MemberInfo[]>([]);
+  const [verses, setVerses] = useState<VerseMap>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -32,6 +35,7 @@ export function useGame(): GameData {
       setEvents(snap.events);
       setTeams(snap.teams);
       setMembers(snap.members);
+      setVerses(snap.verses);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -60,7 +64,7 @@ export function useGame(): GameData {
     if (backend) load(backend);
   }, [backend, load]);
 
-  return { backend, events, teams, members, state, teamById, loading, error, refresh };
+  return { backend, events, teams, members, verses, state, teamById, loading, error, refresh };
 }
 
 // ---------------------------------------------------------------------------
@@ -149,5 +153,6 @@ export function useAdmin(game: GameData) {
     upsertTeam: (t: TeamInput) => run((b, p) => b.upsertTeam(p, t)),
     deleteTeam: (id: string) => run((b, p) => b.deleteTeam(p, id)),
     deleteMember: (id: string) => run((b, p) => b.deleteMember(p, id)),
+    upsertVerses: (v: VerseMap) => run((b, p) => b.upsertVerses(p, v)),
   };
 }

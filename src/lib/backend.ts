@@ -2,11 +2,13 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { GameEvent, GameEventBody, MemberInfo, TeamInfo } from "@/game/types";
+import type { VerseMap } from "@/game/verses";
 
 export interface Snapshot {
   events: GameEvent[];
   teams: TeamInfo[];
   members: MemberInfo[];
+  verses: VerseMap;
 }
 
 export interface TeamInput {
@@ -29,6 +31,7 @@ export interface Backend {
   deleteTeam(pass: string, id: string): Promise<void>;
   joinTeam(teamId: string, nickname: string): Promise<MemberInfo>;
   deleteMember(pass: string, id: string): Promise<void>;
+  upsertVerses(pass: string, verses: VerseMap): Promise<void>;
 }
 
 export const GAME_ID = process.env.NEXT_PUBLIC_GAME_ID || "main";
@@ -46,17 +49,21 @@ class SupabaseBackend implements Backend {
   }
 
   async load(): Promise<Snapshot> {
-    const [ev, tm, mb] = await Promise.all([
+    const [ev, tm, mb, vs] = await Promise.all([
       this.sb.from("events").select("id,seq,type,payload,voided,created_at").eq("game_id", GAME_ID).order("seq"),
       this.sb.from("teams").select("id,slot,name,color,image_url").eq("game_id", GAME_ID).order("slot"),
       this.sb.from("members").select("id,team_id,nickname,created_at").eq("game_id", GAME_ID).order("created_at"),
+      this.sb.from("verses").select("verse,text").eq("game_id", GAME_ID),
     ]);
     const err = ev.error || tm.error || mb.error;
     if (err) throw new Error(err.message);
+    const verses: VerseMap = {};
+    for (const r of (vs.data ?? []) as { verse: number; text: string }[]) verses[r.verse] = r.text;
     return {
       events: (ev.data ?? []) as unknown as GameEvent[],
       teams: (tm.data ?? []) as TeamInfo[],
       members: (mb.data ?? []) as MemberInfo[],
+      verses,
     };
   }
 
@@ -66,6 +73,7 @@ class SupabaseBackend implements Backend {
       .on("postgres_changes", { event: "*", schema: "public", table: "events", filter: `game_id=eq.${GAME_ID}` }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "teams", filter: `game_id=eq.${GAME_ID}` }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `game_id=eq.${GAME_ID}` }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "verses", filter: `game_id=eq.${GAME_ID}` }, onChange)
       .subscribe((status) => {
         if (status === "SUBSCRIBED") onChange();
       });
@@ -120,6 +128,9 @@ class SupabaseBackend implements Backend {
   async deleteMember(pass: string, id: string) {
     await this.rpc("admin_delete_member", { p_pass: pass, p_id: id });
   }
+  async upsertVerses(pass: string, verses: VerseMap) {
+    await this.rpc("admin_upsert_verses", { p_pass: pass, p_verses: verses });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +148,7 @@ class LocalBackend implements Backend {
       const raw = localStorage.getItem(this.key);
       if (raw) return JSON.parse(raw);
     } catch {}
-    return { events: [], teams: [], members: [], nextId: 1 };
+    return { events: [], teams: [], members: [], verses: {}, nextId: 1 };
   }
   private write(d: Snapshot & { nextId: number }) {
     localStorage.setItem(this.key, JSON.stringify(d));
@@ -148,8 +159,8 @@ class LocalBackend implements Backend {
   }
 
   async load() {
-    const { events, teams, members } = this.read();
-    return { events, teams: [...teams].sort((a, b) => a.slot - b.slot), members };
+    const { events, teams, members, verses } = this.read();
+    return { events, teams: [...teams].sort((a, b) => a.slot - b.slot), members, verses: verses ?? {} };
   }
   subscribe(onChange: () => void) {
     const h = () => onChange();
@@ -213,6 +224,12 @@ class LocalBackend implements Backend {
     this.guard(pass);
     const d = this.read();
     d.members = d.members.filter((x) => x.id !== id);
+    this.write(d);
+  }
+  async upsertVerses(pass: string, verses: VerseMap) {
+    this.guard(pass);
+    const d = this.read();
+    d.verses = { ...(d.verses ?? {}), ...verses };
     this.write(d);
   }
 }

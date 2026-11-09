@@ -63,7 +63,7 @@ export default function DisplayPage() {
               <Board state={state} teamById={teamById} />
             </div>
             <div className="shrink-0">
-              <ActionCard state={state} teamById={teamById} />
+              <ActionCard state={state} teamById={teamById} verses={game.verses} />
             </div>
           </section>
           <aside className="min-h-0 overflow-auto flex flex-col gap-3">

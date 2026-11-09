@@ -62,16 +62,18 @@ export const ROUTES: Route[] = [
   { id: "d2", verses: [37, 39], next: 0 },
 ];
 
+// 본문 길이 기준 배치 (긴 절 → 빨간 칸). 길이 순: 3,11,26,29,15,17,9,27,35,23,12,34,20,30 …
+// 어려운 길(10~12, 26~30)은 빨간 칸 비중을 높게.
 const SPACE_TYPES: Record<number, SpaceType> = {
   1: "blue", 2: "blue", 3: "red", 4: "blue",
-  5: "item", 6: "blue", 7: "red", 8: "event", 9: "happening",
-  10: "red", 11: "red", 12: "event",
-  13: "blue", 14: "blue", 15: "bless", 16: "item", 17: "blue",
-  18: "blue", 19: "red", 20: "blue", 21: "event", 22: "blue", 23: "red", 24: "happening", 25: "blue",
-  26: "red", 27: "blue", 28: "red", 29: "red", 30: "item",
-  31: "blue", 32: "red", 33: "blue",
-  34: "blue", 35: "event", 36: "bless",
-  37: "item", 38: "red", 39: "blue",
+  5: "item", 6: "blue", 7: "blue", 8: "event", 9: "happening",
+  10: "red", 11: "red", 12: "red",
+  13: "blue", 14: "blue", 15: "bless", 16: "item", 17: "red",
+  18: "blue", 19: "blue", 20: "red", 21: "event", 22: "blue", 23: "red", 24: "happening", 25: "blue",
+  26: "red", 27: "red", 28: "blue", 29: "red", 30: "item",
+  31: "blue", 32: "blue", 33: "blue",
+  34: "red", 35: "event", 36: "bless",
+  37: "item", 38: "blue", 39: "blue",
 };
 
 const RED_MODES: RedMode[] = ["blank", "firstWord", "noHint"];

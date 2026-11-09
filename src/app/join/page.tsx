@@ -174,7 +174,7 @@ export default function JoinPage() {
               <span className="text-base">{myState.items.length ? myState.items.map((i) => ITEMS[i].icon).join(" ") : "아이템 없음"}</span>
             </div>
           )}
-          <ActionCard state={state} teamById={teamById} size="sm" />
+          <ActionCard state={state} teamById={teamById} verses={game.verses} size="sm" />
           <div className="relative rounded-3xl overflow-hidden shadow-lg ring-1 ring-white/10">
             <Board state={state} teamById={teamById} highlightTeam={me.teamId} compact />
             <div className="absolute top-2 left-0 right-0 flex justify-center">

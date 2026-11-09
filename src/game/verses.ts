@@ -1,24 +1,19 @@
-// 로마서 8장 본문 (새번역)
-// ⚠️ 저작권상 본문은 운영자가 직접 입력합니다. 각 절의 빈 문자열을 본문으로 채워 주세요.
-//    본문이 비어 있어도 게임은 동작하며, 화면에는 장절과 암송 방식만 표시됩니다.
-export const VERSES: Record<number, string> = {
-  1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "", 10: "",
-  11: "", 12: "", 13: "", 14: "", 15: "", 16: "", 17: "", 18: "", 19: "", 20: "",
-  21: "", 22: "", 23: "", 24: "", 25: "", 26: "", 27: "", 28: "", 29: "", 30: "",
-  31: "", 32: "", 33: "", 34: "", 35: "", 36: "", 37: "", 38: "", 39: "",
-};
+// 로마서 8장 본문은 DB(verses 테이블)에 저장되며, 어드민 "본문" 탭에서 입력합니다.
+// 여기에는 본문을 다루는 도우미만 둡니다.
 
-export function verseText(v: number): string {
-  return VERSES[v]?.trim() ?? "";
+export type VerseMap = Record<number, string>;
+
+export function verseText(verses: VerseMap, v: number): string {
+  return verses[v]?.trim() ?? "";
 }
 
-export function firstWord(v: number): string {
-  return verseText(v).split(/\s+/)[0] ?? "";
+export function firstWord(verses: VerseMap, v: number): string {
+  return verseText(verses, v).split(/\s+/)[0] ?? "";
 }
 
 /** 빈칸 채우기: 가장 긴 어절 2~3개를 가림 (결정적) */
-export function blanked(v: number): string {
-  const words = verseText(v).split(/\s+/).filter(Boolean);
+export function blanked(verses: VerseMap, v: number): string {
+  const words = verseText(verses, v).split(/\s+/).filter(Boolean);
   if (words.length === 0) return "";
   const count = words.length >= 12 ? 3 : 2;
   const idx = words
@@ -28,4 +23,30 @@ export function blanked(v: number): string {
     .slice(0, count)
     .map((x) => x.i);
   return words.map((w, i) => (idx.includes(i) ? "＿".repeat(Math.max(2, Math.min(5, w.length))) : w)).join(" ");
+}
+
+/**
+ * 붙여넣은 본문을 절별로 파싱.
+ * "12   그러므로 ..." 처럼 줄 앞에 절 번호가 오는 형식. 각주 번호("1)")와 소제목 줄은 제거.
+ */
+export function parseVerses(raw: string): VerseMap {
+  const out: VerseMap = {};
+  for (const line of raw.split(/\r?\n/)) {
+    const m = line.trim().match(/^(\d{1,2})[.:]?\s+(.*)$/);
+    if (!m) continue;
+    const n = Number(m[1]);
+    if (n < 1 || n > 39) continue;
+    const text = m[2]
+      .replace(/\d+\)/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (text) out[n] = text;
+  }
+  return out;
+}
+
+export function countVerses(verses: VerseMap): number {
+  let n = 0;
+  for (let v = 1; v <= 39; v++) if (verses[v]?.trim()) n++;
+  return n;
 }
