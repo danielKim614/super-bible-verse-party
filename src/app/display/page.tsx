@@ -36,7 +36,10 @@ export default function DisplayPage() {
             달란트 2배
           </div>
         )}
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex-1 min-w-0 flex justify-center">
+          <FeedToasts state={state} teamById={teamById} />
+        </div>
+        <div className="flex items-center gap-3">
           {game.backend?.mode === "local" && <span className="rounded-full bg-yellow-300/90 text-slate-900 px-3 py-1 text-sm">데모</span>}
           {joinUrl && (
             <div className="flex items-center gap-2 rounded-2xl bg-white p-1.5 pr-3 shadow-lg">
@@ -58,9 +61,6 @@ export default function DisplayPage() {
           <section className="min-h-0 flex flex-col gap-4">
             <div className="relative flex-1 min-h-0 flex items-center justify-center rounded-[36px] shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden ring-1 ring-white/10">
               <Board state={state} teamById={teamById} />
-              <div className="absolute left-[46%] top-[34%] flex justify-start">
-                <FeedToasts state={state} teamById={teamById} />
-              </div>
             </div>
             <div className="shrink-0">
               <ActionCard state={state} teamById={teamById} />
