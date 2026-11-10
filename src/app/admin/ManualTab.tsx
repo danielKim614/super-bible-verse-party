@@ -129,7 +129,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
         <ul className="list-disc pl-5">
           {Object.entries(FORKS).map(([at, opts]) => (
             <li key={at}>
-              <b>{at}번 칸</b>: {opts.map((o) => `${o.label}(${o.desc})`).join(" / ")}
+              <b>{at}번 칸</b>: {opts.map((o) => `${o.label}(${o.to}절부터)`).join(" / ")}
             </li>
           ))}
         </ul>

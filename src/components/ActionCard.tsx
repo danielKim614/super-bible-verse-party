@@ -73,8 +73,6 @@ export function ActionCard({
           {(FORKS[state.teams[tid].pos] ?? []).map((f, i) => (
             <div key={f.to} className={`rounded-2xl p-3 text-center border ${i === 0 ? "bg-sky-400/20 border-sky-300/40" : "bg-amber-400/20 border-amber-300/40"}`}>
               {f.label} {f.to}~
-              <br />
-              <span className={`text-base ${i === 0 ? "text-sky-200" : "text-amber-200"}`}>{f.desc}</span>
             </div>
           ))}
         </div>

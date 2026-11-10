@@ -312,7 +312,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
               {f.label}
               <br />
               <span className="text-base">
-                {f.to}절부터 · {f.desc}
+                {f.to}절부터
               </span>
             </button>
           ))}
