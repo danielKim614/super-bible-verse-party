@@ -74,16 +74,16 @@ export function lastPlaceTeam(s: GameState): string | undefined {
   return rows[rows.length - 1]?.id;
 }
 
-/** 칸의 실제 보상 종류. 방패는 보상 종류를 바꾸지 않고 암송 방식만 바꾼다(effectiveRedMode). */
+/** 칸의 실제 보상 종류 */
 export function effectiveType(s: GameState, space: number): SpaceType {
   return SPACE_BY_ID[space]?.type ?? "blue";
 }
 
-/** 어려운 칸의 실제 암송 방식: 방패를 쓰면 가장 쉬운 '빈칸 채우기'로 */
+/** 어려운 칸의 암송 방식 */
 export function effectiveRedMode(s: GameState, space: number): RedMode | undefined {
   const sp = SPACE_BY_ID[space];
   if (sp?.type !== "red") return undefined;
-  return s.ctx.shieldOn === space ? "blank" : sp.redMode;
+  return sp.redMode;
 }
 
 export function starPriceFor(s: GameState, coupon: boolean): number {
@@ -106,19 +106,17 @@ export function canAffordStar(s: GameState, team: TeamState): boolean {
 /** 이번 턴에 굴리는 주사위 개수 */
 export function diceCount(s: GameState): number {
   if (s.ctx.rollMode === "triple") return 3;
-  return Math.max(1, s.settings.diceCount ?? 2);
+  const base = Math.max(1, s.settings.diceCount ?? 2);
+  // 선택 다이스: 하나는 고른 눈으로 고정, 나머지만 굴린다
+  if (s.ctx.rollMode === "fixed") return base - 1;
+  return base;
 }
 
-/** 입력 가능한 이동 칸 수 범위 */
+/** 입력 가능한 이동 칸 수 범위 (고정 눈 포함) */
 export function rollRange(s: GameState): [number, number] {
   const n = diceCount(s);
-  return [n, n * 6];
-}
-
-export function mapSelectDice(mode: TurnCtx["rollMode"], face: number): number {
-  if (mode === "low") return face > 3 ? face - 3 : face;
-  if (mode === "high") return face <= 3 ? face + 3 : face;
-  return face;
+  const fixed = s.ctx.rollMode === "fixed" ? s.ctx.fixedFace ?? 0 : 0;
+  return [n + fixed, n * 6 + fixed];
 }
 
 /** 지금 단계에서 사용할 수 있는 아이템 */
@@ -129,15 +127,17 @@ export function usableItems(s: GameState): ItemId[] {
   const out = new Set<ItemId>();
   for (const item of team.items) {
     const def = ITEMS[item];
+    if (!def) continue;
     if (def.kind === "move" && s.phase === "pre_roll" && !s.ctx.moveItem) {
       if (item === "warpPipe" && warpTargets(s, tid).length === 0) continue;
-      if (item === "goldenPipe" && s.stars.length === 0) continue;
       out.add(item);
     }
+    // 달란트 2배권: 굴리기 전에 미리 켜 두면 이번 턴 도착 칸 암송 보상이 2배
+    if (item === "doubleTalent") {
+      if (s.phase === "pre_roll" && !s.ctx.doubleTalentOn) out.add(item);
+      continue;
+    }
     if (def.kind === "recite" && (s.phase === "recite" || s.phase === "star_recite") && !s.ctx.reciteItem) {
-      const space = s.phase === "recite" ? s.ctx.landed! : s.ctx.starAt!;
-      if (item === "shield" && (SPACE_BY_ID[space]?.type !== "red" || SPACE_BY_ID[space]?.redMode === "blank")) continue;
-      if (item === "doubleTalent" && s.phase !== "recite") continue;
       out.add(item);
     }
   }
@@ -234,25 +234,26 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
 
   switch (ev.type) {
     case "use_item": {
-      const { item, choice, seed } = ev.payload;
+      const { item, face, seed } = ev.payload;
       if (!usableItems(prev).includes(item)) return prev;
       removeItem(team, item);
       const def = ITEMS[item];
       if (def.kind === "move") ctx.moveItem = item;
-      if (def.kind === "recite") ctx.reciteItem = item;
+      if (def.kind === "recite" && item !== "doubleTalent") ctx.reciteItem = item;
       feed(s, { seq, teamId: tid, kind: "item", text: `${def.name} 사용` });
       if (item === "tripleDice") ctx.rollMode = "triple";
-      else if (item === "selectDice") ctx.rollMode = choice === "high" ? "high" : "low";
+      else if (item === "selectDice") {
+        ctx.rollMode = "fixed";
+        ctx.fixedFace = Math.min(6, Math.max(1, Math.round(face ?? 6)));
+      }
       else if (item === "warpPipe") {
         const r = rng(seed ?? seq);
         const target = pick(r, warpTargets(prev, tid));
         teleport(s, tid, target, seq);
       } else if (item === "goldenPipe") {
-        const dist = forwardDistances(team.pos);
-        const target = [...s.stars].sort((a, b) => (dist.get(a) ?? 99) - (dist.get(b) ?? 99))[0];
-        teleport(s, tid, target, seq);
-      } else if (item === "shield") ctx.shieldOn = s.phase === "recite" ? ctx.landed : ctx.starAt;
-      else if (item === "doubleTalent") ctx.doubleTalentOn = true;
+        // 파이프에 들어간 뒤, 나올 칸은 운영자가 입력(pipe_exit)
+        s.phase = "pipe_choose";
+      } else if (item === "doubleTalent") ctx.doubleTalentOn = true;
       else if (item === "hint") ctx.hintUsed = true;
       return s;
     }
@@ -265,8 +266,8 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
       if (faces && (faces.length !== n || faces.some((f) => f < 1 || f > 6))) return prev;
       let steps: number;
       if (faces) {
-        // 각 눈을 선택 다이스 규칙으로 변환해 합산
-        faces = faces.map((f) => mapSelectDice(ctx.rollMode, f));
+        // 선택 다이스면 고정한 눈을 맨 앞에 붙여 합산
+        if (ctx.rollMode === "fixed" && ctx.fixedFace) faces = [ctx.fixedFace, ...faces];
         steps = faces.reduce((a, b) => a + b, 0);
       } else {
         // 눈 없이 합계만 온 경우(테스트·구버전): 합계를 이동 칸 수로 사용
@@ -279,6 +280,14 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
       ctx.path = [];
       s.moveSeq = seq;
       advance(s, tid, seq);
+      return s;
+    }
+
+    case "pipe_exit": {
+      if (s.phase !== "pipe_choose") return prev;
+      const to = Math.round(ev.payload.to);
+      if (!SPACE_BY_ID[to] || to === team.pos) return prev;
+      teleport(s, tid, to, seq);
       return s;
     }
 
@@ -298,8 +307,9 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
         feed(s, { seq, teamId: tid, kind: "info", text: "스타 구매 안 함" });
         ctx.starAt = undefined;
         if (ctx.starLanding) {
+          // 도착 칸: 사지 않아도 그 칸 암송은 그대로 진행
           ctx.starLanding = false;
-          s.phase = "resolve";
+          s.phase = "recite";
         } else {
           s.moveSeq = seq;
           advance(s, tid, seq);
@@ -310,9 +320,11 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
       if (team.talents < starPriceFor(s, useCoupon)) return prev;
       ctx.couponUsed = useCoupon;
       if (ctx.starLanding) {
+        // 도착 칸: 스타는 바로 사고, 그 칸 암송은 별개로 이어서 진행
         buyStar(s, tid, seq, { seed: ev.payload.seed });
         ctx.starLanding = false;
-        s.phase = "resolve";
+        ctx.starAt = undefined;
+        s.phase = "recite";
       } else {
         s.phase = "star_recite";
       }
@@ -370,13 +382,7 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
           feed(s, { seq, teamId: tid, kind: "payout", text: "가방이 가득 차서 달란트로 대신 받음", amount: FULL_BAG_TALENTS });
         }
       }
-      if (s.stars.includes(space) && canAffordStar(s, team)) {
-        ctx.starAt = space;
-        ctx.starLanding = true;
-        s.phase = "star_offer";
-      } else {
-        s.phase = "resolve";
-      }
+      s.phase = "resolve";
       return s;
     }
 
@@ -476,6 +482,13 @@ function land(s: GameState, tid: string, space: number, seq: number) {
     }
   }
   if (t === "happening") applyHappening(s, tid, seq);
+  // 도착 칸에 스타가 있으면 암송보다 먼저 구매 의사를 묻는다
+  const team = s.teams[tid];
+  if (s.stars.includes(space) && canAffordStar(s, team)) {
+    s.ctx.starAt = space;
+    s.ctx.starLanding = true;
+    s.phase = "star_offer";
+  }
 }
 
 const HAPPENINGS: HappeningKind[] = ["stars", "rain", "golden", "gift"];
@@ -632,8 +645,8 @@ function applyOverride(
       feed(s, { seq, teamId: p.teamId, kind: "info", text: `스타 ${p.delta > 0 ? "+" : ""}${p.delta} (수동)` });
       break;
     case "addItem":
-      // 강제 개입으로도 보유 한도는 넘기지 않는다
-      if (team!.items.length >= s.settings.inventoryLimit) return prev;
+      // 강제 개입으로도 보유 한도는 넘기지 않고, 지금 없는 아이템(예전 버전의 방패 등)은 무시한다
+      if (!ITEMS[p.item] || team!.items.length >= s.settings.inventoryLimit) return prev;
       team!.items.push(p.item);
       break;
     case "removeItem":

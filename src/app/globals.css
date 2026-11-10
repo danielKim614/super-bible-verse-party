@@ -246,3 +246,29 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .action-card { animation: none; }
 }
+
+/* 파이프 연출 */
+@keyframes pipe {
+  0% { transform: scaleY(0); }
+  28% { transform: scaleY(1.08); }
+  36% { transform: scaleY(1); }
+  78% { transform: scaleY(1); }
+  100% { transform: scaleY(0); }
+}
+.animate-pipe { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(0); animation-name: pipe; animation-timing-function: ease-in-out; animation-fill-mode: both; }
+@keyframes warp-sink {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-10px); }
+  100% { transform: translateY(46px); }
+}
+.animate-warp-sink { animation: warp-sink 0.8s cubic-bezier(0.5, 0, 0.9, 0.5) both; }
+@keyframes warp-rise {
+  0% { transform: translateY(46px); }
+  65% { transform: translateY(-14px); }
+  85% { transform: translateY(3px); }
+  100% { transform: translateY(0); }
+}
+.animate-warp-rise { animation: warp-rise 0.85s cubic-bezier(0.2, 0.8, 0.3, 1.2) both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-warp-sink, .animate-warp-rise { animation-duration: 0.01s; }
+}

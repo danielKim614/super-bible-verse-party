@@ -48,12 +48,6 @@ const ICONS: Record<ItemId, React.JSX.Element> = {
       <path d="M12 1.5 l1 2 l2.2 .3 l-1.6 1.5 l.4 2.2 l-2 -1 l-2 1 l.4 -2.2 l-1.6 -1.5 l2.2 -.3 z" fill="#fff7c2" />
     </g>
   ),
-  shield: (
-    <g>
-      <path d="M12 2 L20 5 V11 C20 16 16.5 20 12 22 C7.5 20 4 16 4 11 V5 Z" fill="#60a5fa" stroke="#1e3a8a" strokeWidth={1.2} />
-      <path d="M12 5 V19 M6.5 7 H17.5" stroke="#1e3a8a" strokeWidth={1.4} opacity={0.6} />
-    </g>
-  ),
   doubleTalent: (
     <g>
       <circle cx={12} cy={12} r={9.5} fill="#fbbf24" stroke="#92400e" strokeWidth={1.2} />

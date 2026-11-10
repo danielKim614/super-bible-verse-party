@@ -182,7 +182,7 @@ export default function JoinPage() {
                     <span className="inline-flex w-9 h-9 rounded-xl bg-white/15 items-center justify-center">
                       <ItemIcon id={i} size={24} />
                     </span>
-                    <span className="text-[10px] text-white/70 leading-tight truncate w-full text-center">{ITEMS[i].name}</span>
+                    <span className="text-[10px] text-white/70 leading-tight truncate w-full text-center">{ITEMS[i]?.name ?? i}</span>
                   </span>
                 ))}
               </span>
@@ -212,7 +212,7 @@ export default function JoinPage() {
               </div>
             </div>
           )}
-          <Scoreboard state={state} teamById={teamById} highlightTeam={me.teamId} compact />
+          <Scoreboard state={state} teamById={teamById} highlightTeam={me.teamId} compact members={game.members} />
         </div>
       )}
 

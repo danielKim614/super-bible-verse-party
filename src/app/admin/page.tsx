@@ -17,7 +17,6 @@ import {
   FULL_BAG_TALENTS,
   replay,
   diceCount,
-  mapSelectDice,
   starPriceFor,
   usableItems,
 } from "@/game/reducer";
@@ -205,7 +204,7 @@ function ControlTab({ game, admin, goSettings }: { game: GameData; admin: Admin;
             </div>
             <div className="text-sm text-slate-500">
               위치 {team.pos === 0 ? "출발" : `${team.pos}절`} · ⭐{team.stars} · 🪙{team.talents} · 아이템{" "}
-              {team.items.length ? team.items.map((i) => ITEMS[i].name).join(", ") : "없음"}
+              {team.items.length ? team.items.map((i) => ITEMS[i]?.name ?? i).join(", ") : "없음"}
             </div>
           </div>
         </div>
@@ -254,13 +253,19 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       <span className="text-sm text-slate-500">아이템 사용:</span>
       {items.map((it) =>
         it === "selectDice" ? (
-          <span key={it} className="flex gap-1">
-            <button className={`${btn} bg-purple-100`} disabled={busy} onClick={() => send({ type: "use_item", payload: { item: it, choice: "low", seed: newSeed() } })}>
-              <ItemIcon id={it} size={20} className="inline mr-1 align-middle" />선택 다이스 낮음(1~3)
-            </button>
-            <button className={`${btn} bg-purple-100`} disabled={busy} onClick={() => send({ type: "use_item", payload: { item: it, choice: "high", seed: newSeed() } })}>
-              <ItemIcon id={it} size={20} className="inline mr-1 align-middle" />선택 다이스 높음(4~6)
-            </button>
+          <span key={it} className="flex items-center gap-1 rounded-xl bg-purple-50 pl-2 pr-1 py-1">
+            <ItemIcon id={it} size={20} className="inline align-middle" />
+            <span className="text-sm font-bold mr-1">선택 다이스 고정 눈:</span>
+            {[1, 2, 3, 4, 5, 6].map((f) => (
+              <button
+                key={f}
+                className={`${btn} bg-purple-100 px-3 py-1 font-display text-lg`}
+                disabled={busy}
+                onClick={() => send({ type: "use_item", payload: { item: it, face: f, seed: newSeed() } })}
+              >
+                {f}
+              </button>
+            ))}
           </span>
         ) : (
           <button
@@ -285,7 +290,28 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       return (
         <div className="flex flex-col gap-3">
           {itemButtons}
-          <DiceInput key={`${ctx.startSeq}-${ctx.rollMode}`} n={diceCount(state)} mode={ctx.rollMode} busy={busy} onDone={(faces) => send({ type: "roll", payload: { value: faces.reduce((a, b) => a + b, 0), faces } })} />
+          <DiceInput key={`${ctx.startSeq}-${ctx.rollMode}`} n={diceCount(state)} mode={ctx.rollMode} fixedFace={ctx.fixedFace} busy={busy} onDone={(faces) => send({ type: "roll", payload: { value: faces.reduce((a, b) => a + b, 0), faces } })} />
+        </div>
+      );
+    case "pipe_choose":
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="text-sm text-slate-500">
+            황금 파이프: 나올 칸을 누르세요 <span className="text-amber-600">★ = 스타가 있는 칸</span>
+          </div>
+          <div className="grid grid-cols-10 gap-1.5">
+            {SPACES.map((sp) => (
+              <button
+                key={sp.id}
+                className={`${btn} px-0 py-2 font-display text-lg ${state.stars.includes(sp.id) ? "bg-amber-300" : "bg-slate-100"}`}
+                disabled={busy || sp.id === team.pos}
+                onClick={() => confirm(`${sp.id}절 칸으로 나갈까요?`) && send({ type: "pipe_exit", payload: { to: sp.id } })}
+              >
+                {state.stars.includes(sp.id) ? "★" : ""}
+                {sp.id}
+              </button>
+            ))}
+          </div>
         </div>
       );
     case "choose_path":
@@ -314,7 +340,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       return (
         <div className="flex flex-col gap-3">
           <div className="text-slate-600">
-            {ctx.starLanding ? `도착 칸(${ctx.starAt}절)에 스타가 있어요. 암송을 이미 성공했으니 바로 구매할 수 있어요.` : `${ctx.starAt}절의 스타를 지나갑니다. 구매하려면 이 절을 암송해야 해요.`}
+            {ctx.starLanding ? `도착 칸(${ctx.starAt}절)에 스타가 있어요. 사면 바로 스타를 얻고, 사든 안 사든 이어서 이 칸 암송을 해요.` : `${ctx.starAt}절의 스타를 지나갑니다. 구매하려면 이 절을 암송해야 해요.`}
           </div>
           <div className="flex flex-wrap gap-2">
             <button className={`${btn} bg-yellow-400 font-display text-2xl py-4`} disabled={busy || team.talents < normal} onClick={() => send({ type: "star_decision", payload: { buy: true, seed: newSeed() } })}>
@@ -739,7 +765,7 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
         </select>
         {t && (
           <div className="text-sm text-slate-600">
-            위치 {t.pos === 0 ? "출발" : `${t.pos}절`} · ⭐{t.stars} · 🪙{t.talents} · {t.items.map((i) => ITEMS[i].name).join(", ") || "아이템 없음"}
+            위치 {t.pos === 0 ? "출발" : `${t.pos}절`} · ⭐{t.stars} · 🪙{t.talents} · {t.items.map((i) => ITEMS[i]?.name ?? i).join(", ") || "아이템 없음"}
           </div>
         )}
         <Row label="달란트">
@@ -1062,7 +1088,7 @@ function SettingsTab({ game, admin }: { game: GameData; admin: Admin }) {
 }
 
 /** 주사위 눈 입력: 주사위마다 1~6 중 하나를 차례로 누르면 마지막 눈에서 자동 전송 */
-function DiceInput({ n, mode, busy, onDone }: { n: number; mode: TurnCtx["rollMode"]; busy: boolean; onDone: (faces: number[]) => void }) {
+function DiceInput({ n, mode, fixedFace, busy, onDone }: { n: number; mode: TurnCtx["rollMode"]; fixedFace?: number; busy: boolean; onDone: (faces: number[]) => void }) {
   const [faces, setFaces] = useState<number[]>([]);
   const idx = faces.length;
   const pick = (f: number) => {
@@ -1072,19 +1098,27 @@ function DiceInput({ n, mode, busy, onDone }: { n: number; mode: TurnCtx["rollMo
       setFaces([]);
     } else setFaces(next);
   };
-  const conv = (f: number) => mapSelectDice(mode, f);
+  const fixed = mode === "fixed" ? fixedFace : undefined;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2 text-sm text-slate-500">
         <span>
-          주사위 {n}개 · <b className="text-slate-800">{idx + 1}번째 눈</b>을 누르세요
-          {mode === "low" && " (낮음: 4~6은 1~3으로 자동 변환)"}
-          {mode === "high" && " (높음: 1~3은 4~6으로 자동 변환)"}
+          {fixed !== undefined && <b className="text-purple-700">선택 다이스 {fixed} 고정 · </b>}
+          {n > 0 ? (
+            <>
+              굴린 주사위 {n}개 · <b className="text-slate-800">{idx + 1}번째 눈</b>을 누르세요
+            </>
+          ) : (
+            "굴릴 주사위가 없어요"
+          )}
         </span>
         <span className="ml-auto flex gap-1">
+          {fixed !== undefined && (
+            <span className="inline-flex w-9 h-9 items-center justify-center rounded-lg font-display text-xl bg-amber-400 text-slate-900">{fixed}</span>
+          )}
           {Array.from({ length: n }, (_, i) => (
             <span key={i} className={`inline-flex w-9 h-9 items-center justify-center rounded-lg font-display text-xl ${faces[i] !== undefined ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-400"}`}>
-              {faces[i] !== undefined ? conv(faces[i]) : "?"}
+              {faces[i] !== undefined ? faces[i] : "?"}
             </span>
           ))}
         </span>
@@ -1094,13 +1128,19 @@ function DiceInput({ n, mode, busy, onDone }: { n: number; mode: TurnCtx["rollMo
           </button>
         )}
       </div>
-      <div className="grid grid-cols-6 gap-2">
-        {[1, 2, 3, 4, 5, 6].map((f) => (
-          <button key={f} className={`${btn} bg-slate-900 text-white font-display text-4xl py-5`} disabled={busy} onClick={() => pick(f)}>
-            {f}
-          </button>
-        ))}
-      </div>
+      {n > 0 ? (
+        <div className="grid grid-cols-6 gap-2">
+          {[1, 2, 3, 4, 5, 6].map((f) => (
+            <button key={f} className={`${btn} bg-slate-900 text-white font-display text-4xl py-5`} disabled={busy} onClick={() => pick(f)}>
+              {f}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <button className={`${btn} bg-slate-900 text-white font-display text-3xl py-5`} disabled={busy} onClick={() => onDone([])}>
+          {fixed}칸 이동 ▶
+        </button>
+      )}
     </div>
   );
 }

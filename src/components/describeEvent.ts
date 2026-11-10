@@ -7,9 +7,11 @@ export function describeEvent(e: GameEvent, teamById: Record<string, TeamInfo>):
     case "start_game":
       return `게임 시작 (${e.payload.teamIds.length}팀)`;
     case "use_item":
-      return `아이템 사용: ${ITEMS[e.payload.item]?.name ?? e.payload.item}${e.payload.choice ? ` (${e.payload.choice === "low" ? "낮음" : "높음"})` : ""}`;
+      return `아이템 사용: ${ITEMS[e.payload.item]?.name ?? e.payload.item}${e.payload.face ? ` (${e.payload.face} 고정)` : ""}`;
     case "roll":
       return `주사위 ${e.payload.value}`;
+    case "pipe_exit":
+      return `황금 파이프 → ${e.payload.to}절`;
     case "choose_path":
       return `갈림길: ${e.payload.label ?? `${e.payload.option + 1}번 길`}`;
     case "star_decision":

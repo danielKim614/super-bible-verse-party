@@ -2,7 +2,7 @@
 // 보드: 1~2 → 갈림(2) → 3~6 / 7~10 → 11~15 → 갈림(15) → 16~22 / 23~27 → 🏪 → 28~30 → 갈림(30) → 31~34 / 35~38 → 39 → 출발 (출발점은 칸이 아님)
 import assert from "node:assert/strict";
 import { SPACE_BY_ID, nextSpace } from "../src/game/board";
-import { applyEvent, effectiveRedMode, placeStar, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
+import { applyEvent, effectiveRedMode, placeStar, finalRanking, initialState, isBoost, replay, usableItems } from "../src/game/reducer";
 import { ITEMS } from "../src/game/items";
 import { rng } from "../src/game/rng";
 import { DEFAULT_SETTINGS, type GameEvent, type GameEventBody, type GameState } from "../src/game/types";
@@ -89,9 +89,9 @@ s = ev(s, { type: "override", payload: { action: "position", teamId: "E", pos: 2
 s = ev(s, { type: "roll", payload: { value: 3 } });
 assert.equal(s.phase, "shop_offer");
 assert.equal(s.teams.E.pos, 27);
-s = ev(s, { type: "shop_buy", payload: { item: "shield" } });
-assert.equal(s.teams.E.items[0], "shield");
-assert.equal(s.teams.E.talents, 10 - ITEMS.shield.price);
+s = ev(s, { type: "shop_buy", payload: { item: "hint" } });
+assert.equal(s.teams.E.items[0], "hint");
+assert.equal(s.teams.E.talents, 10 - ITEMS.hint.price);
 s = ev(s, { type: "shop_buy", payload: { item: "goldenPipe" } });
 assert.equal(s.teams.E.items.length, 1);
 s = ev(s, { type: "shop_leave", payload: {} });
@@ -135,13 +135,10 @@ log[log.length - 1].voided = true;
 assert.equal(replay(log).teams.A.pos, 14);
 log[log.length - 1].voided = false;
 
-// 방패: A 8에서 1칸 → 9(빨간 칸, 첫 단어) → 방패 → 빈칸 채우기 방식, 보상은 빨간 칸 그대로
-s = ev(s, { type: "override", payload: { action: "addItem", teamId: "A", item: "shield" } });
+// 어려운 칸: A 8에서 1칸 → 9(빨간 칸) 성공 → 빨간 칸 보상, 도전 +1
 s = ev(s, { type: "roll", payload: { value: 1 } });
 assert.equal(s.teams.A.pos, 9);
-s = ev(s, { type: "use_item", payload: { item: "shield" } });
-assert.equal(s.teams.A.items.includes("shield"), false);
-assert.equal(effectiveRedMode(s, 9), "blank");
+assert.ok(effectiveRedMode(s, 9));
 const beforeShield = s.teams.A.talents;
 const challengeBefore = s.teams.A.challengeSuccess;
 const mult = isBoost(s) ? 2 : 1;
@@ -197,3 +194,76 @@ assert.equal(nextSpace(34), 39);
 assert.equal(nextSpace(38), 39);
 assert.equal(nextSpace(39), 1);
 console.log("✅ 39 merge ok");
+
+// 선택 다이스: 하나는 고른 눈(5)으로 고정, 나머지 하나만 굴림 → 5 + 3 = 8칸
+{
+  let t = replay([
+    { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS, diceCount: 2 }, seed: 3 } } as GameEvent,
+    { id: 2, seq: 2, voided: false, type: "override", payload: { action: "addItem", teamId: "A", item: "selectDice" } } as GameEvent,
+    { id: 3, seq: 3, voided: false, type: "use_item", payload: { item: "selectDice", face: 5 } } as GameEvent,
+  ]);
+  assert.equal(t.ctx.rollMode, "fixed");
+  assert.equal(t.ctx.fixedFace, 5);
+  t = applyEvent(t, { id: 4, seq: 4, voided: false, type: "roll", payload: { value: 3, faces: [3] } } as GameEvent);
+  assert.equal(t.ctx.roll, 8);
+  assert.deepEqual(t.ctx.faces, [5, 3]);
+  console.log("✅ select dice ok");
+}
+
+// 황금 파이프: 들어간 뒤 운영자가 고른 칸(20)으로 나옴
+{
+  let t = replay([
+    { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS }, seed: 3 } } as GameEvent,
+    { id: 2, seq: 2, voided: false, type: "override", payload: { action: "addItem", teamId: "A", item: "goldenPipe" } } as GameEvent,
+    { id: 3, seq: 3, voided: false, type: "use_item", payload: { item: "goldenPipe" } } as GameEvent,
+  ]);
+  assert.equal(t.phase, "pipe_choose");
+  assert.equal(t.teams.A.items.length, 0);
+  t = applyEvent(t, { id: 4, seq: 4, voided: false, type: "pipe_exit", payload: { to: 20 } } as GameEvent);
+  assert.equal(t.teams.A.pos, 20);
+  assert.ok(t.phase === "recite" || t.phase === "star_offer");
+  console.log("✅ golden pipe ok");
+}
+
+// 달란트 2배권: 굴리기 전에 사용 → 도착 칸 보상 2배
+{
+  let t = replay([
+    { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS, diceCount: 1 }, seed: 3 } } as GameEvent,
+    { id: 2, seq: 2, voided: false, type: "override", payload: { action: "addItem", teamId: "A", item: "doubleTalent" } } as GameEvent,
+  ]);
+  assert.ok(usableItems(t).includes("doubleTalent"));
+  t = applyEvent(t, { id: 3, seq: 3, voided: false, type: "use_item", payload: { item: "doubleTalent" } } as GameEvent);
+  t = applyEvent(t, { id: 4, seq: 4, voided: false, type: "roll", payload: { value: 1, faces: [1] } } as GameEvent);
+  const before = t.teams.A.talents;
+  t = applyEvent(t, { id: 5, seq: 5, voided: false, type: "recite_result", payload: { success: true, seed: 1 } } as GameEvent);
+  assert.equal(t.teams.A.talents, before + t.settings.rewards.blue * 2);
+  console.log("✅ double talent before roll ok");
+}
+
+// 스타 칸 도착: 구매 의사부터 묻고(사면 즉시 구매), 그다음 암송은 별개
+{
+  const base = [
+    { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS, diceCount: 1 }, seed: 3 } },
+    { id: 2, seq: 2, voided: false, type: "override", payload: { action: "starPositions", stars: [4, 20] } },
+    { id: 3, seq: 3, voided: false, type: "override", payload: { action: "talents", teamId: "A", delta: 20 } },
+    { id: 4, seq: 4, voided: false, type: "override", payload: { action: "position", teamId: "A", pos: 3 } },
+    { id: 5, seq: 5, voided: false, type: "roll", payload: { value: 1, faces: [1] } },
+  ] as GameEvent[];
+  let t = replay(base);
+  assert.equal(t.teams.A.pos, 4);
+  assert.equal(t.phase, "star_offer");
+  const before = t.teams.A.talents;
+  t = applyEvent(t, { id: 6, seq: 6, voided: false, type: "star_decision", payload: { buy: true, seed: 1 } } as GameEvent);
+  assert.equal(t.teams.A.stars, 1);
+  assert.equal(t.teams.A.talents, before - t.settings.starPrice);
+  assert.equal(t.phase, "recite");
+  t = applyEvent(t, { id: 7, seq: 7, voided: false, type: "recite_result", payload: { success: false, seed: 2 } } as GameEvent);
+  assert.equal(t.teams.A.stars, 1); // 암송 실패해도 산 스타는 그대로
+  let u = replay(base);
+  u = applyEvent(u, { id: 6, seq: 6, voided: false, type: "star_decision", payload: { buy: false } } as GameEvent);
+  assert.equal(u.phase, "recite");
+  u = applyEvent(u, { id: 7, seq: 7, voided: false, type: "recite_result", payload: { success: true, seed: 2 } } as GameEvent);
+  assert.equal(u.teams.A.stars, 0);
+  assert.equal(u.teams.A.talents, before + u.settings.rewards.blue);
+  console.log("✅ star landing: buy first, recite separately ok");
+}

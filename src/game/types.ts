@@ -62,9 +62,10 @@ export type OverrideAction =
 
 export type GameEventBody =
   | { type: "start_game"; payload: { teamIds: string[]; settings: Settings; seed: number } }
-  | { type: "use_item"; payload: { item: ItemId; choice?: "low" | "high"; seed?: number } }
+  | { type: "use_item"; payload: { item: ItemId; face?: number; seed?: number } } // face: 선택 다이스로 고정할 눈
   | { type: "roll"; payload: { value: number; faces?: number[] } } // value: 이동 칸 수(합계), faces: 각 주사위 눈
   | { type: "choose_path"; payload: { option: number; label?: string } }
+  | { type: "pipe_exit"; payload: { to: number } } // 황금 파이프: 나올 칸
   | { type: "star_decision"; payload: { buy: boolean; coupon?: boolean; seed?: number } }
   | { type: "recite_result"; payload: { success: boolean; seed: number } }
   | { type: "shop_buy"; payload: { item: ItemId } }
@@ -88,6 +89,7 @@ export type Phase =
   | "setup"
   | "pre_roll"
   | "choose_path"
+  | "pipe_choose" // 황금 파이프에 들어가 나올 칸을 고르는 중
   | "shop_offer"
   | "star_offer"
   | "star_recite"
@@ -114,7 +116,8 @@ export interface TurnCtx {
   startSeq?: number; // 이 팀 턴이 시작된 이벤트 seq
   moveItem?: ItemId;
   reciteItem?: ItemId;
-  rollMode: "normal" | "triple" | "low" | "high";
+  rollMode: "normal" | "triple" | "fixed";
+  fixedFace?: number; // 선택 다이스로 고정한 눈
   roll?: number;
   faces?: number[]; // 실제 나온 주사위 눈 (연출용)
   remaining: number;
@@ -123,9 +126,8 @@ export interface TurnCtx {
   teleport?: boolean;
   shopVisited?: boolean; // 이번 턴 상점(출발점) 통과 처리됨
   starAt?: number; // 스타 제안 중인 칸
-  starLanding?: boolean; // 도착 칸 스타 (암송 후 구매)
+  starLanding?: boolean; // 도착 칸 스타 (구매 의사를 먼저 묻고 암송)
   couponUsed?: boolean;
-  shieldOn?: number; // 방패가 적용된 칸
   doubleTalentOn?: boolean;
   hintUsed?: boolean;
   landed?: number;

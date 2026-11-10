@@ -3,7 +3,7 @@
 import { splitSum } from "./DieBadge";
 import { useEffect, useMemo, useRef, useState, memo } from "react";
 import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_AT, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId, type SpaceType } from "@/game/board";
-import { currentTeamId } from "@/game/reducer";
+import { currentTeamId, diceCount } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
 // 네온 톤: [채움, 그림자/글로우]
@@ -191,7 +191,7 @@ const DICE_MS = 1300;
 
 /** 주사위 입력 직후 굴러가는 연출 */
 function useDiceRoll(state: GameState) {
-  const [dice, setDice] = useState<{ key: number; faces: number[]; show: number[] } | null>(null);
+  const [dice, setDice] = useState<{ key: number; faces: number[]; show: number[]; lockFirst?: boolean } | null>(null);
   const prevRoll = useRef<number | undefined>(state.ctx.roll);
   const prevSeq = useRef(state.ctx.startSeq);
   useEffect(() => {
@@ -201,11 +201,14 @@ function useDiceRoll(state: GameState) {
     if (state.ctx.roll === undefined || hadRoll || state.ctx.teleport) return;
     const faces = state.ctx.faces && state.ctx.faces.length ? state.ctx.faces : splitSum(state.ctx.roll);
     const key = Date.now();
-    setDice({ key, faces, show: faces.map(() => 1 + Math.floor(Math.random() * 6)) });
+    // 선택 다이스로 고정한 첫 주사위는 구르지 않고 그 눈 그대로
+    const lockFirst = state.ctx.rollMode === "fixed" && !!state.ctx.fixedFace;
+    const rnd = (f: number, i: number) => (lockFirst && i === 0 ? f : 1 + Math.floor(Math.random() * 6));
+    setDice({ key, faces, show: faces.map(rnd), lockFirst });
     let n = 0;
     const iv = setInterval(() => {
       n += 1;
-      setDice((d) => (d && d.key === key ? { ...d, show: d.faces.map(() => 1 + Math.floor(Math.random() * 6)) } : d));
+      setDice((d) => (d && d.key === key ? { ...d, show: d.faces.map(rnd) } : d));
       if (n >= 9) {
         clearInterval(iv);
         setDice((d) => (d && d.key === key ? { ...d, show: d.faces } : d));
@@ -269,7 +272,18 @@ const PIPS: Record<number, [number, number][]> = {
   6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
 };
 
-function Die({ face, settled, delay }: { face: number; settled: boolean; delay: number }) {
+function Die({ face, settled, delay, locked }: { face: number; settled: boolean; delay: number; locked?: boolean }) {
+  if (locked) {
+    // 선택 다이스로 고정한 주사위: 구르지 않고 금색 테두리로 그 자리에
+    return (
+      <g filter="url(#soft)">
+        <rect x={-34} y={-34} width={68} height={68} rx={14} fill="#fff" stroke="#fbbf24" strokeWidth={5} />
+        {(PIPS[face] ?? PIPS[1]).map(([px, py], i) => (
+          <circle key={i} cx={px * 18} cy={py * 18} r={6.5} fill="#1e293b" />
+        ))}
+      </g>
+    );
+  }
   // 바깥 g: 왼쪽에서 굴러 들어오는 이동, 안쪽 g: 구르는 회전 → 멈추면 튕김
   return (
     <g className="animate-die-travel" style={{ animationDelay: `${delay}ms` }}>
@@ -311,6 +325,7 @@ export function Board({
   const { burst: starBurst, hidden: hiddenStar, spawn: starSpawn } = useStarBurst(state);
   const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : dice ? DICE_MS : 0);
   const startMark = useStartMark(state, shown);
+  const warp = useWarpFx(state);
   const sparkles = useSparkles(70);
   const cur = currentTeamId(state);
   const focus =
@@ -318,6 +333,8 @@ export function Board({
 
   const byPos: Record<number, string[]> = {};
   for (const id of state.teamIds) {
+    if (warp && warp.team === id) continue; // 파이프 연출 중인 말은 연출 레이어에서 그림
+    if (state.phase === "pipe_choose" && id === currentTeamId(state)) continue; // 황금 파이프 속에 있는 중
     const p = shown[id] ?? state.teams[id].pos;
     (byPos[p] ??= []).push(id);
   }
@@ -360,6 +377,19 @@ export function Board({
             <stop offset="100%" stopColor={TYPE_FILL[t][1]} />
           </radialGradient>
         ))}
+        <linearGradient id="pipeGreen" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#4ade80" />
+          <stop offset="55%" stopColor="#16a34a" />
+          <stop offset="100%" stopColor="#15803d" />
+        </linearGradient>
+        <linearGradient id="pipeGold" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#fff1a8" />
+          <stop offset="50%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#b7791f" />
+        </linearGradient>
+        <clipPath id="pipeMouth" clipPathUnits="userSpaceOnUse">
+          <rect x={-60} y={-160} width={120} height={160 + PIPE_TOP + 1} />
+        </clipPath>
         <linearGradient id="goldDie" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#fff1a8" />
           <stop offset="45%" stopColor="#fbbf24" />
@@ -608,6 +638,9 @@ export function Board({
           );
         });
       })}
+      {/* 워프·황금 파이프 연출 */}
+      {warp && <WarpFx key={warp.key} fx={warp} team={teamById[warp.team]} />}
+
       {/* 스타 획득 연출 */}
       {starBurst &&
         (() => {
@@ -649,7 +682,7 @@ export function Board({
 
       {/* 주사위 아이템 사용 중: 굴리기 전까지 화면 가운데에 주사위가 준비된 채로 떠 있음 */}
       {!dice && state.phase === "pre_roll" && state.ctx.rollMode !== "normal" && !state.paused && (
-        <DiceReady mode={state.ctx.rollMode} count={state.ctx.rollMode === "triple" ? 3 : Math.max(1, state.settings.diceCount ?? 2)} />
+        <DiceReady mode={state.ctx.rollMode} count={diceCount(state)} fixed={state.ctx.fixedFace} />
       )}
 
       {/* 주사위 연출 */}
@@ -661,7 +694,7 @@ export function Board({
             const settled = dice.show[i] === dice.faces[i] && dice.show.every((x, j) => x === dice.faces[j]);
             return (
               <g key={i} transform={`translate(${off},0)`}>
-                <Die face={f} settled={settled} delay={i * 120} />
+                <Die face={f} settled={settled} delay={i * 120} locked={dice.lockFirst && i === 0} />
               </g>
             );
           })}
@@ -731,54 +764,195 @@ const BoardBackdrop = memo(function BoardBackdrop({ roadW }: { roadW: number }) 
 });
 
 /** 트리플·선택 다이스를 쓴 뒤 굴리기를 기다리는 동안의 표시 */
-function DiceReady({ mode, count }: { mode: "triple" | "low" | "high" | "normal"; count: number }) {
+function DiceReady({ mode, count, fixed }: { mode: "triple" | "fixed" | "normal"; count: number; fixed?: number }) {
   const triple = mode === "triple";
-  const label = triple ? "트리플 다이스!" : mode === "low" ? "선택 다이스: 낮음 1~3" : "선택 다이스: 높음 4~6";
-  const tint = triple ? "#fbbf24" : mode === "low" ? "#7dd3fc" : "#fdba74";
+  const label = triple ? "트리플 다이스!" : `선택 다이스! ${fixed ?? ""} 고정`;
+  const tint = triple ? "#fbbf24" : "#c4b5fd";
   const w = Math.max(label.length * 17 + 36, 180);
-  // 트리플은 피라미드(위 1개, 아래 2개), 나머지는 한 줄
+  // 트리플은 피라미드(위 1개, 아래 2개). 선택 다이스는 고정한 주사위 + 굴릴 주사위를 한 줄로
+  const n = triple ? 3 : count + 1;
   const slots: [number, number][] = triple
     ? [
         [0, -26],
         [-42, 52],
         [42, 52],
       ]
-    : Array.from({ length: count }, (_, i) => [(i - (count - 1) / 2) * 92, 14] as [number, number]);
+    : Array.from({ length: n }, (_, i) => [(i - (n - 1) / 2) * 92, 14] as [number, number]);
   const labelY = triple ? -112 : -74;
   return (
     // 바깥 g는 위치만, 안쪽 g가 등장 애니메이션 (CSS transform 애니메이션이 SVG transform 속성을 덮어쓰지 않게 분리)
     <g transform={`translate(${BOARD_W / 2},${BOARD_H / 2 + (triple ? -14 : 0)})`}>
       <g className="animate-pop" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
-        <ellipse cy={triple ? 6 : 0} rx={triple ? 170 : count * 52 + 60} ry={triple ? 150 : 112} fill="#05081f" opacity={0.6} />
+        <ellipse cy={triple ? 6 : 0} rx={triple ? 170 : n * 52 + 60} ry={triple ? 150 : 112} fill="#05081f" opacity={0.6} />
         <g transform={`translate(0,${labelY})`} filter="url(#soft)">
           <rect x={-w / 2} y={-19} width={w} height={38} rx={19} fill={tint} stroke="#fff" strokeWidth={2.5} />
           <text textAnchor="middle" dy={7} fontSize={21} className="font-display" fill="#1e1b4b">
             {label}
           </text>
         </g>
-        {slots.map(([x, y], i) => (
-          <g key={i} transform={`translate(${x},${y})`}>
-            <g className="animate-bob" style={{ animationDelay: `${i * 0.18}s` }} filter="url(#soft)">
-              {triple ? (
-                <>
-                  <rect x={-34} y={-34} width={68} height={68} rx={14} fill="url(#goldDie)" stroke="#fff7d6" strokeWidth={3} />
-                  <rect x={-27} y={-29} width={34} height={10} rx={5} fill="#fff" opacity={0.35} />
-                  <text textAnchor="middle" dy={14} fontSize={42} className="font-display" fill="#111">
-                    ?
-                  </text>
-                </>
-              ) : (
-                <>
-                  <rect x={-34} y={-34} width={68} height={68} rx={14} fill="#fff" stroke={tint} strokeWidth={4} />
-                  <text textAnchor="middle" dy={14} fontSize={40} className="font-display" fill="#1e1b4b">
-                    ?
-                  </text>
-                </>
-              )}
+        {slots.map(([x, y], i) => {
+          const isFixed = !triple && i === 0 && fixed !== undefined;
+          return (
+            <g key={i} transform={`translate(${x},${y})`}>
+              <g className={isFixed ? undefined : "animate-bob"} style={{ animationDelay: `${i * 0.18}s` }} filter="url(#soft)">
+                {triple ? (
+                  <>
+                    <rect x={-34} y={-34} width={68} height={68} rx={14} fill="url(#goldDie)" stroke="#fff7d6" strokeWidth={3} />
+                    <rect x={-27} y={-29} width={34} height={10} rx={5} fill="#fff" opacity={0.35} />
+                    <text textAnchor="middle" dy={14} fontSize={42} className="font-display" fill="#111">
+                      ?
+                    </text>
+                  </>
+                ) : isFixed ? (
+                  <>
+                    {/* 고정한 주사위: 금색 테두리 + 실제 눈 */}
+                    <rect x={-34} y={-34} width={68} height={68} rx={14} fill="#fff" stroke="#fbbf24" strokeWidth={5} />
+                    {(PIPS[fixed!] ?? PIPS[1]).map(([px, py], k) => (
+                      <circle key={k} cx={px * 18} cy={py * 18} r={6.5} fill="#1e293b" />
+                    ))}
+                    <g transform="translate(0,-46)">
+                      <rect x={-22} y={-10} width={44} height={20} rx={10} fill="#fbbf24" stroke="#fff" strokeWidth={2} />
+                      <text textAnchor="middle" dy={5} fontSize={13} className="font-display" fill="#1e1b4b">
+                        고정
+                      </text>
+                    </g>
+                  </>
+                ) : (
+                  <>
+                    <rect x={-34} y={-34} width={68} height={68} rx={14} fill="#fff" stroke={tint} strokeWidth={4} />
+                    <text textAnchor="middle" dy={14} fontSize={40} className="font-display" fill="#1e1b4b">
+                      ?
+                    </text>
+                  </>
+                )}
+              </g>
             </g>
-          </g>
-        ))}
+          );
+        })}
       </g>
+    </g>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 파이프 연출: 출발 칸에 파이프가 솟아 말이 쏙 들어가고,            */
+/* 도착 칸에 파이프가 솟아 말이 쏙 올라온 뒤 파이프가 들어감          */
+/* ------------------------------------------------------------------ */
+interface WarpInfo {
+  key: number;
+  team: string;
+  from: number;
+  to: number;
+  gold: boolean;
+  /** both: 들어갔다 나옴(워프) / enter: 들어가기만(황금 파이프, 나올 칸 입력 대기) / exit: 나오기만 */
+  mode: "both" | "enter" | "exit";
+}
+const WARP_MS = { both: 3700, enter: 1950, exit: 2050 };
+
+function useWarpFx(state: GameState): WarpInfo | null {
+  const [fx, setFx] = useState<WarpInfo | null>(null);
+  const prevPos = useRef<Record<string, number> | null>(null);
+  const prevMove = useRef(state.moveSeq);
+  const prevPhase = useRef(state.phase);
+  useEffect(() => {
+    const before = prevPos.current;
+    const moved = prevMove.current !== state.moveSeq;
+    const wasPhase = prevPhase.current;
+    prevPos.current = Object.fromEntries(state.teamIds.map((id) => [id, state.teams[id].pos]));
+    prevMove.current = state.moveSeq;
+    prevPhase.current = state.phase;
+    if (!before) return;
+    const team = currentTeamId(state);
+    if (!team) return;
+    let next: WarpInfo | null = null;
+    const key = Date.now();
+    if (state.phase === "pipe_choose" && wasPhase !== "pipe_choose") {
+      next = { key, team, from: state.teams[team].pos, to: state.teams[team].pos, gold: true, mode: "enter" };
+    } else if (moved && state.ctx.teleport && before[team] !== undefined && before[team] !== state.teams[team].pos) {
+      const gold = state.ctx.moveItem === "goldenPipe";
+      next = { key, team, from: before[team], to: state.teams[team].pos, gold, mode: gold ? "exit" : "both" };
+    }
+    if (!next) return;
+    setFx(next);
+    const t = setTimeout(() => setFx((f) => (f && f.key === key ? null : f)), WARP_MS[next.mode]);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.moveSeq, state.lastSeq]);
+  return fx;
+}
+
+const PIPE_TOP = -26; // 칸 중심 기준 파이프 입구 높이
+const PIPE_BOTTOM = 30;
+
+function Pipe({ gold, delay, life }: { gold: boolean; delay: number; life: number }) {
+  // 그라데이션 대신 단색 + 하이라이트 (브라우저에 따라 그라데이션 참조가 빠지는 경우가 있어서)
+  const body = gold ? "#f5b81c" : "#22b14c";
+  const edge = gold ? "#8a5a00" : "#0f5a26";
+  const shade = gold ? "#c98a0c" : "#178a3a";
+  return (
+    <g className="animate-pipe" style={{ animationDelay: `${delay}ms`, animationDuration: `${life}ms` }}>
+      <rect x={-17} y={PIPE_TOP + 10} width={34} height={PIPE_BOTTOM - PIPE_TOP - 10} fill={body} stroke={edge} strokeWidth={2.5} />
+      <rect x={6} y={PIPE_TOP + 12} width={9} height={PIPE_BOTTOM - PIPE_TOP - 14} fill={shade} />
+      <rect x={-12} y={PIPE_TOP + 12} width={5} height={PIPE_BOTTOM - PIPE_TOP - 14} fill="#fff" opacity={0.35} />
+      <rect x={-23} y={PIPE_TOP} width={46} height={14} rx={3} fill={body} stroke={edge} strokeWidth={2.5} />
+      <rect x={9} y={PIPE_TOP + 2} width={12} height={10} rx={2} fill={shade} />
+      <rect x={-18} y={PIPE_TOP + 2.5} width={7} height={8} rx={2} fill="#fff" opacity={0.4} />
+      <ellipse cx={0} cy={PIPE_TOP + 1} rx={19} ry={4} fill="#06120a" opacity={0.85} />
+    </g>
+  );
+}
+
+function WarpToken({ team, anim, delay }: { team: TeamInfo | undefined; anim: string; delay: number }) {
+  const r = 17;
+  return (
+    // 파이프 입구 위쪽만 보이게 잘라서, 말이 입구 속으로 들어가고 나오는 것처럼 보이게 한다
+    <g clipPath="url(#pipeMouth)">
+      <g className={anim} style={{ animationDelay: `${delay}ms` }}>
+        <g transform={`translate(0,${PIPE_TOP - r + 2})`}>
+          <circle r={r} fill={team?.color ?? "#888"} stroke="#fff" strokeWidth={3} />
+          {team?.image_url ? (
+            <image
+              href={team.image_url}
+              x={-(r - 3)}
+              y={-(r - 3)}
+              width={(r - 3) * 2}
+              height={(r - 3) * 2}
+              clipPath={`url(#clip-${team.id}-${r})`}
+              preserveAspectRatio="xMidYMid slice"
+            />
+          ) : (
+            <text textAnchor="middle" dy={r * 0.3} fontSize={r * 0.8} fontWeight={800} fill="#fff">
+              {(team?.name ?? "?").slice(0, 1)}
+            </text>
+          )}
+        </g>
+      </g>
+    </g>
+  );
+}
+
+function WarpFx({ fx, team }: { fx: WarpInfo; team: TeamInfo | undefined }) {
+  const a = SPACE_BY_ID[fx.from] ?? (fx.from === 0 ? { x: T_POS.x, y: T_POS.y } : null);
+  const b = SPACE_BY_ID[fx.to];
+  // 나오기만 할 때는 바로 시작, 워프(들어갔다 나옴)는 들어가는 연출 뒤에
+  const exitAt = fx.mode === "exit" ? 0 : 1700;
+  return (
+    <g>
+      {fx.mode !== "exit" && a && (
+        // 출발: 파이프가 솟고(0~0.35초) 말이 쏙 들어감(0.45~0.95초), 파이프가 들어감
+        // 감싸는 g에 그림자 필터를 걸면 파이프가 0 크기일 때 검은 사각형이 생겨서 필터를 쓰지 않는다
+        <g transform={`translate(${a.x},${a.y})`}>
+          <Pipe gold={fx.gold} delay={0} life={1900} />
+          <WarpToken team={team} anim="animate-warp-sink" delay={700} />
+        </g>
+      )}
+      {fx.mode !== "enter" && b && (
+        // 도착: 파이프가 솟고 말이 쏙 올라옴, 파이프가 들어감
+        <g transform={`translate(${b.x},${b.y})`}>
+          <Pipe gold={fx.gold} delay={exitAt} life={2000} />
+          <WarpToken team={team} anim="animate-warp-rise" delay={exitAt + 650} />
+        </g>
+      )}
     </g>
   );
 }

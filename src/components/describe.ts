@@ -47,7 +47,7 @@ export function verseCard(s: GameState, space: number, verses: VerseMap): VerseC
         .map((v) => `${v} ${verseText(verses, v)}`)
         .join("\n");
   }
-  const typeLabel = sp.type === "red" && s.ctx.shieldOn === space ? "어려운 칸 (방패: 빈칸 채우기)" : SPACE_LABEL[sp.type];
+  const typeLabel = SPACE_LABEL[sp.type];
   return { ref, space, typeLabel, type: sp.type, modeLabel, prompt, fullText };
 }
 
@@ -61,11 +61,12 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
       return "게임 준비 중";
     case "pre_roll":
       if (ctx.rollMode === "triple") return `${name} 팀, 주사위 3개를 굴려 주세요`;
-      if (ctx.rollMode === "low") return `${name} 팀, 선택 다이스(낮음)를 굴려 주세요`;
-      if (ctx.rollMode === "high") return `${name} 팀, 선택 다이스(높음)를 굴려 주세요`;
+      if (ctx.rollMode === "fixed") return `${name} 팀, 선택 다이스 ${ctx.fixedFace}! 나머지 주사위를 굴려 주세요`;
       return `${name} 팀, 주사위를 굴려 주세요`;
     case "choose_path":
       return `${name} 팀, 갈림길! 어느 길로 갈까요?`;
+    case "pipe_choose":
+      return `${name} 팀, 황금 파이프! 어느 칸으로 나갈까요?`;
     case "shop_offer":
       return `${name} 팀, 상점! 아이템을 살까요?`;
     case "star_offer": {
