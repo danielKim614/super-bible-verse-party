@@ -306,7 +306,7 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
           if (!team.recited.includes(space)) team.recited.push(space);
           buyStar(s, tid, seq, { seed });
         } else {
-          feed(s, { seq, teamId: tid, kind: "fail", text: `${space}절 암송 실패 — 스타 구매 불가` });
+          feed(s, { seq, teamId: tid, kind: "fail", text: `${space}절 암송 실패, 스타 구매 불가` });
           ctx.couponUsed = false;
         }
         ctx.starAt = undefined;

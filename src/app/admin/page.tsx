@@ -212,7 +212,7 @@ function ControlTab({ game, admin, goSettings }: { game: GameData; admin: Admin;
         </div>
 
         {state.paused ? (
-          <div className="rounded-2xl bg-slate-200 p-6 text-center font-display text-2xl">일시정지 중 — 상단의 재개를 누르세요</div>
+          <div className="rounded-2xl bg-slate-200 p-6 text-center font-display text-2xl">일시정지 중. 상단의 재개를 누르세요</div>
         ) : (
           <PhaseControls game={game} admin={admin} />
         )}
@@ -357,7 +357,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
             </div>
             <div className="text-slate-600 mt-1">암송 방식: <b>{card.modeLabel}</b></div>
             <pre className="mt-2 whitespace-pre-wrap font-sans text-lg leading-relaxed bg-slate-50 rounded-xl p-3">
-              {card.fullText || "(본문 미입력 — “본문” 탭에서 새번역 본문을 넣어 주세요)"}
+              {card.fullText || "(본문 미입력: “본문” 탭에서 새번역 본문을 넣어 주세요)"}
             </pre>
           </div>
           {itemButtons}
@@ -462,7 +462,7 @@ function CeremonyControl({ game, admin }: { game: GameData; admin: Admin }) {
       <h2 className="font-display text-3xl">🏆 시상식 진행</h2>
       {c.step === 0 && (
         <div className="rounded-2xl bg-amber-50 border-2 border-amber-300 p-3">
-          <div className="text-xs font-bold text-amber-800">💰 MC 실물 달란트 안내 — 남은 아이템 환급</div>
+          <div className="text-xs font-bold text-amber-800">💰 MC 실물 달란트 안내: 남은 아이템 환급</div>
           {refunds.length === 0 && <div>환급 없음</div>}
           {refunds.map(([id, v]) => (
             <div key={id} className="font-display text-xl">

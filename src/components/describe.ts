@@ -61,27 +61,27 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
     case "setup":
       return "게임 준비 중";
     case "pre_roll":
-      if (ctx.rollMode === "double") return `${name} — 주사위 2개를 굴려 주세요`;
-      if (ctx.rollMode === "low") return `${name} — 선택 다이스(낮음 1~3)를 굴려 주세요`;
-      if (ctx.rollMode === "high") return `${name} — 선택 다이스(높음 4~6)를 굴려 주세요`;
-      return `${name} — 주사위를 굴려 주세요`;
+      if (ctx.rollMode === "double") return `${name} 팀, 주사위 2개를 굴려 주세요`;
+      if (ctx.rollMode === "low") return `${name} 팀, 선택 다이스(낮음 1~3)를 굴려 주세요`;
+      if (ctx.rollMode === "high") return `${name} 팀, 선택 다이스(높음 4~6)를 굴려 주세요`;
+      return `${name} 팀, 주사위를 굴려 주세요`;
     case "choose_path":
-      return `${name} — 갈림길! 어느 길로?`;
+      return `${name} 팀, 갈림길! 어느 길로 갈까요?`;
     case "shop_offer":
-      return `${name} — 🏪 상점! 아이템을 살까요?`;
+      return `${name} 팀, 🏪 상점! 아이템을 살까요?`;
     case "star_offer": {
       const team = tid ? s.teams[tid] : undefined;
       const coupon = team?.items.includes("starCoupon");
       const price = starPriceFor(s, false);
-      return `${name} — ⭐ 스타를 살까요? (${price}달란트${coupon ? `, 할인권 ${starPriceFor(s, true)}` : ""})`;
+      return `${name} 팀, ⭐ 스타를 살까요? (${price}달란트${coupon ? `, 할인권 ${starPriceFor(s, true)}` : ""})`;
     }
     case "star_recite":
-      return `${name} — 스타를 사려면 8:${ctx.starAt}절을 암송하세요`;
+      return `${name} 팀, 스타를 사려면 8:${ctx.starAt}절을 암송하세요`;
     case "recite":
-      return `${name} — 8:${ctx.landed}절 암송!`;
+      return `${name} 팀, 8:${ctx.landed}절 암송!`;
     case "resolve":
-      if (ctx.reciteResult) return `${name} — 암송 성공!`;
-      return `${name} — 아쉽지만 실패`;
+      if (ctx.reciteResult) return `${name} 팀 암송 성공!`;
+      return `${name} 팀, 아쉽지만 실패`;
     case "ended":
       return "게임 종료! 시상식";
   }
