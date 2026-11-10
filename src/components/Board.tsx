@@ -16,7 +16,7 @@ const TYPE_FILL: Record<string, [string, string]> = {
   bless: ["#f472b6", "#be185d"],
 };
 
-const ROUTE_IDS: RouteId[] = ["c0", "a1", "a2", "c1", "b1", "b2", "c2", "d1", "d2", "c3"];
+const ROUTE_IDS: RouteId[] = ["a1", "a2", "c1", "b1", "b2", "c2", "d1", "d2", "c3"];
 const HARD_ROUTES: RouteId[] = ["a2", "b2"];
 
 /** 칸 위 아이콘 (자체 SVG). 원점이 아이콘 중심 */
@@ -527,7 +527,7 @@ export function Board({
         const gap = r * 2 + 3;
         return ids.map((id, i) => {
           const x = base.x + (i - (n - 1) / 2) * (n === 1 ? 0 : gap);
-          const y = atStart ? base.y - 66 : base.y + 22 + r;
+          const y = atStart ? base.y + 34 + r + 4 : base.y + 22 + r;
           const t = teamById[id];
           const isCur = id === cur && state.phase !== "ended";
           const isMine = highlightTeam === id;

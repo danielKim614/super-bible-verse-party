@@ -84,7 +84,8 @@ const EVENT_MODES: EventMode[] = ["relay", "threeVerses"];
 // ---- 좌표 (viewBox 1000 x 640) ----
 export const BOARD_W = 1000;
 export const BOARD_H = 640;
-export const T_POS = { x: 110, y: 120 };
+/** 출발 표시(START) 위치: 길 위가 아니라 1절 옆에 따로 둔다. 39 → 1은 길이 바로 이어짐 */
+export const T_POS = { x: 62, y: 70 };
 
 type Pt = { x: number; y: number };
 type Cubic = [Pt, Pt, Pt, Pt];
@@ -150,32 +151,32 @@ const F1 = { x: 300, y: 105 }; // 2 다음
 const M1 = { x: 640, y: 150 }; // 11 앞
 const F2 = { x: 920, y: 330 }; // 15 다음
 const M2 = { x: 430, y: 530 }; // 28 앞 (상점)
-const F3 = { x: 210, y: 500 }; // 30 다음
-const M4 = { x: 140, y: 265 }; // 39 앞 (왼쪽길·안쪽길 합류)
+const F3 = { x: 230, y: 545 }; // 30 다음
+const M4 = { x: 150, y: 245 }; // 39 앞 (왼쪽길·안쪽길 합류)
 
 // 각 길의 곡선 (시작점·끝점은 분기/합류 지점 또는 T)
 const ROUTE_CURVES: Record<RouteId, Cubic[]> = {
-  c0: [[T_POS, { x: 180, y: 70 }, { x: 260, y: 70 }, F1]],
+  c0: [], // 39~1~2는 c3 곡선 하나에 함께 배치 (아래 LOOP_CURVE)
   a1: [[F1, { x: 400, y: 20 }, { x: 560, y: 30 }, M1]], // 윗길: 위로 활
   a2: [[F1, { x: 420, y: 215 }, { x: 560, y: 225 }, M1]], // 아랫길: 아래로 처진 활
   c1: [[M1, { x: 790, y: 100 }, { x: 930, y: 180 }, F2]],
   b1: [[F2, { x: 960, y: 560 }, { x: 700, y: 650 }, M2]], // 바깥길: 오른쪽 아래를 크게 돎
   b2: [[F2, { x: 780, y: 400 }, { x: 560, y: 380 }, M2]], // 지름길: 안쪽으로 질러감
   c2: [[M2, { x: 340, y: 560 }, { x: 270, y: 560 }, F3]],
-  d1: [[F3, { x: 55, y: 480 }, { x: 45, y: 300 }, M4]], // 왼쪽길: 가장자리
-  d2: [[F3, { x: 255, y: 420 }, { x: 235, y: 310 }, M4]], // 안쪽길
-  c3: [[M4, { x: 132, y: 215 }, { x: 118, y: 170 }, T_POS]], // 39 → 출발
+  d1: [[F3, { x: 30, y: 575 }, { x: 15, y: 300 }, M4]], // 왼쪽길: 가장자리로 크게
+  d2: [[F3, { x: 335, y: 470 }, { x: 335, y: 290 }, M4]], // 안쪽길: 보드 안쪽으로 불룩하게
+  c3: [[M4, { x: 105, y: 165 }, { x: 165, y: 72 }, F1]], // 39 → 1 → 2 (끊김 없이 이어짐)
 };
 
-const PAD_T = 64; // 출발점 주변
 const PAD_J = 34; // 분기/합류 지점 주변
-const PAD_FORK_OUT = 58; // 갈림길에서 갈라진 두 길의 첫 칸끼리 겹치지 않도록
+const PAD_FORK_OUT = 70; // 갈림길에서 갈라진 두 길의 첫 칸끼리 겹치지 않도록
 const PAD_MERGE = 66; // 합류 칸 앞 칸과의 간격 (합류 칸은 만나는 지점 바로 위에 놓임)
 /** 두 길이 만나는 지점에서 시작하는 길: 첫 칸을 합류 지점에 정확히 둔다 */
-const MERGE_ROUTES: RouteId[] = ["c1", "c2", "c3"];
+const MERGE_ROUTES: RouteId[] = ["c1", "c2"];
 const MERGE_TARGETS = new Set([11, 28, 39]);
 
 function toD(curves: Cubic[]): string {
+  if (curves.length === 0) return "";
   const [first] = curves;
   let d = `M ${first[0].x} ${first[0].y}`;
   for (const [, c1, c2, p3] of curves) d += ` C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${p3.x} ${p3.y}`;
@@ -196,11 +197,18 @@ function buildSpaces(): Space[] {
   for (const r of ROUTES) {
     const [a, b] = r.verses;
     const n = b - a + 1;
-    const startPad = r.id === "c0" ? PAD_T : MERGE_ROUTES.includes(r.id) ? 0 : r.id === "b2" ? 64 : PAD_FORK_OUT;
-    const endPad = r.next === 0 ? PAD_T : MERGE_TARGETS.has(r.next) ? PAD_MERGE : PAD_J;
+    if (r.id === "c0" || r.id === "c3") continue;
+    // 갈림길 칸(다음이 -1)은 갈라지는 지점에, 합류 칸은 만나는 지점에 정확히 놓는다
+    const startPad = MERGE_ROUTES.includes(r.id) ? 0 : PAD_FORK_OUT;
+    const endPad = r.next === -1 ? 0 : MERGE_TARGETS.has(r.next) ? PAD_MERGE : PAD_J;
     const pts = along(ROUTE_CURVES[r.id], n, startPad, endPad);
     for (let v = a; v <= b; v++) coords[v] = pts[v - a];
   }
+  // 39(합류) → 1 → 2(갈림길): 한 곡선 위에 균등 배치
+  const loop = along(ROUTE_CURVES.c3, 3, 0, 0);
+  coords[39] = loop[0];
+  coords[1] = loop[1];
+  coords[2] = loop[2];
   let red = 0;
   let ev = 0;
   const spaces: Space[] = [];
