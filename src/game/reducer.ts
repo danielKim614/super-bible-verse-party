@@ -1,4 +1,4 @@
-import { FORKS, SHOP_AT, SPACE_BY_ID, SPACES, T, forwardDistances, nextSpace, type SpaceType } from "./board";
+import { FORKS, SHOP_AT, SPACE_BY_ID, SPACES, T, forwardDistances, nextSpace, type RedMode, type SpaceType } from "./board";
 import { ITEMS, RANDOM_ITEM_POOL, type ItemId } from "./items";
 import { pick, rng } from "./rng";
 import {
@@ -68,11 +68,16 @@ export function lastPlaceTeam(s: GameState): string | undefined {
   return rows[rows.length - 1]?.id;
 }
 
-/** 칸의 실제 암송 규칙 (방패 적용 시 빨간 칸 → 파란 칸) */
+/** 칸의 실제 보상 종류. 방패는 보상 종류를 바꾸지 않고 암송 방식만 바꾼다(effectiveRedMode). */
 export function effectiveType(s: GameState, space: number): SpaceType {
-  const t = SPACE_BY_ID[space]?.type ?? "blue";
-  if (t === "red" && s.ctx.shieldOn === space) return "blue";
-  return t;
+  return SPACE_BY_ID[space]?.type ?? "blue";
+}
+
+/** 어려운 칸의 실제 암송 방식: 방패를 쓰면 가장 쉬운 '빈칸 채우기'로 */
+export function effectiveRedMode(s: GameState, space: number): RedMode | undefined {
+  const sp = SPACE_BY_ID[space];
+  if (sp?.type !== "red") return undefined;
+  return s.ctx.shieldOn === space ? "blank" : sp.redMode;
 }
 
 export function starPriceFor(s: GameState, coupon: boolean): number {
@@ -122,7 +127,7 @@ export function usableItems(s: GameState): ItemId[] {
     }
     if (def.kind === "recite" && (s.phase === "recite" || s.phase === "star_recite") && !s.ctx.reciteItem) {
       const space = s.phase === "recite" ? s.ctx.landed! : s.ctx.starAt!;
-      if (item === "shield" && SPACE_BY_ID[space]?.type !== "red") continue;
+      if (item === "shield" && (SPACE_BY_ID[space]?.type !== "red" || SPACE_BY_ID[space]?.redMode === "blank")) continue;
       if (item === "doubleTalent" && s.phase !== "recite") continue;
       out.add(item);
     }

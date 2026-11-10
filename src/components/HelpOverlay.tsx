@@ -140,7 +140,7 @@ function SectionTitle({ title, note }: { title: string; note: string }) {
 }
 
 /** 달란트 금액 뱃지: 코인 아이콘 + 숫자 */
-function Talent({ n, plus }: { n: number; plus?: boolean }) {
+export function Talent({ n, plus }: { n: number; plus?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-300/15 text-amber-200 font-display px-2 py-0.5 text-sm leading-none">
       <TalentCoin size={12} />

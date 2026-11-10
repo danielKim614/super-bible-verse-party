@@ -8,6 +8,7 @@ import type { GameState, TeamInfo } from "@/game/types";
 import type { VerseMap } from "@/game/verses";
 import { phaseHeadline, verseCard } from "./describe";
 import { DieBadge } from "./DieBadge";
+import { Talent } from "./HelpOverlay";
 import { TeamAvatar } from "./TeamAvatar";
 
 const TYPE_BG: Record<string, string> = {
@@ -56,10 +57,12 @@ export function ActionCard({
       </div>
 
       {state.phase === "shop_offer" && tid && (
-        <div className={`mt-3 flex flex-wrap gap-2 ${big ? "text-lg" : "text-sm"}`}>
+        <div className={`mt-3 grid gap-2 ${big ? "grid-cols-4 text-lg" : "grid-cols-2 text-sm"}`}>
           {Object.values(ITEMS).map((d) => (
-            <span key={d.id} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 pl-1.5 pr-3 py-1">
-              <ItemIcon id={d.id} size={22} /> {d.name} <b className="text-amber-300">{d.price} 달란트</b>
+            <span key={d.id} className="flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/15 pl-1.5 pr-2 py-1 min-w-0">
+              <ItemIcon id={d.id} size={big ? 26 : 22} />
+              <span className="truncate flex-1">{d.name}</span>
+              <Talent n={d.price} />
             </span>
           ))}
         </div>

@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   couponStarPrice: 10,
   starCount: 2,
   finalBoostTurns: 3,
-  rewards: { blue: 3, red: 6, event: 8, item: 3, happening: 3, bless: 3 },
+  rewards: { blue: 3, red: 5, event: 8, item: 3, happening: 3, bless: 3 },
   inventoryLimit: 3,
   itemRefund: 1,
   bonusStars: { recite: true, talent: true, challenge: true },

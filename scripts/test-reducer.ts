@@ -2,7 +2,7 @@
 // 보드: 1~3 → 갈림(3) → 4~7 / 8~11 → 12~16 → 갈림(16) → 17~23 / 24~28 → 🏪 → 29~30 → 갈림(30) → 31~35 / 36~39 → 출발
 import assert from "node:assert/strict";
 import { SPACE_BY_ID } from "../src/game/board";
-import { applyEvent, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
+import { applyEvent, effectiveRedMode, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
 import { DEFAULT_SETTINGS, type GameEvent, type GameEventBody, type GameState } from "../src/game/types";
 
 let seq = 0;
@@ -133,16 +133,19 @@ log[log.length - 1].voided = true;
 assert.equal(replay(log).teams.A.pos, 14);
 log[log.length - 1].voided = false;
 
-// 방패: A 8에서 1칸 → 9(빨간 칸) → 방패 → 파란 칸 보상
+// 방패: A 8에서 1칸 → 9(빨간 칸, 첫 단어) → 방패 → 빈칸 채우기 방식, 보상은 빨간 칸 그대로
 s = ev(s, { type: "override", payload: { action: "addItem", teamId: "A", item: "shield" } });
 s = ev(s, { type: "roll", payload: { value: 1 } });
 assert.equal(s.teams.A.pos, 9);
 s = ev(s, { type: "use_item", payload: { item: "shield" } });
 assert.equal(s.teams.A.items.includes("shield"), false);
+assert.equal(effectiveRedMode(s, 9), "blank");
 const beforeShield = s.teams.A.talents;
+const challengeBefore = s.teams.A.challengeSuccess;
 const mult = isBoost(s) ? 2 : 1;
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 7 } });
-assert.equal(s.teams.A.talents, beforeShield + 3 * mult);
+assert.equal(s.teams.A.talents, beforeShield + s.settings.rewards.red * mult);
+assert.equal(s.teams.A.challengeSuccess, challengeBefore + 1);
 s = ev(s, { type: "end_turn", payload: {} });
 
 // 출발점 통과: B 39에서 2칸 → 1, 2 (바퀴 +1, 상점 없음)

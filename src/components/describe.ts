@@ -1,5 +1,5 @@
 import { EVENT_MODE_LABEL, RED_MODE_LABEL, SPACE_BY_ID, SPACE_LABEL } from "@/game/board";
-import { currentTeamId, effectiveType, starPriceFor } from "@/game/reducer";
+import { currentTeamId, effectiveRedMode, effectiveType, starPriceFor } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 import { blanked, firstWord, verseText, type VerseMap } from "@/game/verses";
 
@@ -28,10 +28,11 @@ export function verseCard(s: GameState, space: number, verses: VerseMap): VerseC
   let modeLabel = "장절을 보고 그대로 암송";
   let prompt: string | null = null;
   let ref = `로마서 8:${space}`;
-  if (eff === "red" && sp.redMode) {
-    modeLabel = RED_MODE_LABEL[sp.redMode];
-    if (sp.redMode === "blank") prompt = blanked(verses, space) || null;
-    if (sp.redMode === "firstWord") prompt = firstWord(verses, space) ? `${firstWord(verses, space)} …` : null;
+  const redMode = effectiveRedMode(s, space);
+  if (eff === "red" && redMode) {
+    modeLabel = RED_MODE_LABEL[redMode];
+    if (redMode === "blank") prompt = blanked(verses, space) || null;
+    if (redMode === "firstWord") prompt = firstWord(verses, space) ? `${firstWord(verses, space)} …` : null;
   }
   if (eff === "event" && sp.eventMode) {
     modeLabel = EVENT_MODE_LABEL[sp.eventMode];
@@ -48,7 +49,7 @@ export function verseCard(s: GameState, space: number, verses: VerseMap): VerseC
       .map((v) => `${v} ${verseText(verses, v)}`)
       .join("\n");
   }
-  const typeLabel = sp.type === "red" && eff === "blue" ? "어려운 칸 (방패 → 일반 칸 규칙)" : SPACE_LABEL[sp.type];
+  const typeLabel = sp.type === "red" && s.ctx.shieldOn === space ? "어려운 칸 (방패: 빈칸 채우기)" : SPACE_LABEL[sp.type];
   return { ref, space, typeLabel, type: sp.type, modeLabel, prompt, fullText };
 }
 
@@ -68,12 +69,12 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
     case "choose_path":
       return `${name} 팀, 갈림길! 어느 길로 갈까요?`;
     case "shop_offer":
-      return `${name} 팀, 🏪 상점! 아이템을 살까요?`;
+      return `${name} 팀, 상점! 아이템을 살까요?`;
     case "star_offer": {
       const team = tid ? s.teams[tid] : undefined;
       const coupon = team?.items.includes("starCoupon");
       const price = starPriceFor(s, false);
-      return `${name} 팀, ⭐ 스타를 살까요? (${price}달란트${coupon ? `, 할인권 ${starPriceFor(s, true)}` : ""})`;
+      return `${name} 팀, 스타를 살까요? (${price}달란트${coupon ? `, 할인권 ${starPriceFor(s, true)}` : ""})`;
     }
     case "star_recite":
       return `${name} 팀, 스타를 사려면 8:${ctx.starAt}절을 암송하세요`;
