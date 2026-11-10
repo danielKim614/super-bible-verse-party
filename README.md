@@ -1,5 +1,7 @@
 # ⭐ 2026 더드림 성경 암송 파티 (Super Bible Verse Party)
 
+[![CI](https://github.com/danielKim614/super-bible-verse-party/actions/workflows/ci.yml/badge.svg)](https://github.com/danielKim614/super-bible-verse-party/actions/workflows/ci.yml)
+
 **교회 성경 암송 대회를 위한 마리오 파티 컨셉의 웹 앱**입니다.
 
 마리오 파티의 보드게임 진행 방식(주사위 → 이동 → 칸 이벤트 → 코인으로 스타 구매)을 그대로 오마주하되,
@@ -142,6 +144,15 @@ scripts/test-reducer.ts  규칙 시나리오 테스트 (npm run test:reducer)
 게임 상태는 DB에 직접 저장하지 않고, `events` 테이블의 입력 기록을 모든 화면이 같은 리듀서로 재생해서 계산합니다.
 그래서 되돌리기가 안전하고, 어느 화면에서 새로고침해도 같은 상태가 나옵니다.
 
+## 개발 확인
+
+```bash
+npm run check   # lint(경고 0) + 타입 검사 + 규칙 테스트
+npm run build
+```
+
+GitHub에 푸시하거나 PR을 열면 GitHub Actions([`.github/workflows/ci.yml`](.github/workflows/ci.yml))가 같은 검사와 빌드를 돌립니다.
+
 ## 배포
 
-Vercel에 저장소를 연결하고 환경변수(`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)만 넣으면 됩니다.
+Vercel + Supabase 배포 순서, 행사 전 점검, 무료 플랜 주의점은 [docs/DEPLOY.md](docs/DEPLOY.md)에 정리되어 있습니다.
