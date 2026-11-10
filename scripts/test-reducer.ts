@@ -1,5 +1,5 @@
 // 리듀서 시나리오 테스트: npm run test:reducer
-// 보드: 1~3 → 갈림(3) → 4~7 / 8~11 → 12~16 → 갈림(16) → 17~23 / 24~28 → 🏪 → 29~30 → 갈림(30) → 31~35 / 36~39 → 출발
+// 보드: 1~2 → 갈림(2) → 3~6 / 7~10 → 11~15 → 갈림(15) → 16~22 / 23~27 → 🏪 → 28~30 → 갈림(30) → 31~35 / 36~39 → 출발 (출발점은 칸이 아님)
 import assert from "node:assert/strict";
 import { SPACE_BY_ID } from "../src/game/board";
 import { applyEvent, effectiveRedMode, placeStar, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
@@ -27,20 +27,20 @@ for (const t of teams) assert.equal(s.teams[t].talents, 10);
 // 스타를 경로 밖에 고정
 s = ev(s, { type: "override", payload: { action: "starPositions", stars: [22, 38] } });
 
-// A팀: 3칸 → 3절(빨간 칸, 갈림길 칸) 도착 → 성공 +5
-s = ev(s, { type: "roll", payload: { value: 3 } });
-assert.equal(s.teams.A.pos, 3);
+// A팀: 출발에서 2칸 → 1, 2절(갈림길 칸에 정확히 도착하면 그냥 암송) → 성공
+s = ev(s, { type: "roll", payload: { value: 2 } });
+assert.equal(s.teams.A.pos, 2);
 assert.equal(s.phase, "recite");
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 1 } });
-assert.equal(s.teams.A.talents, 10 + s.settings.rewards.red);
-assert.equal(s.teams.A.challengeSuccess, 1);
+assert.equal(s.teams.A.talents, 10 + s.settings.rewards.blue);
+assert.equal(s.teams.A.challengeSuccess, 0);
 s = ev(s, { type: "end_turn", payload: {} });
 
-// B팀: 14에서 4칸 → 16(갈림) → 지름길 → 24, 25 도착(아이템 칸) → 실패
+// B팀: 14에서 4칸 → 15(갈림) → 지름길 → 23, 24, 25 도착(아이템 칸) → 실패
 s = ev(s, { type: "override", payload: { action: "position", teamId: "B", pos: 14 } });
 s = ev(s, { type: "roll", payload: { value: 4 } });
 assert.equal(s.phase, "choose_path");
-assert.equal(s.teams.B.pos, 16);
+assert.equal(s.teams.B.pos, 15);
 s = ev(s, { type: "choose_path", payload: { option: 1 } });
 assert.equal(s.teams.B.pos, 25);
 assert.equal(s.phase, "recite");
@@ -52,7 +52,7 @@ s = ev(s, { type: "end_turn", payload: {} });
 // C팀: 스타 지나가기 → 구매 → 암송 성공 → 상점 통과 → 계속 이동
 s = ev(s, { type: "override", payload: { action: "talents", teamId: "C", delta: 20 } });
 s = ev(s, { type: "override", payload: { action: "position", teamId: "C", pos: 20 } });
-s = ev(s, { type: "roll", payload: { value: 5 } }); // 21, 22(★), 23, 🏪, 29, 30
+s = ev(s, { type: "roll", payload: { value: 5 } }); // 21, 22(★), 🏪, 28, 29, 30
 assert.equal(s.phase, "star_offer");
 assert.equal(s.ctx.starAt, 22);
 s = ev(s, { type: "star_decision", payload: { buy: true } });
@@ -62,21 +62,21 @@ assert.equal(s.teams.C.stars, 1);
 assert.equal(s.teams.C.talents, 10);
 assert.ok(!s.stars.includes(22));
 assert.equal(s.stars.length, 2);
-assert.equal(s.phase, "shop_offer"); // 23 다음 상점
-assert.equal(s.teams.C.pos, 23);
+assert.equal(s.phase, "shop_offer"); // 22 다음 상점
+assert.equal(s.teams.C.pos, 22);
 s = ev(s, { type: "shop_leave", payload: {} });
-assert.equal(s.teams.C.pos, 30); // 29, 30 → 30 도착
+assert.equal(s.teams.C.pos, 30); // 28, 29, 30 → 30 도착
 assert.equal(s.phase, "recite");
 const cBefore = s.teams.C.talents;
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 4 } });
 assert.equal(s.teams.C.talents, cBefore + reward(30, s));
 s = ev(s, { type: "end_turn", payload: {} });
 
-// D팀: 출발 → 3(갈림) → 윗길 → 7절(아이템 칸) 도착 → 아이템 획득
-s = ev(s, { type: "override", payload: { action: "position", teamId: "D", pos: 2 } });
-s = ev(s, { type: "roll", payload: { value: 5 } }); // 3(갈림),4,5,6,7
+// D팀: 1 → 2(갈림) → 아랫길 → 7절(아이템 칸) 도착 → 아이템 획득
+s = ev(s, { type: "override", payload: { action: "position", teamId: "D", pos: 1 } });
+s = ev(s, { type: "roll", payload: { value: 2 } }); // 2(갈림), 7
 assert.equal(s.phase, "choose_path");
-s = ev(s, { type: "choose_path", payload: { option: 0 } });
+s = ev(s, { type: "choose_path", payload: { option: 1 } });
 assert.equal(s.teams.D.pos, 7);
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 5 } });
 assert.equal(s.teams.D.items.length, 1);
@@ -84,11 +84,11 @@ s = ev(s, { type: "end_turn", payload: {} });
 s = ev(s, { type: "end_turn", payload: {} }); // resolve가 아니면 무시
 assert.equal(s.teamIndex, 4);
 
-// E팀: 상점(28→29 사이) 통과 → 구매 → 돈 부족 무시 → 나가기 → 30 도착
-s = ev(s, { type: "override", payload: { action: "position", teamId: "E", pos: 28 } });
-s = ev(s, { type: "roll", payload: { value: 2 } });
+// E팀: 상점(27→28 사이) 통과 → 구매 → 돈 부족 무시 → 나가기 → 30 도착
+s = ev(s, { type: "override", payload: { action: "position", teamId: "E", pos: 27 } });
+s = ev(s, { type: "roll", payload: { value: 3 } });
 assert.equal(s.phase, "shop_offer");
-assert.equal(s.teams.E.pos, 28);
+assert.equal(s.teams.E.pos, 27);
 s = ev(s, { type: "shop_buy", payload: { item: "shield" } });
 assert.equal(s.teams.E.items[0], "shield");
 assert.equal(s.teams.E.talents, 10 - ITEMS.shield.price);
