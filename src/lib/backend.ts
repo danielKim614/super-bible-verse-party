@@ -141,11 +141,19 @@ class SupabaseBackend implements Backend {
       .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `game_id=eq.${GAME_ID}` }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "verses", filter: `game_id=eq.${GAME_ID}` }, onChange)
       .subscribe((status) => {
-        if (status === "SUBSCRIBED") onChange();
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.warn("realtime:", status);
+        live = status === "SUBSCRIBED";
+        if (live) onChange();
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.warn("realtime:", status);
       });
-    // 실시간이 끊기거나 폰이 절전에서 깨어나도 따라잡도록: 주기 폴링 + 화면 복귀 시 새로고침
-    const iv = setInterval(onChange, 4000);
+    // 실시간이 끊기거나 폰이 절전에서 깨어나도 따라잡도록: 주기 폴링 + 화면 복귀 시 새로고침.
+    // 실시간이 연결돼 있으면 안전망으로 10초마다, 끊겨 있으면 4초마다 확인한다.
+    let live = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      onChange();
+      timer = setTimeout(tick, live ? 10000 : 4000);
+    };
+    timer = setTimeout(tick, 4000);
     const onVisible = () => {
       if (document.visibilityState === "visible") onChange();
     };
@@ -153,7 +161,7 @@ class SupabaseBackend implements Backend {
     window.addEventListener("focus", onChange);
     window.addEventListener("online", onChange);
     return () => {
-      clearInterval(iv);
+      clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onChange);
       window.removeEventListener("online", onChange);

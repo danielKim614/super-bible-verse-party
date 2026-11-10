@@ -1,8 +1,8 @@
 "use client";
 
 import { splitSum } from "./DieBadge";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId } from "@/game/board";
+import { useEffect, useMemo, useRef, useState, memo } from "react";
+import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId, type SpaceType } from "@/game/board";
 import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
@@ -325,21 +325,10 @@ export function Board({
   const roadW = compact ? 30 : 36;
 
   return (
-    <svg viewBox={`0 0 ${BOARD_W} ${BOARD_H}`} className="w-full h-full select-none" role="img" aria-label="로마서 8장 보드">
+    <div className="relative w-full h-full">
+    <BoardBackdrop roadW={roadW} />
+    <svg viewBox={`0 0 ${BOARD_W} ${BOARD_H}`} className="relative block w-full h-full select-none" role="img" aria-label="로마서 8장 보드">
       <defs>
-        <radialGradient id="night" cx="50%" cy="35%" r="80%">
-          <stop offset="0%" stopColor="#2b3a8f" />
-          <stop offset="60%" stopColor="#141b4d" />
-          <stop offset="100%" stopColor="#0a0f2e" />
-        </radialGradient>
-        <radialGradient id="aurora1" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#6d5dfc" stopOpacity={0.55} />
-          <stop offset="100%" stopColor="#6d5dfc" stopOpacity={0} />
-        </radialGradient>
-        <radialGradient id="aurora2" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#1fd1c8" stopOpacity={0.4} />
-          <stop offset="100%" stopColor="#1fd1c8" stopOpacity={0} />
-        </radialGradient>
         <radialGradient id="glow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#fff2a8" stopOpacity={0.9} />
           <stop offset="100%" stopColor="#ffd84d" stopOpacity={0} />
@@ -353,12 +342,6 @@ export function Board({
           <stop offset="0%" stopColor="#3b4a86" />
           <stop offset="100%" stopColor="#26315f" />
         </linearGradient>
-        <filter id="milky" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
-          <feGaussianBlur stdDeviation="5" />
-        </filter>
-        <filter id="milkyWide" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
-          <feGaussianBlur stdDeviation="14" />
-        </filter>
         <filter id="soft" x="-30%" y="-30%" width="160%" height="180%">
           <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.45" />
         </filter>
@@ -369,6 +352,21 @@ export function Board({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        {(Object.keys(TYPE_FILL) as SpaceType[]).map((t) => (
+          <radialGradient key={t} id={`planet-${t}`} cx="34%" cy="28%" r="80%">
+            <stop offset="0%" stopColor="#fff" stopOpacity={0.95} />
+            <stop offset="18%" stopColor={TYPE_FILL[t][0]} />
+            <stop offset="62%" stopColor={TYPE_FILL[t][0]} />
+            <stop offset="100%" stopColor={TYPE_FILL[t][1]} />
+          </radialGradient>
+        ))}
+        <radialGradient id="planetShade" cx="30%" cy="26%" r="85%">
+          <stop offset="55%" stopColor="#000" stopOpacity={0} />
+          <stop offset="100%" stopColor="#060a2a" stopOpacity={0.55} />
+        </radialGradient>
+        <clipPath id="planetClip">
+          <circle r={PLANET_R} />
+        </clipPath>
         {state.teamIds.flatMap((id) =>
           [21, 17, 14].map((r) => (
             <clipPath id={`clip-${id}-${r}`} key={`${id}-${r}`}>
@@ -378,29 +376,24 @@ export function Board({
         )}
       </defs>
 
-      {/* 배경 */}
-      <rect width={BOARD_W} height={BOARD_H} rx={36} fill="url(#night)" />
-      <ellipse cx={760} cy={120} rx={360} ry={200} fill="url(#aurora1)" />
-      <ellipse cx={240} cy={520} rx={330} ry={190} fill="url(#aurora2)" />
+      {/* 반짝이는 별 (배경·은하수 띠는 BoardBackdrop의 정지 레이어) */}
       {sparkles.map((sp, i) => (
         <circle key={i} cx={sp.x} cy={sp.y} r={sp.r} fill="#fff" opacity={0.7} className="animate-twinkle" style={{ animationDelay: `${sp.d}s` }} />
       ))}
 
-      {/* 길: 은하수. 은은한 빛의 띠 위로 별가루가 진행 방향으로 흐른다 (어려운 길은 주황빛) */}
+      {/* 길 위를 흐르는 별가루 (어려운 길은 주황빛). 폰(compact)에서는 한 겹만 */}
       {ROUTE_IDS.map((rid) => {
-        const hard = HARD_ROUTES.includes(rid);
-        const haze = hard ? "#ffb877" : "#9db4ff";
-        const core = hard ? "#ffe3c2" : "#e6edff";
-        const dust = hard ? "#ffd9a8" : "#ffffff";
+        const dust = HARD_ROUTES.includes(rid) ? "#ffd9a8" : "#ffffff";
         const d = ROUTE_D[rid];
         return (
           <g key={rid} fill="none" strokeLinecap="round">
-            <path d={d} stroke={haze} strokeOpacity={0.16} strokeWidth={roadW + 30} filter="url(#milkyWide)" />
-            <path d={d} stroke={haze} strokeOpacity={0.3} strokeWidth={roadW + 4} filter="url(#milky)" />
-            <path d={d} stroke={core} strokeOpacity={0.3} strokeWidth={roadW * 0.4} filter="url(#milky)" />
-            <path d={d} stroke={dust} strokeOpacity={0.55} strokeWidth={1.4} strokeDasharray="0.1 6 0.1 9 0.1 28.7" className="animate-dash" style={{ animationDuration: "5s" }} transform="translate(0,-7)" />
+            {!compact && (
+              <path d={d} stroke={dust} strokeOpacity={0.55} strokeWidth={1.4} strokeDasharray="0.1 6 0.1 9 0.1 28.7" className="animate-dash" style={{ animationDuration: "5s" }} transform="translate(0,-7)" />
+            )}
             <path d={d} stroke={dust} strokeOpacity={0.9} strokeWidth={2.4} strokeDasharray="0.1 21.9" className="animate-dash" style={{ animationDuration: "3.2s" }} />
-            <path d={d} stroke={dust} strokeOpacity={0.7} strokeWidth={3.4} strokeDasharray="0.1 13 0.1 30.8" className="animate-dash" style={{ animationDuration: "4.2s" }} transform="translate(0,6)" />
+            {!compact && (
+              <path d={d} stroke={dust} strokeOpacity={0.7} strokeWidth={3.4} strokeDasharray="0.1 13 0.1 30.8" className="animate-dash" style={{ animationDuration: "4.2s" }} transform="translate(0,6)" />
+            )}
           </g>
         );
       })}
@@ -462,11 +455,8 @@ export function Board({
         return (
           <g key={sp.id} transform={`translate(${sp.x},${sp.y})`}>
             {isFocus && <circle r={34} fill="none" stroke="#fff" strokeWidth={5} className="animate-ping-slow" />}
-            <circle r={21} fill={dark} opacity={0.6} filter="url(#neon)" />
-            <circle r={19} cy={3} fill={dark} />
-            <circle r={19} fill={light} stroke="#fff" strokeWidth={3} />
-            <ellipse cx={-5} cy={-8} rx={8} ry={4.5} fill="#fff" opacity={0.4} />
-            <text textAnchor="middle" dy={6} fontSize={16} fontWeight={800} fill="#fff">
+            <Planet id={sp.id} type={sp.type} light={light} dark={dark} />
+            <text textAnchor="middle" dy={6} fontSize={16} fontWeight={800} fill="#fff" stroke={dark} strokeWidth={3.5} strokeLinejoin="round" paintOrder="stroke">
               {sp.id}
             </text>
             {SPACE_ICON[sp.type] && (
@@ -654,5 +644,123 @@ export function Board({
         </g>
       )}
     </svg>
+    </div>
+  );
+}
+
+/**
+ * 정지 배경 레이어: 밤하늘, 오로라, 은하수 빛의 띠(블러).
+ * 움직이는 요소와 분리해 두어, 애니메이션이 돌 때마다 큰 블러를 다시 그리지 않게 한다.
+ */
+const BoardBackdrop = memo(function BoardBackdrop({ roadW }: { roadW: number }) {
+  return (
+    <svg
+      viewBox={`0 0 ${BOARD_W} ${BOARD_H}`}
+      className="absolute inset-0 w-full h-full"
+      style={{ transform: "translateZ(0)" }}
+      aria-hidden
+    >
+      <defs>
+        <radialGradient id="night" cx="50%" cy="35%" r="80%">
+          <stop offset="0%" stopColor="#2b3a8f" />
+          <stop offset="60%" stopColor="#141b4d" />
+          <stop offset="100%" stopColor="#0a0f2e" />
+        </radialGradient>
+        <radialGradient id="aurora1" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#6d5dfc" stopOpacity={0.55} />
+          <stop offset="100%" stopColor="#6d5dfc" stopOpacity={0} />
+        </radialGradient>
+        <radialGradient id="aurora2" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#1fd1c8" stopOpacity={0.4} />
+          <stop offset="100%" stopColor="#1fd1c8" stopOpacity={0} />
+        </radialGradient>
+        <filter id="milky" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+        <filter id="milkyWide" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+          <feGaussianBlur stdDeviation="14" />
+        </filter>
+        <clipPath id="boardClip">
+          <rect width={BOARD_W} height={BOARD_H} rx={36} />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#boardClip)">
+        <rect width={BOARD_W} height={BOARD_H} fill="url(#night)" />
+        <ellipse cx={760} cy={120} rx={360} ry={200} fill="url(#aurora1)" />
+        <ellipse cx={240} cy={520} rx={330} ry={190} fill="url(#aurora2)" />
+        {ROUTE_IDS.map((rid) => {
+          const hard = HARD_ROUTES.includes(rid);
+          const haze = hard ? "#ffb877" : "#9db4ff";
+          const core = hard ? "#ffe3c2" : "#e6edff";
+          const d = ROUTE_D[rid];
+          return (
+            <g key={rid} fill="none" strokeLinecap="round">
+              <path d={d} stroke={haze} strokeOpacity={0.16} strokeWidth={roadW + 30} filter="url(#milkyWide)" />
+              <path d={d} stroke={haze} strokeOpacity={0.3} strokeWidth={roadW + 4} filter="url(#milky)" />
+              <path d={d} stroke={core} strokeOpacity={0.3} strokeWidth={roadW * 0.4} filter="url(#milky)" />
+            </g>
+          );
+        })}
+      </g>
+    </svg>
+  );
+});
+
+const PLANET_R = 20;
+
+/**
+ * 칸 = 작은 행성. 칸 종류 색의 구체에 표면 무늬(줄무늬·크레이터·소용돌이)를 번갈아 입히고,
+ * 이벤트 칸에는 고리를 두른다. 무늬는 칸 번호로 정해져 항상 같다.
+ */
+function Planet({ id, type, light, dark }: { id: number; type: SpaceType; light: string; dark: string }) {
+  const R = PLANET_R;
+  const ringed = type === "event";
+  const variant = id % 3;
+  const tilt = -18 + (id % 5) * 4;
+  return (
+    <g>
+      <circle r={R + 2} fill={dark} opacity={0.6} filter="url(#neon)" />
+      {ringed && (
+        <ellipse rx={R + 11} ry={7} fill="none" stroke={light} strokeOpacity={0.9} strokeWidth={3.2} transform={`rotate(${tilt})`} />
+      )}
+      <circle r={R} fill={`url(#planet-${type})`} />
+      <g clipPath="url(#planetClip)">
+        {variant === 0 && (
+          <g transform={`rotate(${tilt})`} fill="none" strokeLinecap="round">
+            <path d={`M ${-R - 4} -7 Q 0 -12 ${R + 4} -6`} stroke={dark} strokeOpacity={0.35} strokeWidth={4} />
+            <path d={`M ${-R - 4} 4 Q 0 -1 ${R + 4} 5`} stroke="#fff" strokeOpacity={0.28} strokeWidth={3} />
+            <path d={`M ${-R - 4} 13 Q 0 9 ${R + 4} 14`} stroke={dark} strokeOpacity={0.4} strokeWidth={5} />
+          </g>
+        )}
+        {variant === 1 && (
+          <g fill={dark} fillOpacity={0.32}>
+            <circle cx={-8} cy={7} r={4.6} />
+            <circle cx={9} cy={-4} r={3.2} />
+            <circle cx={5} cy={12} r={2.6} />
+            <circle cx={-11} cy={-6} r={2.2} />
+          </g>
+        )}
+        {variant === 2 && (
+          <g transform={`rotate(${tilt})`} fill="none" strokeLinecap="round">
+            <path d="M -16 2 C -8 -8, 4 -8, 10 -1 S 4 10, -3 6" stroke="#fff" strokeOpacity={0.3} strokeWidth={3.4} />
+            <path d="M -18 12 C -6 16, 10 16, 20 8" stroke={dark} strokeOpacity={0.4} strokeWidth={4.5} />
+          </g>
+        )}
+        <circle r={R} fill="url(#planetShade)" />
+      </g>
+      <circle r={R} fill="none" stroke="#fff" strokeOpacity={0.75} strokeWidth={1.6} />
+      {ringed && (
+        // 고리의 앞쪽 절반: 행성 위로 지나가게
+        <path
+          d={`M ${-(R + 11)} 0 A ${R + 11} 7 0 0 0 ${R + 11} 0`}
+          fill="none"
+          stroke={light}
+          strokeOpacity={0.95}
+          strokeWidth={3.2}
+          strokeLinecap="round"
+          transform={`rotate(${tilt})`}
+        />
+      )}
+    </g>
   );
 }

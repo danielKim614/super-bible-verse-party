@@ -39,8 +39,14 @@ export function useGame(): GameData {
     }
     inflight.current = true;
     try {
-      const snap = snapRef.current ? await b.sync(snapRef.current) : await b.load();
+      const before = snapRef.current;
+      const snap = before ? await b.sync(before) : await b.load();
       snapRef.current = snap;
+      if (snap === before) {
+        // 바뀐 게 없으면(같은 객체) 비교·상태 갱신을 건너뛴다
+        setError(null);
+        return;
+      }
       // 내용이 같으면 상태를 바꾸지 않아 불필요한 재렌더·애니메이션 재시작을 막음
       const same = <T,>(prev: T, next: T) => JSON.stringify(prev) === JSON.stringify(next);
       setEvents((prev) => (same(prev, snap.events) ? prev : snap.events));

@@ -253,8 +253,13 @@ export function passesShop(pos: number): boolean {
 }
 
 /** pos에서 앞으로 BFS 거리 (갈림길은 양쪽 다 탐색) */
+const DIST_CACHE = new Map<number, Map<number, number>>();
+/** 보드는 고정이므로 결과를 기억해 둔다. 돌려받은 Map은 읽기 전용으로 쓸 것 */
 export function forwardDistances(from: number): Map<number, number> {
+  const cached = DIST_CACHE.get(from);
+  if (cached) return cached;
   const dist = new Map<number, number>();
+  DIST_CACHE.set(from, dist);
   const queue: [number, number][] = [[from, 0]];
   const seen = new Set<number>([from]);
   while (queue.length) {
