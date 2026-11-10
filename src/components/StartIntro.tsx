@@ -25,6 +25,9 @@ export function StartIntro({ state, teamById, big = true }: { state: GameState; 
 
   if (!show) return null;
   const size = big ? 76 : 44;
+  // 폰: 한 줄에 못 담으면 두 줄로 고르게 나눈다 (7팀 → 4 + 3, 가운데 정렬)
+  const n = state.teamIds.length;
+  const cols = n <= 5 ? Math.max(1, n) : Math.ceil(n / 2);
   return (
     <div className="animate-intro-wrap fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-[#0b1033]/90 backdrop-blur-sm text-white pointer-events-none px-4">
       <div className="relative">
@@ -34,11 +37,15 @@ export function StartIntro({ state, teamById, big = true }: { state: GameState; 
         </div>
       </div>
       <div className={`animate-intro-sub font-display text-white/80 ${big ? "text-3xl" : "text-lg"}`}>진행 순서</div>
-      <ol className={`flex flex-wrap justify-center ${big ? "gap-5" : "gap-3"} max-w-5xl`}>
+      <ol className={`flex flex-wrap justify-center ${big ? "gap-x-5 gap-y-4" : "gap-y-3"} max-w-5xl w-full`}>
         {state.teamIds.map((id, i) => {
           const t = teamById[id];
           return (
-            <li key={id} className="animate-intro-team flex flex-col items-center gap-1" style={{ animationDelay: `${900 + i * 180}ms` }}>
+            <li
+              key={id}
+              className="animate-intro-team flex flex-col items-center gap-1"
+              style={{ animationDelay: `${900 + i * 180}ms`, width: big ? undefined : `${100 / cols}%` }}
+            >
               <span className="relative">
                 <TeamAvatar team={t} size={size} />
                 <span
