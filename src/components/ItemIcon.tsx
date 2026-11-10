@@ -19,10 +19,11 @@ const die = (x: number, y: number, s: number, fill: string, pips: [number, numbe
 );
 
 const ICONS: Record<ItemId, React.JSX.Element> = {
-  doubleDice: (
+  tripleDice: (
     <g>
-      {die(2, 9, 1.2, "#fff", [[2.5, 2.5], [7.5, 7.5], [5, 5]])}
-      {die(10, 2, 1.2, "#fde68a", [[2.5, 2.5], [7.5, 2.5], [2.5, 7.5], [7.5, 7.5]])}
+      {die(1, 11, 1.05, "#fff", [[2.5, 2.5], [7.5, 7.5], [5, 5]])}
+      {die(12, 11, 1.05, "#fde68a", [[2.5, 2.5], [7.5, 2.5], [2.5, 7.5], [7.5, 7.5]])}
+      {die(6.5, 1.5, 1.05, "#bae6fd", [[5, 5]])}
     </g>
   ),
   selectDice: (

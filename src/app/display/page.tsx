@@ -9,7 +9,7 @@ import { FeedToasts } from "@/components/FeedToasts";
 import { Ceremony } from "@/components/Ceremony";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { HelpButton } from "@/components/HelpOverlay";
-import { isBoost } from "@/game/reducer";
+import { boostReason } from "@/game/reducer";
 import { useGame } from "@/lib/useGame";
 
 export default function DisplayPage() {
@@ -18,13 +18,13 @@ export default function DisplayPage() {
   const [joinUrl, setJoinUrl] = useState("");
   useEffect(() => setJoinUrl(`${window.location.origin}/${window.location.search}`), []);
 
-  const boost = state.started && state.phase !== "ended" && isBoost(state);
+  const boost = state.started && state.phase !== "ended" ? boostReason(state) : null;
 
   return (
     <main className="h-screen w-screen overflow-hidden bg-[#0b1033] text-white flex flex-col p-5 gap-4">
       <header className="flex items-center gap-4 shrink-0">
         <h1 className="font-display text-4xl tracking-wide">
-          <span className="text-yellow-300">★</span> 로마서 8장 암송 파티
+          <span className="text-yellow-300">★</span> 2026 더드림 성경 암송 축제
         </h1>
         {state.started && state.phase !== "ended" && (
           <div className="glass font-display text-2xl px-5 py-1.5">
@@ -34,7 +34,7 @@ export default function DisplayPage() {
         )}
         {boost && (
           <div className="font-display text-2xl rounded-full bg-gradient-to-r from-rose-500 to-amber-400 px-5 py-1.5 shadow-[0_0_24px_rgba(251,113,133,0.6)] animate-pulse">
-            달란트 2배
+            {boost === "golden" ? "황금 라운드 · 보상 2배" : boost === "final" ? "마지막 스퍼트 · 보상 2배" : "보상 2배"}
           </div>
         )}
         <div className="flex-1 min-w-0 relative self-stretch">

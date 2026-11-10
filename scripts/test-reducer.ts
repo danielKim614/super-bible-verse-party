@@ -2,8 +2,9 @@
 // 보드: 1~3 → 갈림(3) → 4~7 / 8~11 → 12~16 → 갈림(16) → 17~23 / 24~28 → 🏪 → 29~30 → 갈림(30) → 31~35 / 36~39 → 출발
 import assert from "node:assert/strict";
 import { SPACE_BY_ID } from "../src/game/board";
-import { applyEvent, effectiveRedMode, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
+import { applyEvent, effectiveRedMode, placeStar, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
 import { ITEMS } from "../src/game/items";
+import { rng } from "../src/game/rng";
 import { DEFAULT_SETTINGS, type GameEvent, type GameEventBody, type GameState } from "../src/game/types";
 
 let seq = 0;
@@ -18,7 +19,7 @@ const reward = (space: number, s: GameState) => s.settings.rewards[SPACE_BY_ID[s
 
 const teams = ["A", "B", "C", "D", "E", "F"];
 let s = initialState();
-s = ev(s, { type: "start_game", payload: { teamIds: teams, settings: { ...DEFAULT_SETTINGS, starCount: 2 }, seed: 42 } });
+s = ev(s, { type: "start_game", payload: { teamIds: teams, settings: { ...DEFAULT_SETTINGS, starCount: 2, diceCount: 1 }, seed: 42 } });
 assert.equal(s.phase, "pre_roll");
 assert.equal(s.stars.length, 2);
 for (const t of teams) assert.equal(s.teams[t].talents, 10);
@@ -175,3 +176,18 @@ assert.equal(rank.length, 6);
 console.log("ranking", rank);
 console.log("awards", s.ceremony!.awards.map((a) => [a.title, a.winners]));
 console.log("✅ reducer tests passed");
+
+// 스타는 말이 서 있는 칸에 생기지 않는다
+{
+  const base = replay([{ seq: 1, type: "start_game", payload: { teamIds: teams, settings: { ...DEFAULT_SETTINGS, starCount: 2 }, seed: 1 } } as never]);
+  for (let seed = 1; seed <= 300; seed++) {
+    const t = structuredClone(base);
+    const occupied = [5, 9, 12, 20, 33];
+    t.teamIds.forEach((id, i) => (t.teams[id].pos = occupied[i % occupied.length]));
+    t.stars = [];
+    placeStar(t, rng(seed));
+    placeStar(t, rng(seed + 1000));
+    for (const st of t.stars) assert.ok(!occupied.includes(st), `seed ${seed}: star on occupied ${st}`);
+  }
+}
+console.log("✅ star placement avoids occupied spaces");

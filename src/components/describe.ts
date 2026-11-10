@@ -62,9 +62,9 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
     case "setup":
       return "게임 준비 중";
     case "pre_roll":
-      if (ctx.rollMode === "double") return `${name} 팀, 주사위 2개를 굴려 주세요`;
-      if (ctx.rollMode === "low") return `${name} 팀, 선택 다이스(낮음 1~3)를 굴려 주세요`;
-      if (ctx.rollMode === "high") return `${name} 팀, 선택 다이스(높음 4~6)를 굴려 주세요`;
+      if (ctx.rollMode === "triple") return `${name} 팀, 주사위 3개를 굴려 주세요`;
+      if (ctx.rollMode === "low") return `${name} 팀, 선택 다이스(낮음)를 굴려 주세요`;
+      if (ctx.rollMode === "high") return `${name} 팀, 선택 다이스(높음)를 굴려 주세요`;
       return `${name} 팀, 주사위를 굴려 주세요`;
     case "choose_path":
       return `${name} 팀, 갈림길! 어느 길로 갈까요?`;

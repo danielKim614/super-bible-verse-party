@@ -1,5 +1,6 @@
 "use client";
 
+import { splitSum } from "./DieBadge";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId } from "@/game/board";
 import { currentTeamId } from "@/game/reducer";
@@ -149,14 +150,7 @@ function useDiceRoll(state: GameState) {
     prevRoll.current = state.ctx.roll;
     prevSeq.current = state.ctx.startSeq;
     if (state.ctx.roll === undefined || hadRoll || state.ctx.teleport) return;
-    const v = state.ctx.roll;
-    // 더블 다이스(7 이상 또는 rollMode double)면 두 개로 나눠 표시
-    const two = state.ctx.rollMode === "double";
-    let faces: number[];
-    if (two) {
-      const a = Math.max(1, Math.min(6, Math.ceil(v / 2)));
-      faces = [a, v - a];
-    } else faces = [v];
+    const faces = state.ctx.faces && state.ctx.faces.length ? state.ctx.faces : splitSum(state.ctx.roll);
     const key = Date.now();
     setDice({ key, faces, show: faces.map(() => 1 + Math.floor(Math.random() * 6)) });
     let n = 0;
@@ -562,7 +556,7 @@ export function Board({
         <g transform={`translate(${BOARD_W / 2},${BOARD_H / 2})`}>
           <circle r={110} fill="#000" opacity={0.35} />
           {dice.show.map((f, i) => {
-            const off = (i - (dice.show.length - 1) / 2) * 90;
+            const off = (i - (dice.show.length - 1) / 2) * (dice.show.length > 2 ? 80 : 90);
             const settled = dice.show[i] === dice.faces[i] && dice.show.every((x, j) => x === dice.faces[j]);
             return (
               <g key={i} transform={`translate(${off},0)`}>

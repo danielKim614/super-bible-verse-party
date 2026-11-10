@@ -51,7 +51,7 @@ export function ActionCard({
         <div className={`font-display ${big ? "text-3xl" : "text-xl"} leading-tight`}>{phaseHeadline(state, teamById)}</div>
         {ctx.roll !== undefined && (
           <div className="ml-auto">
-            <DieBadge value={ctx.roll} double={ctx.rollMode === "double"} big={big} />
+            <DieBadge value={ctx.roll} faces={ctx.faces} big={big} />
           </div>
         )}
       </div>

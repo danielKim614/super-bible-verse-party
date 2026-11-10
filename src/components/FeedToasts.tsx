@@ -5,7 +5,7 @@ import type { FeedEntry, GameState, TeamInfo } from "@/game/types";
 import { TeamAvatar } from "./TeamAvatar";
 
 const KIND_STYLE: Record<FeedEntry["kind"], string> = {
-  payout: "bg-emerald-400 text-emerald-950",
+  payout: "bg-emerald-500 text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.25)]",
   star: "bg-yellow-300 text-yellow-900",
   item: "bg-violet-400 text-violet-950",
   fail: "bg-slate-200 text-slate-800",

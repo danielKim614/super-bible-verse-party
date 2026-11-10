@@ -57,9 +57,15 @@ export function currentTeamId(s: GameState): string | undefined {
 }
 
 export function isBoost(s: GameState): boolean {
-  if (s.boostOverride !== null) return s.boostOverride;
-  if (s.goldenRound === s.turn) return true;
-  return s.turn > s.settings.totalTurns - s.settings.finalBoostTurns;
+  return boostReason(s) !== null;
+}
+
+/** 보상 2배가 적용 중인 이유 (없으면 null) */
+export function boostReason(s: GameState): "manual" | "golden" | "final" | null {
+  if (s.boostOverride !== null) return s.boostOverride ? "manual" : null;
+  if (s.goldenRound === s.turn) return "golden";
+  if (s.turn > s.settings.totalTurns - s.settings.finalBoostTurns) return "final";
+  return null;
 }
 
 /** 꼴찌 팀 (스타 → 달란트 기준, 동점이면 턴 순서 뒤쪽) */
@@ -97,13 +103,16 @@ export function canAffordStar(s: GameState, team: TeamState): boolean {
   return team.items.includes("starCoupon") && team.talents >= s.settings.couponStarPrice;
 }
 
+/** 이번 턴에 굴리는 주사위 개수 */
+export function diceCount(s: GameState): number {
+  if (s.ctx.rollMode === "triple") return 3;
+  return Math.max(1, s.settings.diceCount ?? 2);
+}
+
+/** 입력 가능한 이동 칸 수 범위 */
 export function rollRange(s: GameState): [number, number] {
-  switch (s.ctx.rollMode) {
-    case "double":
-      return [2, 12];
-    default:
-      return [1, 6];
-  }
+  const n = diceCount(s);
+  return [n, n * 6];
 }
 
 export function mapSelectDice(mode: TurnCtx["rollMode"], face: number): number {
@@ -232,7 +241,7 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
       if (def.kind === "move") ctx.moveItem = item;
       if (def.kind === "recite") ctx.reciteItem = item;
       feed(s, { seq, teamId: tid, kind: "item", text: `${def.name} 사용` });
-      if (item === "doubleDice") ctx.rollMode = "double";
+      if (item === "tripleDice") ctx.rollMode = "triple";
       else if (item === "selectDice") ctx.rollMode = choice === "high" ? "high" : "low";
       else if (item === "warpPipe") {
         const r = rng(seed ?? seq);
@@ -251,10 +260,21 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
     case "roll": {
       if (s.phase !== "pre_roll") return prev;
       const [lo, hi] = rollRange(s);
-      const v = Math.round(ev.payload.value);
-      if (v < lo || v > hi) return prev;
-      const steps = mapSelectDice(ctx.rollMode, v);
+      const n = diceCount(s);
+      let faces = ev.payload.faces?.map((f) => Math.round(f));
+      if (faces && (faces.length !== n || faces.some((f) => f < 1 || f > 6))) return prev;
+      let steps: number;
+      if (faces) {
+        // 각 눈을 선택 다이스 규칙으로 변환해 합산
+        faces = faces.map((f) => mapSelectDice(ctx.rollMode, f));
+        steps = faces.reduce((a, b) => a + b, 0);
+      } else {
+        // 눈 없이 합계만 온 경우(테스트·구버전): 합계를 이동 칸 수로 사용
+        steps = Math.round(ev.payload.value);
+        if (steps < lo || steps > hi) return prev;
+      }
       ctx.roll = steps;
+      ctx.faces = faces;
       ctx.remaining = steps;
       ctx.path = [];
       s.moveSeq = seq;
@@ -523,8 +543,10 @@ function buyStar(s: GameState, tid: string, seq: number, opts: { seed?: number }
 }
 
 /** 스타 배치 규칙: 아이템·상점 칸 제외, 구매 팀 앞 6칸 제외, 다른 스타와 거리 확보 */
-function placeStar(s: GameState, r: () => number, buyerPos?: number) {
+export function placeStar(s: GameState, r: () => number, buyerPos?: number) {
   const blocked = new Set<number>(s.stars);
+  // 지금 말이 서 있는 칸에는 스타를 만들지 않는다
+  for (const id of s.teamIds) blocked.add(s.teams[id].pos);
   if (buyerPos !== undefined) {
     const d = forwardDistances(buyerPos);
     for (const [sp, dist] of d) if (dist <= 6) blocked.add(sp);

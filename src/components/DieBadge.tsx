@@ -29,12 +29,9 @@ export function DieFace({ face, size = 28 }: { face: number; size?: number }) {
   );
 }
 
-/**
- * 결과 표시. 더블 다이스(2~12)는 두 개의 주사위 눈으로 분해해서 보여준다
- * (실제 눈 조합은 기록하지 않으므로 합계만 맞는 대표 조합).
- */
-export function DieBadge({ value, double, big }: { value: number; double?: boolean; big?: boolean }) {
-  const faces = double ? splitDouble(value) : [Math.min(6, Math.max(1, value))];
+/** 결과 표시: 실제 나온 눈(faces)이 있으면 그대로, 없으면 합계를 주사위 눈으로 분해해 표시 */
+export function DieBadge({ value, faces: given, big }: { value: number; faces?: number[]; big?: boolean }) {
+  const faces = given && given.length ? given : splitSum(value);
   const size = big ? 34 : 24;
   return (
     <span
@@ -51,8 +48,15 @@ export function DieBadge({ value, double, big }: { value: number; double?: boole
   );
 }
 
-function splitDouble(v: number): [number, number] {
-  const a = Math.min(6, Math.max(1, Math.ceil(v / 2)));
-  const b = Math.min(6, Math.max(1, v - a));
-  return [a, b];
+export function splitSum(v: number): number[] {
+  const n = Math.max(1, Math.ceil(v / 6));
+  const out: number[] = [];
+  let rest = v;
+  for (let i = 0; i < n; i++) {
+    const left = n - i - 1;
+    const f = Math.min(6, Math.max(1, rest - left));
+    out.push(f);
+    rest -= f;
+  }
+  return out;
 }

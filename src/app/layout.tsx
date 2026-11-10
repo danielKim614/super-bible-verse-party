@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "로마서 8장 암송 파티",
+  title: "2026 더드림 성경 암송 축제",
   description: "교회 성경 암송 대회를 위한 마리오 파티 컨셉의 웹 앱",
 };
 

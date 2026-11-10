@@ -16,12 +16,13 @@ import {
   payoutText,
   FULL_BAG_TALENTS,
   replay,
-  rollRange,
+  diceCount,
+  mapSelectDice,
   starPriceFor,
   usableItems,
 } from "@/game/reducer";
 import { newSeed } from "@/game/rng";
-import { DEFAULT_SETTINGS, type GameEvent, type Settings, type TeamInfo } from "@/game/types";
+import { DEFAULT_SETTINGS, type GameEvent, type Settings, type TeamInfo, type TurnCtx } from "@/game/types";
 import { useAdmin, useGame, type GameData } from "@/lib/useGame";
 import { countVerses, parseVerses } from "@/game/verses";
 
@@ -280,25 +281,13 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
   );
 
   switch (state.phase) {
-    case "pre_roll": {
-      const [lo, hi] = rollRange(state);
-      const faces = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+    case "pre_roll":
       return (
         <div className="flex flex-col gap-3">
           {itemButtons}
-          <div className="text-sm text-slate-500">
-            {ctx.rollMode === "double" ? "주사위 2개 합계 입력" : ctx.rollMode === "low" || ctx.rollMode === "high" ? "나온 눈 그대로 입력 (자동 변환)" : "나온 눈 입력"}
-          </div>
-          <div className="grid grid-cols-6 gap-2">
-            {faces.map((f) => (
-              <button key={f} className={`${btn} bg-slate-900 text-white font-display text-4xl py-5`} disabled={busy} onClick={() => send({ type: "roll", payload: { value: f } })}>
-                {f}
-              </button>
-            ))}
-          </div>
+          <DiceInput key={`${ctx.startSeq}-${ctx.rollMode}`} n={diceCount(state)} mode={ctx.rollMode} busy={busy} onDone={(faces) => send({ type: "roll", payload: { value: faces.reduce((a, b) => a + b, 0), faces } })} />
         </div>
       );
-    }
     case "choose_path":
       return (
         <div className="grid grid-cols-2 gap-3">
@@ -698,7 +687,7 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
   const [teamId, setTeamId] = useState<string>("");
   const [delta, setDelta] = useState(0);
   const [note, setNote] = useState("");
-  const [item, setItem] = useState<ItemId>("doubleDice");
+  const [item, setItem] = useState<ItemId>("tripleDice");
   const [pos, setPos] = useState(1);
   const [stars, setStars] = useState("");
   const [turns, setTurns] = useState(state.settings.totalTurns);
@@ -965,6 +954,7 @@ function SettingsTab({ game, admin }: { game: GameData; admin: Admin }) {
       {num("스타 가격", "starPrice", 1)}
       {num("할인권 스타 가격", "couponStarPrice", 0)}
       {num("보드 위 스타 개수", "starCount", 1)}
+      {num("기본 주사위 개수", "diceCount", 1)}
       {num("종반 2배 턴 수", "finalBoostTurns", 0)}
       {num("아이템 보유 한도", "inventoryLimit", 1)}
       {num("남은 아이템 환급(개당)", "itemRefund", 0)}
@@ -1049,3 +1039,46 @@ function SettingsTab({ game, admin }: { game: GameData; admin: Admin }) {
   );
 }
 
+/** 주사위 눈 입력: 주사위마다 1~6 중 하나를 차례로 누르면 마지막 눈에서 자동 전송 */
+function DiceInput({ n, mode, busy, onDone }: { n: number; mode: TurnCtx["rollMode"]; busy: boolean; onDone: (faces: number[]) => void }) {
+  const [faces, setFaces] = useState<number[]>([]);
+  const idx = faces.length;
+  const pick = (f: number) => {
+    const next = [...faces, f];
+    if (next.length >= n) {
+      onDone(next);
+      setFaces([]);
+    } else setFaces(next);
+  };
+  const conv = (f: number) => mapSelectDice(mode, f);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 text-sm text-slate-500">
+        <span>
+          주사위 {n}개 · <b className="text-slate-800">{idx + 1}번째 눈</b>을 누르세요
+          {mode === "low" && " (낮음: 4~6은 1~3으로 자동 변환)"}
+          {mode === "high" && " (높음: 1~3은 4~6으로 자동 변환)"}
+        </span>
+        <span className="ml-auto flex gap-1">
+          {Array.from({ length: n }, (_, i) => (
+            <span key={i} className={`inline-flex w-9 h-9 items-center justify-center rounded-lg font-display text-xl ${faces[i] !== undefined ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-400"}`}>
+              {faces[i] !== undefined ? conv(faces[i]) : "?"}
+            </span>
+          ))}
+        </span>
+        {faces.length > 0 && (
+          <button className="underline" onClick={() => setFaces([])}>
+            다시
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-6 gap-2">
+        {[1, 2, 3, 4, 5, 6].map((f) => (
+          <button key={f} className={`${btn} bg-slate-900 text-white font-display text-4xl py-5`} disabled={busy} onClick={() => pick(f)}>
+            {f}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

@@ -7,6 +7,7 @@ export interface Settings {
   starPrice: number;
   couponStarPrice: number;
   starCount: number;
+  diceCount: number; // 기본 주사위 개수
   finalBoostTurns: number; // 마지막 N턴 달란트 2배
   rewards: Record<SpaceType, number>;
   inventoryLimit: number;
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   starPrice: 20,
   couponStarPrice: 10,
   starCount: 2,
+  diceCount: 2,
   finalBoostTurns: 3,
   rewards: { blue: 3, red: 5, event: 8, item: 3, happening: 3, bless: 3 },
   inventoryLimit: 3,
@@ -61,7 +63,7 @@ export type OverrideAction =
 export type GameEventBody =
   | { type: "start_game"; payload: { teamIds: string[]; settings: Settings; seed: number } }
   | { type: "use_item"; payload: { item: ItemId; choice?: "low" | "high"; seed?: number } }
-  | { type: "roll"; payload: { value: number } }
+  | { type: "roll"; payload: { value: number; faces?: number[] } } // value: 이동 칸 수(합계), faces: 각 주사위 눈
   | { type: "choose_path"; payload: { option: number; label?: string } }
   | { type: "star_decision"; payload: { buy: boolean; coupon?: boolean; seed?: number } }
   | { type: "recite_result"; payload: { success: boolean; seed: number } }
@@ -112,8 +114,9 @@ export interface TurnCtx {
   startSeq?: number; // 이 팀 턴이 시작된 이벤트 seq
   moveItem?: ItemId;
   reciteItem?: ItemId;
-  rollMode: "normal" | "double" | "low" | "high";
+  rollMode: "normal" | "triple" | "low" | "high";
   roll?: number;
+  faces?: number[]; // 실제 나온 주사위 눈 (연출용)
   remaining: number;
   forkChoice?: number;
   path: number[]; // 이번 턴에 지나간 칸 (애니메이션용)
