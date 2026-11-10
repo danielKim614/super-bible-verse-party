@@ -99,6 +99,27 @@ function useAnimatedPositions(state: GameState, stepMs: number, initialDelayMs: 
   return shown;
 }
 
+/** 출발 표시: 모든 말이 출발을 떠나면 한 번 반짝이며 사라짐 (Undo 등으로 다시 돌아오면 다시 보임) */
+const START_VANISH_MS = 1000;
+function useStartMark(state: GameState, shown: Record<string, number>): "visible" | "leaving" | "hidden" {
+  const allLeft =
+    state.started && state.teamIds.length > 0 && state.teamIds.every((id) => (shown[id] ?? state.teams[id].pos) !== 0);
+  const [mark, setMark] = useState<"visible" | "leaving" | "hidden">(allLeft ? "hidden" : "visible");
+  const prev = useRef(allLeft);
+  useEffect(() => {
+    if (prev.current === allLeft) return;
+    prev.current = allLeft;
+    if (!allLeft) {
+      setMark("visible");
+      return;
+    }
+    setMark("leaving");
+    const t = setTimeout(() => setMark("hidden"), START_VANISH_MS);
+    return () => clearTimeout(t);
+  }, [allLeft]);
+  return mark;
+}
+
 /** 갈림길 선택 직후 잠깐 보여줄 연출 정보 */
 function useForkFlash(state: GameState) {
   const [flash, setFlash] = useState<{ pos: number; chosen: number } | null>(null);
@@ -261,6 +282,7 @@ export function Board({
   const dice = useDiceRoll(state);
   const { burst: starBurst, hidden: hiddenStar, spawn: starSpawn } = useStarBurst(state);
   const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : dice ? DICE_MS : 0);
+  const startMark = useStartMark(state, shown);
   const sparkles = useSparkles(70);
   const cur = currentTeamId(state);
   const focus =
@@ -349,13 +371,34 @@ export function Board({
         </g>
       ))}
 
-      {/* 출발점 */}
-      <g transform={`translate(${T_POS.x},${T_POS.y})`} filter="url(#soft)">
-        <circle r={34} fill="#ffd23f" stroke="#fff" strokeWidth={4} />
-        <text textAnchor="middle" dy={7} fontSize={19} className="font-display" fill="#5a3500">
-          출발
-        </text>
-      </g>
+      {/* 출발점: 모든 말이 떠나면 반짝이며 사라짐 */}
+      {startMark !== "hidden" && (
+        <g transform={`translate(${T_POS.x},${T_POS.y})`}>
+          <g className={startMark === "leaving" ? "animate-start-vanish" : undefined} filter="url(#soft)">
+            <circle r={34} fill="#ffd23f" stroke="#fff" strokeWidth={4} />
+            <text textAnchor="middle" dy={7} fontSize={19} className="font-display" fill="#fff" stroke="#b45309" strokeWidth={3} paintOrder="stroke">
+              출발
+            </text>
+          </g>
+          {startMark === "leaving" && (
+            <g>
+              <circle r={34} fill="none" stroke="#ffd23f" strokeWidth={5} className="animate-start-ring" />
+              {Array.from({ length: 8 }, (_, i) => {
+                const a = (i / 8) * Math.PI * 2;
+                return (
+                  <circle
+                    key={i}
+                    r={4}
+                    fill="#fff7c2"
+                    className="animate-start-spark"
+                    style={{ ["--dx" as string]: `${Math.cos(a) * 60}px`, ["--dy" as string]: `${Math.sin(a) * 60}px` }}
+                  />
+                );
+              })}
+            </g>
+          )}
+        </g>
+      )}
       {/* 상점 (지나가며 이용) — 자체 SVG */}
       <g transform={`translate(${SHOP_POS.x},${SHOP_POS.y - 6})`} filter="url(#soft)">
         {/* 몸체 */}

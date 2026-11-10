@@ -168,8 +168,27 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-toast-life, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
+  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-toast-life, .animate-start-ring, .animate-start-spark, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
 }
+
+/* 출발 표시 사라짐: 살짝 부풀었다가 작아지며 사라지고, 링과 반짝이가 퍼짐 */
+@keyframes start-vanish {
+  0% { transform: scale(1); opacity: 1; }
+  30% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.animate-start-vanish { transform-box: fill-box; transform-origin: center; animation: start-vanish 0.8s cubic-bezier(0.5, 0, 0.7, 0.4) forwards; }
+@keyframes start-ring {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.animate-start-ring { transform-box: fill-box; transform-origin: center; animation: start-ring 0.9s ease-out 0.2s both; }
+@keyframes start-spark {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+.animate-start-spark { animation: start-spark 0.9s ease-out 0.25s both; }
 
 /* 진행 멘트 카드: 팀 색으로 물든 그라데이션 + 숨 쉬는 테두리 */
 .action-card {
