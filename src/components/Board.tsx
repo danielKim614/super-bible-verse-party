@@ -16,7 +16,7 @@ const TYPE_FILL: Record<string, [string, string]> = {
   bless: ["#f472b6", "#be185d"],
 };
 
-const ROUTE_IDS: RouteId[] = ["c0", "a1", "a2", "c1", "b1", "b2", "c2", "d1", "d2"];
+const ROUTE_IDS: RouteId[] = ["c0", "a1", "a2", "c1", "b1", "b2", "c2", "d1", "d2", "c3"];
 const HARD_ROUTES: RouteId[] = ["a2", "b2"];
 
 /** 칸 위 아이콘 (자체 SVG). 원점이 아이콘 중심 */
@@ -376,8 +376,8 @@ export function Board({
         <g transform={`translate(${T_POS.x},${T_POS.y})`}>
           <g className={startMark === "leaving" ? "animate-start-vanish" : undefined} filter="url(#soft)">
             <circle r={34} fill="#ffd23f" stroke="#fff" strokeWidth={4} />
-            <text textAnchor="middle" dy={7} fontSize={19} className="font-display" fill="#fff" stroke="#b45309" strokeWidth={3} paintOrder="stroke">
-              출발
+            <text textAnchor="middle" dy={6} fontSize={16} letterSpacing={0.5} className="font-display" fill="#fff" stroke="#b45309" strokeWidth={3} paintOrder="stroke">
+              START
             </text>
           </g>
           {startMark === "leaving" && (

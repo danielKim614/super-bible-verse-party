@@ -1,7 +1,7 @@
 // 리듀서 시나리오 테스트: npm run test:reducer
-// 보드: 1~2 → 갈림(2) → 3~6 / 7~10 → 11~15 → 갈림(15) → 16~22 / 23~27 → 🏪 → 28~30 → 갈림(30) → 31~35 / 36~39 → 출발 (출발점은 칸이 아님)
+// 보드: 1~2 → 갈림(2) → 3~6 / 7~10 → 11~15 → 갈림(15) → 16~22 / 23~27 → 🏪 → 28~30 → 갈림(30) → 31~34 / 35~38 → 39 → 출발 (출발점은 칸이 아님)
 import assert from "node:assert/strict";
-import { SPACE_BY_ID } from "../src/game/board";
+import { SPACE_BY_ID, nextSpace } from "../src/game/board";
 import { applyEvent, effectiveRedMode, placeStar, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
 import { ITEMS } from "../src/game/items";
 import { rng } from "../src/game/rng";
@@ -191,3 +191,9 @@ console.log("✅ reducer tests passed");
   }
 }
 console.log("✅ star placement avoids occupied spaces");
+
+// 왼쪽길(31~34)·안쪽길(35~38)은 39에서 합류, 39 다음은 출발을 지나 1
+assert.equal(nextSpace(34), 39);
+assert.equal(nextSpace(38), 39);
+assert.equal(nextSpace(39), 1);
+console.log("✅ 39 merge ok");

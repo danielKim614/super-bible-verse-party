@@ -1,15 +1,15 @@
 // 로마서 8장 보드 — 마리오 파티식 그래프 맵 (갈림길 3개)
 // 칸 id = 절 번호(1~39). 0 = T(출발점·상점, 암송 없음).
 //
-//   T ─ 1~2 ─┬─ 3~6 (윗길) ──┬─ 11~15 ─┬─ 16~22 (바깥길) ─┬─ 🏪 ─ 28~30 ─┬─ 31~35 ─┬─ T
-//            └─ 7~10 (아랫길)┘          └─ 23~27 (지름길) ─┘              └─ 36~39 ─┘
+//   T ─ 1~2 ─┬─ 3~6 (윗길) ──┬─ 11~15 ─┬─ 16~22 (바깥길) ─┬─ 🏪 ─ 28~30 ─┬─ 31~34 ─┬─ 39 ─ T
+//            └─ 7~10 (아랫길)┘          └─ 23~27 (지름길) ─┘              └─ 35~38 ─┘
 //
 // 칸 유형은 본문 길이를 받기 전의 임시 배치입니다. 확정 시 SPACE_TYPES만 고치면 됩니다.
 
 export type SpaceType = "blue" | "red" | "event" | "item" | "happening" | "bless";
 export type RedMode = "blank" | "firstWord" | "noHint";
 export type EventMode = "relay" | "threeVerses";
-export type RouteId = "c0" | "a1" | "a2" | "c1" | "b1" | "b2" | "c2" | "d1" | "d2";
+export type RouteId = "c0" | "a1" | "a2" | "c1" | "b1" | "b2" | "c2" | "d1" | "d2" | "c3";
 
 export interface Space {
   id: number; // 절 번호
@@ -40,8 +40,8 @@ export const FORKS: Record<number, ForkOption[]> = {
     { to: 23, label: "지름길", desc: "5칸 · 어려움" },
   ],
   30: [
-    { to: 31, label: "왼쪽길", desc: "5칸 · 축복" },
-    { to: 36, label: "안쪽길", desc: "4칸 · 아이템" },
+    { to: 31, label: "왼쪽길", desc: "4칸 · 축복" },
+    { to: 35, label: "안쪽길", desc: "4칸 · 아이템" },
   ],
 };
 
@@ -59,8 +59,9 @@ export const ROUTES: Route[] = [
   { id: "b1", verses: [16, 22], next: 28 },
   { id: "b2", verses: [23, 27], next: 28 },
   { id: "c2", verses: [28, 30], next: -1 }, // 30은 갈림길
-  { id: "d1", verses: [31, 35], next: 0 },
-  { id: "d2", verses: [36, 39], next: 0 },
+  { id: "d1", verses: [31, 34], next: 39 },
+  { id: "d2", verses: [35, 38], next: 39 },
+  { id: "c3", verses: [39, 39], next: 0 }, // 두 갈래가 만나는 칸
 ];
 
 // 본문 길이 기준 배치 (긴 절 → 빨간 칸). 길이 순: 3,11,26,29,15,17,9,27,35,23,12,34,20,30 …
@@ -139,7 +140,8 @@ function along(curves: Cubic[], n: number, startPad: number, endPad: number): Pt
   const total = sp.cum[sp.cum.length - 1];
   const usable = total - startPad - endPad;
   const out: Pt[] = [];
-  for (let k = 0; k < n; k++) out.push(pointAtLength(sp, startPad + (n === 1 ? usable / 2 : (usable * k) / (n - 1))));
+  // 칸이 하나뿐이면 가운데에, 단 startPad가 0(합류 칸)이면 시작점에 둔다
+  for (let k = 0; k < n; k++) out.push(pointAtLength(sp, startPad + (n === 1 ? (startPad === 0 ? 0 : usable / 2) : (usable * k) / (n - 1))));
   return out;
 }
 
@@ -149,6 +151,7 @@ const M1 = { x: 640, y: 150 }; // 11 앞
 const F2 = { x: 920, y: 330 }; // 15 다음
 const M2 = { x: 430, y: 530 }; // 28 앞 (상점)
 const F3 = { x: 210, y: 500 }; // 30 다음
+const M4 = { x: 140, y: 265 }; // 39 앞 (왼쪽길·안쪽길 합류)
 
 // 각 길의 곡선 (시작점·끝점은 분기/합류 지점 또는 T)
 const ROUTE_CURVES: Record<RouteId, Cubic[]> = {
@@ -159,13 +162,18 @@ const ROUTE_CURVES: Record<RouteId, Cubic[]> = {
   b1: [[F2, { x: 960, y: 560 }, { x: 700, y: 650 }, M2]], // 바깥길: 오른쪽 아래를 크게 돎
   b2: [[F2, { x: 780, y: 400 }, { x: 560, y: 380 }, M2]], // 지름길: 안쪽으로 질러감
   c2: [[M2, { x: 340, y: 560 }, { x: 270, y: 560 }, F3]],
-  d1: [[F3, { x: 50, y: 470 }, { x: 40, y: 220 }, T_POS]], // 왼쪽길: 가장자리
-  d2: [[F3, { x: 250, y: 410 }, { x: 250, y: 230 }, T_POS]], // 안쪽길
+  d1: [[F3, { x: 55, y: 480 }, { x: 45, y: 300 }, M4]], // 왼쪽길: 가장자리
+  d2: [[F3, { x: 255, y: 420 }, { x: 235, y: 310 }, M4]], // 안쪽길
+  c3: [[M4, { x: 132, y: 215 }, { x: 118, y: 170 }, T_POS]], // 39 → 출발
 };
 
 const PAD_T = 64; // 출발점 주변
 const PAD_J = 34; // 분기/합류 지점 주변
-const PAD_SHOP = 56; // 상점(합류점) 주변
+const PAD_FORK_OUT = 58; // 갈림길에서 갈라진 두 길의 첫 칸끼리 겹치지 않도록
+const PAD_MERGE = 66; // 합류 칸 앞 칸과의 간격 (합류 칸은 만나는 지점 바로 위에 놓임)
+/** 두 길이 만나는 지점에서 시작하는 길: 첫 칸을 합류 지점에 정확히 둔다 */
+const MERGE_ROUTES: RouteId[] = ["c1", "c2", "c3"];
+const MERGE_TARGETS = new Set([11, 28, 39]);
 
 function toD(curves: Cubic[]): string {
   const [first] = curves;
@@ -178,8 +186,9 @@ export const ROUTE_D: Record<RouteId, string> = Object.fromEntries(
   (Object.keys(ROUTE_CURVES) as RouteId[]).map((k) => [k, toD(ROUTE_CURVES[k])]),
 ) as Record<RouteId, string>;
 
-export const JUNCTIONS = { F1, M1, F2, M2, F3 };
-export const SHOP_POS = M2;
+export const JUNCTIONS = { F1, M1, F2, M2, F3, M4 };
+/** 상점 그림 위치: 합류 칸(28) 왼쪽 위 */
+export const SHOP_POS = { x: M2.x - 46, y: M2.y - 48 };
 export const FORK_POINTS: Record<number, Pt> = { 2: F1, 15: F2, 30: F3 };
 
 function buildSpaces(): Space[] {
@@ -187,8 +196,8 @@ function buildSpaces(): Space[] {
   for (const r of ROUTES) {
     const [a, b] = r.verses;
     const n = b - a + 1;
-    const startPad = r.id === "c0" ? PAD_T : r.id === "c2" ? PAD_SHOP : r.id === "b2" ? 64 : PAD_J;
-    const endPad = r.next === 0 ? PAD_T : r.next === SHOP_AT ? PAD_SHOP : PAD_J;
+    const startPad = r.id === "c0" ? PAD_T : MERGE_ROUTES.includes(r.id) ? 0 : r.id === "b2" ? 64 : PAD_FORK_OUT;
+    const endPad = r.next === 0 ? PAD_T : MERGE_TARGETS.has(r.next) ? PAD_MERGE : PAD_J;
     const pts = along(ROUTE_CURVES[r.id], n, startPad, endPad);
     for (let v = a; v <= b; v++) coords[v] = pts[v - a];
   }
