@@ -104,6 +104,7 @@ npm run dev
 2. **SQL Editor**에 [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql)을 붙여 넣고 실행
    - 맨 아래 `'change-me'` 를 원하는 **어드민 패스코드**로 바꾼 뒤 실행하세요
    - 이어서 [`0002_verses.sql`](supabase/migrations/0002_verses.sql)도 실행
+   - 이어서 [`0003_version.sql`](supabase/migrations/0003_version.sql), [`0004_hardening.sql`](supabase/migrations/0004_hardening.sql)도 순서대로 실행
 3. `.env.local`에 Project URL과 anon(publishable) key 입력
 
 ### 3. 본문 입력
