@@ -8,45 +8,31 @@ import { ItemIcon } from "./ItemIcon";
 /**
  * 도움말: 폰에서는 "?"를 꾹 누르는 동안, 큰 화면에서는 클릭으로 켜고 끔.
  */
-export function HelpButton({ settings, mode = "hold", className = "" }: { settings: Settings; mode?: "hold" | "toggle"; className?: string }) {
+export function HelpButton({ settings, className = "" }: { settings: Settings; mode?: "hold" | "toggle"; className?: string }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
-    if (mode === "hold") {
-      window.addEventListener("pointerup", close);
-      window.addEventListener("pointercancel", close);
-      return () => {
-        window.removeEventListener("pointerup", close);
-        window.removeEventListener("pointercancel", close);
-      };
-    }
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, mode]);
+  }, [open]);
 
   return (
     <>
       <button
         type="button"
         aria-label="도움말"
-        className={`select-none touch-none rounded-full bg-white text-slate-900 font-display shadow-lg flex items-center justify-center ${className}`}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          if (mode === "hold") setOpen(true);
-        }}
-        onClick={() => mode === "toggle" && setOpen((v) => !v)}
-        onContextMenu={(e) => e.preventDefault()}
+        className={`rounded-full bg-white text-slate-900 font-display shadow-lg flex items-center justify-center ${className}`}
+        onClick={() => setOpen(true)}
       >
         ?
       </button>
-      {open && <HelpOverlay settings={settings} onClose={() => setOpen(false)} dismissOnClick={mode === "toggle"} />}
+      {open && <HelpOverlay settings={settings} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function HelpOverlay({ settings, onClose, dismissOnClick }: { settings: Settings; onClose: () => void; dismissOnClick: boolean }) {
+function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () => void }) {
   const r = settings.rewards;
   const spaces: [string, string, string][] = [
     ["bg-sky-400", "파란 칸", `장절을 보고 암송 · +${r.blue}`],
@@ -57,11 +43,21 @@ function HelpOverlay({ settings, onClose, dismissOnClick }: { settings: Settings
     ["bg-pink-400", "축복 칸", "멈추면 꼴찌 팀에게 +5 달란트"],
   ];
   return (
-    <div className="fixed inset-0 z-50 bg-[#0b1033]/92 backdrop-blur-sm text-white overflow-auto p-5" onClick={() => dismissOnClick && onClose()}>
-      <div className="max-w-3xl mx-auto flex flex-col gap-5" onClick={(e) => e.stopPropagation()}>
-        <h2 className="font-display text-3xl">
-          <span className="text-yellow-300">★</span> 게임 도움말
-        </h2>
+    <div className="fixed inset-0 z-50 bg-[#0b1033]/95 backdrop-blur-sm text-white overflow-auto p-5">
+      <div className="max-w-3xl mx-auto flex flex-col gap-5">
+        <div className="flex items-center">
+          <h2 className="font-display text-3xl">
+            <span className="text-yellow-300">★</span> 게임 도움말
+          </h2>
+          <button
+            type="button"
+            aria-label="닫기"
+            onClick={onClose}
+            className="ml-auto w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-2xl font-bold flex items-center justify-center"
+          >
+            ×
+          </button>
+        </div>
 
         <section className="glass p-4">
           <h3 className="font-display text-xl mb-2">이기는 법</h3>
@@ -87,7 +83,7 @@ function HelpOverlay({ settings, onClose, dismissOnClick }: { settings: Settings
               <li key={n} className="flex gap-2 items-start">
                 <span className={`mt-1 inline-block w-4 h-4 rounded-full shrink-0 ${c} ring-2 ring-white/70`} />
                 <span>
-                  <b>{n}</b> <span className="text-white/75">— {d}</span>
+                  <b>{n}</b> <span className="text-white/75">{d}</span>
                 </span>
               </li>
             ))}
@@ -104,7 +100,7 @@ function HelpOverlay({ settings, onClose, dismissOnClick }: { settings: Settings
                   <ItemIcon id={id} size={24} />
                 </span>
                 <span>
-                  <b>{ITEMS[id].name}</b> <span className="text-white/75">— {ITEMS[id].desc}</span>
+                  <b>{ITEMS[id].name}</b> <span className="text-white/75">{ITEMS[id].desc}</span>
                   <span className="text-amber-200/80 text-sm"> · {ITEMS[id].price}</span>
                 </span>
               </li>
@@ -112,13 +108,9 @@ function HelpOverlay({ settings, onClose, dismissOnClick }: { settings: Settings
           </ul>
         </section>
 
-        {dismissOnClick ? (
-          <button className="self-center rounded-full bg-white text-slate-900 font-display px-6 py-2" onClick={onClose}>
-            닫기
-          </button>
-        ) : (
-          <p className="text-center text-white/50 text-sm">손을 떼면 닫혀요</p>
-        )}
+        <button className="self-center rounded-full bg-white text-slate-900 font-display px-8 py-2" onClick={onClose}>
+          닫기
+        </button>
       </div>
     </div>
   );

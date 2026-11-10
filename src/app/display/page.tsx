@@ -44,7 +44,7 @@ export default function DisplayPage() {
         </div>
         <div className="flex items-center gap-3">
           {game.backend?.mode === "local" && <span className="rounded-full bg-yellow-300/90 text-slate-900 px-3 py-1 text-sm">데모</span>}
-          <HelpButton settings={state.settings} mode="toggle" className="w-11 h-11 text-2xl" />
+          <HelpButton settings={state.settings} className="w-11 h-11 text-2xl" />
           {joinUrl && (
             <div className="flex items-center gap-2 rounded-2xl bg-white p-1.5 pr-3 shadow-lg">
               <QRCodeSVG value={joinUrl} size={52} />

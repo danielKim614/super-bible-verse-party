@@ -198,7 +198,7 @@ export default function JoinPage() {
       )}
 
       {state.paused && <div className="fixed bottom-4 left-4 right-4 rounded-2xl bg-black/70 text-white text-center py-3 font-display text-xl">잠시만요 ⏸</div>}
-      <HelpButton settings={state.settings} mode="hold" className="fixed bottom-5 right-5 w-14 h-14 text-3xl z-40" />
+      <HelpButton settings={state.settings} className="fixed bottom-5 right-5 w-14 h-14 text-3xl z-40" />
     </main>
   );
 }
