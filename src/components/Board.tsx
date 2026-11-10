@@ -485,11 +485,12 @@ export function Board({
         const base = posXY(Number(posStr));
         const n = ids.length;
         const atStart = Number(posStr) === 0;
-        const r = n === 1 ? 21 : n === 2 ? 17 : 14;
-        const gap = r * 2 + 4;
+        // 말은 칸 아래쪽에 매달리듯 배치해 칸 번호·색이 항상 보이게 한다
+        const r = n === 1 ? 18 : n === 2 ? 16 : 13;
+        const gap = r * 2 + 3;
         return ids.map((id, i) => {
           const x = base.x + (i - (n - 1) / 2) * (n === 1 ? 0 : gap);
-          const y = atStart ? base.y - 66 : n === 1 ? base.y - 4 : base.y - 30 - (n > 3 ? 4 : 0);
+          const y = atStart ? base.y - 66 : base.y + 22 + r;
           const t = teamById[id];
           const isCur = id === cur && state.phase !== "ended";
           const isMine = highlightTeam === id;

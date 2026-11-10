@@ -40,11 +40,14 @@ export function ActionCard({
   const card = verseSpace ? verseCard(state, verseSpace, verses) : null;
 
   return (
-    <div className={`glass relative overflow-hidden ${big ? "p-5 pl-7" : "p-3 pl-5"}`}>
-      <span className="absolute left-0 top-0 bottom-0 w-2" style={{ background: team?.color }} />
-      <div className="flex items-center gap-3">
+    <div
+      className={`action-card relative overflow-hidden ${big ? "p-5" : "p-3"}`}
+      style={{ ["--team" as string]: team?.color ?? "#8b5cf6" }}
+    >
+      <span className={`now-chip absolute ${big ? "top-3 left-5 text-sm" : "top-2 left-3 text-[10px]"}`}>NOW</span>
+      <div className={`flex items-center gap-3 ${big ? "mt-5" : "mt-3"}`}>
         <TeamAvatar team={team} size={big ? 52 : 36} />
-        <div className={`font-display ${big ? "text-3xl" : "text-lg"} leading-tight`}>{phaseHeadline(state, teamById)}</div>
+        <div className={`font-display ${big ? "text-3xl" : "text-xl"} leading-tight`}>{phaseHeadline(state, teamById)}</div>
         {ctx.roll !== undefined && (
           <div className="ml-auto">
             <DieBadge value={ctx.roll} double={ctx.rollMode === "double"} big={big} />

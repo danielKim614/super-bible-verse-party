@@ -6,6 +6,7 @@ import { TeamAvatar } from "@/components/TeamAvatar";
 import { ItemIcon } from "@/components/ItemIcon";
 import { describeEvent } from "@/components/describeEvent";
 import { phaseHeadline, teamName, verseCard } from "@/components/describe";
+import { ManualTab } from "./ManualTab";
 import { FORKS, SPACES, SPACE_LABEL } from "@/game/board";
 import { ITEMS, ITEM_IDS, type ItemId } from "@/game/items";
 import {
@@ -25,7 +26,7 @@ import { useAdmin, useGame, type GameData } from "@/lib/useGame";
 import { countVerses, parseVerses } from "@/game/verses";
 
 type Admin = ReturnType<typeof useAdmin>;
-type Tab = "control" | "teams" | "verses" | "override" | "log" | "settings";
+type Tab = "control" | "teams" | "verses" | "override" | "log" | "settings" | "manual";
 
 const btn = "rounded-xl px-4 py-2 font-bold shadow-sm active:scale-[0.97] transition disabled:opacity-40 disabled:pointer-events-none";
 
@@ -81,6 +82,7 @@ export default function AdminPage() {
             ["override", "강제 개입"],
             ["log", "달란트 장부·로그"],
             ["settings", "설정"],
+            ["manual", "설명서"],
           ] as [Tab, string][]
         ).map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} className={`rounded-t-xl px-4 py-2 font-bold ${tab === k ? "bg-white" : "bg-slate-200 text-slate-500"}`}>
@@ -95,6 +97,7 @@ export default function AdminPage() {
         {tab === "override" && <OverrideTab game={game} admin={admin} />}
         {tab === "log" && <LogTab game={game} />}
         {tab === "settings" && <SettingsTab game={game} admin={admin} />}
+        {tab === "manual" && <ManualTab settings={game.state.settings} />}
       </div>
     </main>
   );
