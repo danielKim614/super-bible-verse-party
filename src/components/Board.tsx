@@ -178,6 +178,45 @@ function useDiceRoll(state: GameState) {
   return dice;
 }
 
+const STAR_FX_MS = 2400;
+
+/** 스타 구매 직후 연출: 그 칸 위에서 별이 빠르게 돌며 빛나다 사라짐 */
+const STAR_SPAWN_MS = 1200;
+
+function useStarBurst(state: GameState) {
+  const [burst, setBurst] = useState<{ key: number; at: number } | null>(null);
+  const [hidden, setHidden] = useState<number | null>(null); // 아직 등장 연출 전인 새 별
+  const [spawn, setSpawn] = useState<{ key: number; at: number } | null>(null);
+  const prevBought = useRef(false);
+  const prevStart = useRef(state.ctx.startSeq);
+  const prevStars = useRef<number[]>(state.stars);
+  useEffect(() => {
+    const was = prevBought.current && prevStart.current === state.ctx.startSeq;
+    prevBought.current = !!state.ctx.starBought;
+    prevStart.current = state.ctx.startSeq;
+    const before = prevStars.current;
+    prevStars.current = state.stars;
+    if (!state.ctx.starBought || was) return;
+    const at = state.ctx.starBoughtAt ?? state.ctx.landed ?? 0;
+    const fresh = state.stars.find((x) => !before.includes(x)) ?? null;
+    const key = Date.now();
+    setBurst({ key, at });
+    setHidden(fresh);
+    const t1 = setTimeout(() => {
+      setBurst((b) => (b && b.key === key ? null : b));
+      setHidden(null);
+      if (fresh !== null) setSpawn({ key, at: fresh });
+    }, STAR_FX_MS);
+    const t2 = setTimeout(() => setSpawn((sp) => (sp && sp.key === key ? null : sp)), STAR_FX_MS + STAR_SPAWN_MS);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ctx.starBought, state.ctx.startSeq]);
+  return { burst, hidden, spawn };
+}
+
 const PIPS: Record<number, [number, number][]> = {
   1: [[0, 0]],
   2: [[-1, -1], [1, 1]],
@@ -226,6 +265,7 @@ export function Board({
 }) {
   const forkFlash = useForkFlash(state);
   const dice = useDiceRoll(state);
+  const { burst: starBurst, hidden: hiddenStar, spawn: starSpawn } = useStarBurst(state);
   const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : dice ? DICE_MS : 0);
   const sparkles = useSparkles(70);
   const cur = currentTeamId(state);
@@ -368,12 +408,20 @@ export function Board({
       {/* 스타: 칸 위에 떠서 Y축 회전 */}
       {state.stars.map((st) => {
         const sp = SPACE_BY_ID[st];
-        if (!sp) return null;
+        if (!sp || st === hiddenStar) return null;
+        const spawning = starSpawn?.at === st;
         return (
           <g key={`star-${st}`} transform={`translate(${sp.x},${sp.y - 40})`}>
+            {spawning && (
+              <g className="animate-starfx-rays">
+                {Array.from({ length: 10 }, (_, i) => (
+                  <rect key={i} x={-2.5} y={-80} width={5} height={46} rx={2.5} fill="#fff7c2" opacity={0.9} transform={`rotate(${i * 36})`} />
+                ))}
+              </g>
+            )}
             <circle r={44} fill="url(#glow)" className="animate-ping-slow" />
             <ellipse cx={0} cy={40} rx={16} ry={5} fill="#000" opacity={0.35} />
-            <g className="animate-star-spin">
+            <g className={spawning ? "animate-star-spawn" : "animate-star-spin"}>
               <polygon
                 points="0,-30 8.6,-10 30,-10 12.8,2.6 19.1,24 0,12.4 -19.1,24 -12.8,2.6 -30,-10 -8.6,-10"
                 fill="url(#starFill)"
@@ -466,6 +514,45 @@ export function Board({
           );
         });
       })}
+      {/* 스타 획득 연출 */}
+      {starBurst &&
+        (() => {
+          const p = posXY(starBurst.at);
+          return (
+            <g key={starBurst.key} transform={`translate(${p.x},${p.y - 40})`}>
+              <g className="animate-starfx-glow">
+                <circle r={90} fill="url(#glow)" />
+              </g>
+              <g className="animate-starfx-rays">
+                {Array.from({ length: 12 }, (_, i) => (
+                  <rect key={i} x={-3} y={-95} width={6} height={60} rx={3} fill="#fff7c2" opacity={0.85} transform={`rotate(${i * 30})`} />
+                ))}
+              </g>
+              <g className="animate-starfx-fade">
+                <g className="animate-starfx-spin">
+                  <polygon
+                    points="0,-44 12.6,-14.6 44,-14.6 18.8,3.8 28,35.2 0,18.2 -28,35.2 -18.8,3.8 -44,-14.6 -12.6,-14.6"
+                    fill="url(#starFill)"
+                    stroke="#fff"
+                    strokeWidth={4}
+                    strokeLinejoin="round"
+                    filter="url(#neon)"
+                  />
+                </g>
+              </g>
+              {Array.from({ length: 10 }, (_, i) => (
+                <circle
+                  key={`p${i}`}
+                  r={4}
+                  fill={i % 2 ? "#fde047" : "#fff"}
+                  className="animate-starfx-particle"
+                  style={{ animationDelay: `${i * 40}ms`, transform: `rotate(${i * 36}deg)` } as React.CSSProperties}
+                />
+              ))}
+            </g>
+          );
+        })()}
+
       {/* 주사위 연출 */}
       {dice && (
         <g transform={`translate(${BOARD_W / 2},${BOARD_H / 2})`}>

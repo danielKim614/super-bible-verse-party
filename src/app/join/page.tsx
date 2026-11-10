@@ -8,6 +8,8 @@ import { FeedToasts } from "@/components/FeedToasts";
 import { Ceremony } from "@/components/Ceremony";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { ITEMS } from "@/game/items";
+import { ItemIcon } from "@/components/ItemIcon";
+import { HelpButton } from "@/components/HelpOverlay";
 import { isBoost } from "@/game/reducer";
 import { useGame } from "@/lib/useGame";
 
@@ -171,7 +173,17 @@ export default function JoinPage() {
             <div className="glass p-3 flex items-center justify-around font-display text-2xl">
               <span>⭐ {myState.stars}</span>
               <span className="text-amber-200">🪙 {myState.talents}</span>
-              <span className="text-base">{myState.items.length ? myState.items.map((i) => ITEMS[i].icon).join(" ") : "아이템 없음"}</span>
+              <span className="flex gap-1.5">
+                {myState.items.length === 0 && <span className="text-sm text-white/40">아이템 없음</span>}
+                {myState.items.map((i, k) => (
+                  <span key={k} className="inline-flex flex-col items-center w-12">
+                    <span className="inline-flex w-9 h-9 rounded-xl bg-white/15 items-center justify-center">
+                      <ItemIcon id={i} size={24} />
+                    </span>
+                    <span className="text-[10px] text-white/70 leading-tight truncate w-full text-center">{ITEMS[i].name}</span>
+                  </span>
+                ))}
+              </span>
             </div>
           )}
           <ActionCard state={state} teamById={teamById} verses={game.verses} size="sm" />
@@ -186,6 +198,7 @@ export default function JoinPage() {
       )}
 
       {state.paused && <div className="fixed bottom-4 left-4 right-4 rounded-2xl bg-black/70 text-white text-center py-3 font-display text-xl">잠시만요 ⏸</div>}
+      <HelpButton settings={state.settings} mode="hold" className="fixed bottom-5 right-5 w-14 h-14 text-3xl z-40" />
     </main>
   );
 }

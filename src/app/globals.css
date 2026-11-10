@@ -66,6 +66,51 @@ body {
 }
 .animate-die-settle { animation: die-settle 0.35s ease-out both; transform-box: fill-box; transform-origin: center; }
 
+/* 스타 획득 연출 */
+/* 회전: 천천히 시작해 점점 빨라짐 (ease-in) */
+@keyframes starfx-spin { from { transform: rotateY(0deg); } to { transform: rotateY(3240deg); } }
+.animate-starfx-spin { animation: starfx-spin 2.4s cubic-bezier(0.7, 0, 1, 0.4) both; transform-box: fill-box; transform-origin: center; }
+/* 크기·투명도: 커지며 나타났다가 끝에 사라짐 */
+@keyframes starfx-fade {
+  0% { transform: scale(0.5); opacity: 0; }
+  12% { transform: scale(1.3); opacity: 1; }
+  80% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.animate-starfx-fade { animation: starfx-fade 2.4s ease-out both; transform-box: fill-box; transform-origin: center; }
+@keyframes starfx-glow {
+  0% { transform: scale(0.2); opacity: 0; }
+  20% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.animate-starfx-glow { animation: starfx-glow 2.4s ease-out both; transform-box: fill-box; transform-origin: center; }
+@keyframes starfx-rays {
+  0% { transform: scale(0.3); opacity: 0; }
+  25% { opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.animate-starfx-rays { animation: starfx-rays 2.4s ease-out both; transform-box: fill-box; transform-origin: center; }
+@keyframes starfx-particle {
+  0% { translate: 0 0; opacity: 1; }
+  100% { translate: 0 -120px; opacity: 0; }
+}
+.animate-starfx-particle { animation: starfx-particle 1.2s ease-out both; }
+
+@keyframes toast-in {
+  0% { transform: translateY(-24px) scale(0.9); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.animate-toast-in { animation: toast-in 0.35s cubic-bezier(0.2, 0.8, 0.3, 1.2) both; }
+
+/* 새 별 등장: 번쩍이며 커졌다 자리 잡음 */
+@keyframes star-spawn {
+  0% { transform: scale(0) rotateY(0deg); opacity: 0; }
+  40% { transform: scale(1.6) rotateY(360deg); opacity: 1; }
+  70% { transform: scale(0.9) rotateY(540deg); }
+  100% { transform: scale(1) rotateY(720deg); opacity: 1; }
+}
+.animate-star-spawn { animation: star-spawn 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) both; transform-box: fill-box; transform-origin: center; }
+
 @keyframes dash { to { stroke-dashoffset: -44; } }
 .animate-dash { animation: dash 2.2s linear infinite; }
 
@@ -109,5 +154,5 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-die-travel, .animate-die-tumble, .animate-die-settle { animation: none; }
+  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
 }

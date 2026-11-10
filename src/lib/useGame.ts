@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { replay } from "@/game/reducer";
 import type { GameEvent, GameEventBody, GameState, MemberInfo, TeamInfo } from "@/game/types";
-import { getBackend, type Backend, type TeamInput } from "./backend";
+import { getBackend, type Backend, type Snapshot, type TeamInput } from "./backend";
 import type { VerseMap } from "@/game/verses";
 
 export interface GameData {
@@ -28,10 +28,19 @@ export function useGame(): GameData {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const snapRef = useRef<Snapshot | null>(null);
+  const inflight = useRef(false);
+  const queued = useRef(false);
 
-  const load = useCallback(async (b: Backend) => {
+  const load = useCallback(async (b: Backend): Promise<void> => {
+    if (inflight.current) {
+      queued.current = true; // 진행 중이면 끝난 뒤 한 번 더
+      return;
+    }
+    inflight.current = true;
     try {
-      const snap = await b.load();
+      const snap = snapRef.current ? await b.sync(snapRef.current) : await b.load();
+      snapRef.current = snap;
       // 내용이 같으면 상태를 바꾸지 않아 불필요한 재렌더·애니메이션 재시작을 막음
       const same = <T,>(prev: T, next: T) => JSON.stringify(prev) === JSON.stringify(next);
       setEvents((prev) => (same(prev, snap.events) ? prev : snap.events));
@@ -42,7 +51,12 @@ export function useGame(): GameData {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
+      inflight.current = false;
       setLoading(false);
+      if (queued.current) {
+        queued.current = false;
+        void load(b);
+      }
     }
   }, []);
 

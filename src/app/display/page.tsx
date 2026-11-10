@@ -8,6 +8,7 @@ import { ActionCard } from "@/components/ActionCard";
 import { FeedToasts } from "@/components/FeedToasts";
 import { Ceremony } from "@/components/Ceremony";
 import { TeamAvatar } from "@/components/TeamAvatar";
+import { HelpButton } from "@/components/HelpOverlay";
 import { isBoost } from "@/game/reducer";
 import { useGame } from "@/lib/useGame";
 
@@ -36,11 +37,14 @@ export default function DisplayPage() {
             달란트 2배
           </div>
         )}
-        <div className="flex-1 min-w-0 flex justify-center">
-          <FeedToasts state={state} teamById={teamById} />
+        <div className="flex-1 min-w-0 relative self-stretch">
+          <div className="absolute left-1/2 -translate-x-1/2 top-0 z-30">
+            <FeedToasts state={state} teamById={teamById} />
+          </div>
         </div>
         <div className="flex items-center gap-3">
           {game.backend?.mode === "local" && <span className="rounded-full bg-yellow-300/90 text-slate-900 px-3 py-1 text-sm">데모</span>}
+          <HelpButton settings={state.settings} mode="toggle" className="w-11 h-11 text-2xl" />
           {joinUrl && (
             <div className="flex items-center gap-2 rounded-2xl bg-white p-1.5 pr-3 shadow-lg">
               <QRCodeSVG value={joinUrl} size={52} />

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Board } from "@/components/Board";
 import { TeamAvatar } from "@/components/TeamAvatar";
+import { ItemIcon } from "@/components/ItemIcon";
 import { describeEvent } from "@/components/describeEvent";
 import { phaseHeadline, teamName, verseCard } from "@/components/describe";
 import { FORKS, SPACES, SPACE_LABEL } from "@/game/board";
@@ -250,10 +251,10 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
         it === "selectDice" ? (
           <span key={it} className="flex gap-1">
             <button className={`${btn} bg-purple-100`} disabled={busy} onClick={() => send({ type: "use_item", payload: { item: it, choice: "low", seed: newSeed() } })}>
-              {ITEMS[it].icon} 선택 다이스 낮음(1~3)
+              <ItemIcon id={it} size={20} className="inline mr-1 align-middle" />선택 다이스 낮음(1~3)
             </button>
             <button className={`${btn} bg-purple-100`} disabled={busy} onClick={() => send({ type: "use_item", payload: { item: it, choice: "high", seed: newSeed() } })}>
-              {ITEMS[it].icon} 선택 다이스 높음(4~6)
+              <ItemIcon id={it} size={20} className="inline mr-1 align-middle" />선택 다이스 높음(4~6)
             </button>
           </span>
         ) : (
@@ -266,7 +267,8 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
               send({ type: "use_item", payload: { item: it, seed: newSeed() } });
             }}
           >
-            {ITEMS[it].icon} {ITEMS[it].name}
+            <ItemIcon id={it} size={20} className="inline mr-1 align-middle" />
+            {ITEMS[it].name}
           </button>
         ),
       )}
@@ -381,7 +383,8 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
                 const ok = team.talents >= d.price && team.items.length < state.settings.inventoryLimit;
                 return (
                   <button key={id} className={`${btn} bg-white border`} disabled={busy || !ok} onClick={() => send({ type: "shop_buy", payload: { item: id } })} title={d.desc}>
-                    {d.icon} {d.name} · {d.price}
+                    <ItemIcon id={id} size={20} className="inline mr-1 align-middle" />
+                    {d.name} · {d.price}
                   </button>
                 );
               })}

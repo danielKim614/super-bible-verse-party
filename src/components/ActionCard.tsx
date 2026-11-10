@@ -2,6 +2,7 @@
 
 import { FORKS } from "@/game/board";
 import { ITEMS } from "@/game/items";
+import { ItemIcon } from "./ItemIcon";
 import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 import type { VerseMap } from "@/game/verses";
@@ -51,8 +52,8 @@ export function ActionCard({
       {state.phase === "shop_offer" && tid && (
         <div className={`mt-3 flex flex-wrap gap-2 ${big ? "text-lg" : "text-sm"}`}>
           {Object.values(ITEMS).map((d) => (
-            <span key={d.id} className="rounded-full bg-white/10 border border-white/15 px-3 py-1">
-              {d.icon} {d.name} <b className="text-amber-300">{d.price}</b>
+            <span key={d.id} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 pl-1.5 pr-3 py-1">
+              <ItemIcon id={d.id} size={22} /> {d.name} <b className="text-amber-300">{d.price}</b>
             </span>
           ))}
         </div>
@@ -106,8 +107,8 @@ export function ActionCard({
             <span className={`font-display text-white/50 ${big ? "text-4xl" : "text-xl"}`}>획득 없음</span>
           )}
           {ctx.gainedItem && ctx.gainedItem !== "full" && (
-            <span className={`rounded-2xl bg-violet-400/30 border border-violet-300/40 px-3 py-1 font-display ${big ? "text-2xl" : "text-base"}`}>
-              🎁 {ITEMS[ctx.gainedItem].name}
+            <span className={`inline-flex items-center gap-2 rounded-2xl bg-violet-400/30 border border-violet-300/40 px-3 py-1 font-display ${big ? "text-2xl" : "text-base"}`}>
+              <ItemIcon id={ctx.gainedItem} size={big ? 30 : 20} /> {ITEMS[ctx.gainedItem].name} 획득!
             </span>
           )}
           {ctx.starBought && <span className={`font-display text-yellow-300 ${big ? "text-3xl" : "text-lg"}`}>★ 스타 획득!</span>}

@@ -505,6 +505,7 @@ function buyStar(s: GameState, tid: string, seq: number, opts: { seed?: number }
   if (ctx.couponUsed) removeItem(team, "starCoupon");
   team.stars += 1;
   ctx.starBought = true;
+  ctx.starBoughtAt = ctx.starAt;
   credit(s, seq, tid, -price, `스타 구매${ctx.couponUsed ? " (할인권)" : ""}`);
   feed(s, { seq, teamId: tid, kind: "star", text: "스타 획득!", amount: -price });
   const at = ctx.starAt!;

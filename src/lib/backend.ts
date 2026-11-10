@@ -22,6 +22,8 @@ export interface TeamInput {
 export interface Backend {
   mode: "supabase" | "local";
   load(): Promise<Snapshot>;
+  /** 이전 스냅샷 기준으로 바뀐 부분만 받아 새 스냅샷을 돌려줌 (변경 없으면 같은 객체) */
+  sync(prev: Snapshot): Promise<Snapshot>;
   subscribe(onChange: () => void): () => void;
   verifyAdmin(pass: string): Promise<boolean>;
   appendEvent(pass: string, body: GameEventBody, expectedSeq: number): Promise<void>;
@@ -66,6 +68,68 @@ class SupabaseBackend implements Backend {
       verses,
     };
   }
+
+  private lastVersion: string | null = null;
+
+  async sync(prev: Snapshot): Promise<Snapshot> {
+    const { data, error } = await this.sb.rpc("game_version", { p_game: GAME_ID });
+    if (error) {
+      // 함수가 아직 없으면(마이그레이션 전) 전체 로드로 대체
+      return this.load();
+    }
+    const v = data as { e: number; v: number; t: string; m: string; s: string };
+    const key = JSON.stringify(v);
+    if (this.lastVersion === key && this.lastSnap === prev) return prev;
+    const maxSeq = Math.max(0, ...prev.events.map((x) => x.seq));
+    const voidedCount = prev.events.filter((x) => x.voided).length;
+    const prevV = this.lastVersion ? (JSON.parse(this.lastVersion) as typeof v) : null;
+
+    let events = prev.events;
+    if (v.e > maxSeq) {
+      const { data: rows, error: e2 } = await this.sb
+        .from("events")
+        .select("id,seq,type,payload,voided,created_at")
+        .eq("game_id", GAME_ID)
+        .gt("seq", maxSeq)
+        .order("seq");
+      if (e2) throw new Error(e2.message);
+      events = [...events, ...((rows ?? []) as unknown as GameEvent[])];
+    } else if (v.e < maxSeq) {
+      // 초기화됨
+      return this.load();
+    }
+    if (v.v !== voidedCount || (v.e > maxSeq && v.v !== events.filter((x) => x.voided).length)) {
+      const { data: flags, error: e3 } = await this.sb.from("events").select("id,voided").eq("game_id", GAME_ID);
+      if (e3) throw new Error(e3.message);
+      const map = new Map((flags ?? []).map((f: { id: number; voided: boolean }) => [f.id, f.voided]));
+      events = events.map((x) => (map.has(x.id) && map.get(x.id) !== x.voided ? { ...x, voided: map.get(x.id)! } : x));
+    }
+
+    let teams = prev.teams;
+    if (!prevV || prevV.t !== v.t) {
+      const { data: tm, error: e4 } = await this.sb.from("teams").select("id,slot,name,color,image_url").eq("game_id", GAME_ID).order("slot");
+      if (e4) throw new Error(e4.message);
+      teams = (tm ?? []) as TeamInfo[];
+    }
+    let members = prev.members;
+    if (!prevV || prevV.m !== v.m) {
+      const { data: mb, error: e5 } = await this.sb.from("members").select("id,team_id,nickname,created_at").eq("game_id", GAME_ID).order("created_at");
+      if (e5) throw new Error(e5.message);
+      members = (mb ?? []) as MemberInfo[];
+    }
+    let verses = prev.verses;
+    if (!prevV || prevV.s !== v.s) {
+      const { data: vs, error: e6 } = await this.sb.from("verses").select("verse,text").eq("game_id", GAME_ID);
+      if (e6) throw new Error(e6.message);
+      verses = {};
+      for (const r of (vs ?? []) as { verse: number; text: string }[]) verses[r.verse] = r.text;
+    }
+    this.lastVersion = key;
+    const next = { events, teams, members, verses };
+    this.lastSnap = next;
+    return next;
+  }
+  private lastSnap: Snapshot | null = null;
 
   subscribe(onChange: () => void) {
     const ch = this.sb
@@ -171,6 +235,9 @@ class LocalBackend implements Backend {
   async load() {
     const { events, teams, members, verses } = this.read();
     return { events, teams: [...teams].sort((a, b) => a.slot - b.slot), members, verses: verses ?? {} };
+  }
+  async sync() {
+    return this.load();
   }
   subscribe(onChange: () => void) {
     const h = () => onChange();

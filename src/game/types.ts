@@ -132,6 +132,7 @@ export interface TurnCtx {
   payout?: number;
   gainedItem?: ItemId | "full";
   starBought?: boolean;
+  starBoughtAt?: number; // 스타를 산 칸 (연출용)
   starReciteResult?: boolean;
 }
 

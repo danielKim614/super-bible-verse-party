@@ -1,6 +1,7 @@
 "use client";
 
 import { ITEMS } from "@/game/items";
+import { ItemIcon } from "./ItemIcon";
 import { currentTeamId, finalRanking } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 import { TeamAvatar } from "./TeamAvatar";
@@ -40,7 +41,15 @@ export function Scoreboard({
             <TeamAvatar team={t} size={compact ? 34 : 44} />
             <div className="min-w-0 flex-1">
               <div className={`font-display truncate ${compact ? "text-base" : "text-xl"}`}>{t?.name ?? "?"}</div>
-              {!compact && ts.items.length > 0 && <div className="text-sm truncate opacity-80">{ts.items.map((i) => ITEMS[i].icon).join(" ")}</div>}
+              {!compact && ts.items.length > 0 && (
+                <div className="flex gap-1 mt-0.5">
+                  {ts.items.map((i, k) => (
+                    <span key={k} title={ITEMS[i].name} className="inline-flex w-7 h-7 rounded-lg bg-white/15 items-center justify-center">
+                      <ItemIcon id={i} size={18} />
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-3 shrink-0 font-display">
               <span className={`${compact ? "text-lg" : "text-2xl"} text-yellow-300`}>★{stars}</span>

@@ -31,16 +31,16 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
     fresh.forEach((f) => seen.current!.add(keyOf(f)));
     if (!fresh.length) return;
     const items = fresh.map((f) => ({ ...f, key: keyOf(f) + Math.random() }));
-    setShown((s) => [...s, ...items].slice(-2));
+    setShown((s) => [...items.reverse(), ...s].slice(0, 3));
     setTimeout(() => setShown((s) => s.filter((x) => !items.includes(x))), 4500);
   }, [state.feed]);
 
   return (
-    <div className="pointer-events-none flex flex-row flex-wrap items-center justify-center gap-2">
+    <div className="pointer-events-none flex flex-col items-center gap-2">
       {shown.map((f) => (
         <div
           key={f.key}
-          className={`animate-pop flex items-center gap-2 rounded-full shadow-lg font-display ${big ? "px-4 py-1.5 text-xl" : "px-3 py-1.5 text-base"} ${KIND_STYLE[f.kind]}`}
+          className={`animate-toast-in flex items-center gap-2 rounded-full shadow-lg font-display ${big ? "px-4 py-1.5 text-xl" : "px-3 py-1.5 text-base"} ${KIND_STYLE[f.kind]}`}
         >
           {f.teamId && <TeamAvatar team={teamById[f.teamId]} size={big ? 30 : 24} />}
           <span>{f.text}</span>
