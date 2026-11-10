@@ -157,7 +157,7 @@ export function payoutBreakdown(amount: number): { d10: number; d5: number; d1: 
 }
 
 /** 아이템 가방이 가득 찼을 때 아이템 대신 지급하는 달란트 */
-export const FULL_BAG_TALENTS = 5;
+export const FULL_BAG_TALENTS = 3;
 
 export function payoutText(amount: number): string {
   const b = payoutBreakdown(amount);
