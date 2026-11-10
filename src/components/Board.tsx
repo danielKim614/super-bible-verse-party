@@ -405,6 +405,9 @@ export function Board({
         );
       })}
 
+      {/* 스타 획득·등장 동안 화면 어둡게 */}
+      {(starBurst || starSpawn) && <rect width={BOARD_W} height={BOARD_H} rx={36} fill="#05081f" opacity={0.72} className="animate-dim-in" />}
+
       {/* 스타: 칸 위에 떠서 Y축 회전 */}
       {state.stars.map((st) => {
         const sp = SPACE_BY_ID[st];

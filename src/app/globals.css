@@ -111,6 +111,9 @@ body {
 }
 .animate-star-spawn { animation: star-spawn 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) both; transform-box: fill-box; transform-origin: center; }
 
+@keyframes dim-in { from { opacity: 0; } to { opacity: 0.72; } }
+.animate-dim-in { animation: dim-in 0.4s ease-out both; }
+
 @keyframes dash { to { stroke-dashoffset: -44; } }
 .animate-dash { animation: dash 2.2s linear infinite; }
 
@@ -154,5 +157,5 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
+  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
 }
