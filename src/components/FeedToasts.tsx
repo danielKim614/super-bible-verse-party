@@ -16,6 +16,8 @@ const KIND_STYLE: Record<FeedEntry["kind"], string> = {
   bless: "bg-pink-300 text-pink-950",
 };
 
+const TOAST_MS = 4500;
+
 /** 새로 생긴 피드 항목을 잠깐 띄움 (Undo로 사라진 항목은 무시) */
 export function FeedToasts({ state, teamById, big = true }: { state: GameState; teamById: Record<string, TeamInfo>; big?: boolean }) {
   const [shown, setShown] = useState<(FeedEntry & { key: string })[]>([]);
@@ -32,7 +34,8 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
     if (!fresh.length) return;
     const items = fresh.map((f) => ({ ...f, key: keyOf(f) + Math.random() }));
     setShown((s) => [...items.reverse(), ...s].slice(0, 3));
-    setTimeout(() => setShown((s) => s.filter((x) => !items.includes(x))), 4500);
+    // CSS animate-toast-life(4.5초) 이 끝난 뒤 목록에서 제거
+    setTimeout(() => setShown((s) => s.filter((x) => !items.includes(x))), TOAST_MS);
   }, [state.feed]);
 
   return (
@@ -40,7 +43,7 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
       {shown.map((f) => (
         <div
           key={f.key}
-          className={`animate-toast-in flex items-center gap-2 rounded-full shadow-lg font-display ${big ? "px-4 py-1.5 text-xl" : "px-3 py-1.5 text-base"} ${KIND_STYLE[f.kind]}`}
+          className={`animate-toast-life flex items-center gap-2 rounded-full shadow-lg font-display ${big ? "px-4 py-1.5 text-xl" : "px-3 py-1.5 text-base"} ${KIND_STYLE[f.kind]}`}
         >
           {f.teamId && <TeamAvatar team={teamById[f.teamId]} size={big ? 30 : 24} />}
           <span>{f.text}</span>

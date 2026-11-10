@@ -102,6 +102,17 @@ body {
 }
 .animate-toast-in { animation: toast-in 0.35s cubic-bezier(0.2, 0.8, 0.3, 1.2) both; }
 
+/* 알림: 튀어나온 뒤 잠시 머물다가 위로 살짝 떠오르며 서서히 사라짐 (총 4.5초) */
+@keyframes toast-out {
+  0% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(-10px) scale(0.96); opacity: 0; filter: blur(2px); }
+}
+.animate-toast-life {
+  animation:
+    toast-in 0.35s cubic-bezier(0.2, 0.8, 0.3, 1.2) both,
+    toast-out 1.1s ease-in 3.4s forwards;
+}
+
 /* 새 별 등장: 번쩍이며 커졌다 자리 잡음 */
 @keyframes star-spawn {
   0% { transform: scale(0) rotateY(0deg); opacity: 0; }
@@ -157,7 +168,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
+  .animate-pop, .animate-bob, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-toast-life, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
 }
 
 /* 진행 멘트 카드: 팀 색으로 물든 그라데이션 + 숨 쉬는 테두리 */
