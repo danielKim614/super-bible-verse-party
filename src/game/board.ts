@@ -253,8 +253,8 @@ export function forwardDistances(from: number): Map<number, number> {
 }
 
 export const SPACE_LABEL: Record<SpaceType, string> = {
-  blue: "파란 칸",
-  red: "빨간 칸",
+  blue: "일반 칸",
+  red: "어려운 칸",
   event: "이벤트 칸",
   item: "아이템 칸",
   happening: "해프닝 칸",

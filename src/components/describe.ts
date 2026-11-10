@@ -48,7 +48,7 @@ export function verseCard(s: GameState, space: number, verses: VerseMap): VerseC
       .map((v) => `${v} ${verseText(verses, v)}`)
       .join("\n");
   }
-  const typeLabel = sp.type === "red" && eff === "blue" ? "빨간 칸 (방패 → 파란 칸 규칙)" : SPACE_LABEL[sp.type];
+  const typeLabel = sp.type === "red" && eff === "blue" ? "어려운 칸 (방패 → 일반 칸 규칙)" : SPACE_LABEL[sp.type];
   return { ref, space, typeLabel, type: sp.type, modeLabel, prompt, fullText };
 }
 

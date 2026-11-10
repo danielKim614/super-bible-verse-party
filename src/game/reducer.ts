@@ -559,7 +559,7 @@ function finishGame(s: GameState, seq: number) {
   if (s.settings.bonusStars.recite) mk("recite", "암송 스타", "암송 성공 횟수 최다", (t) => t.reciteSuccess);
   if (s.settings.bonusStars.talent) mk("talent", "달란트 스타", "달란트 보유 최다", (t) => t.talents);
   if (s.settings.bonusStars.challenge)
-    mk("challenge", "도전 스타", "빨간 칸·이벤트 칸 암송 성공 최다", (t) => t.challengeSuccess);
+    mk("challenge", "도전 스타", "어려운 칸·이벤트 칸 암송 성공 최다", (t) => t.challengeSuccess);
   s.ceremony = { step: 0, refunds, awards };
   s.ctx = freshCtx();
   feed(s, { seq, kind: "info", text: "게임 종료! 시상식을 시작합니다" });

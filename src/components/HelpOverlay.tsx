@@ -35,12 +35,12 @@ export function HelpButton({ settings, className = "" }: { settings: Settings; m
 function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () => void }) {
   const r = settings.rewards;
   const spaces: [string, string, string][] = [
-    ["bg-sky-400", "파란 칸", `장절을 보고 암송 · +${r.blue}`],
-    ["bg-rose-400", "빨간 칸", `빈칸·첫 단어·힌트 없음 중 하나 · +${r.red}`],
-    ["bg-emerald-400", "이벤트 칸", `팀 릴레이 또는 3절 연속 · +${r.event}`],
-    ["bg-violet-400", "선물 칸", `성공하면 랜덤 아이템 · +${r.item}`],
-    ["bg-teal-400", "해프닝 칸", "멈추면 보드에 사건 발생 (스타 대이동·달란트 비·황금 라운드·깜짝 선물)"],
-    ["bg-pink-400", "축복 칸", "멈추면 꼴찌 팀에게 +5 달란트"],
+    ["bg-sky-400", "일반 칸", `장절을 보고 암송 (성공 시 +${r.blue} 달란트)`],
+    ["bg-rose-400", "어려운 칸", `일반 칸보다 어려운 난이도!! (성공 시 +${r.red} 달란트)`],
+    ["bg-emerald-400", "이벤트 칸", `팀 릴레이 또는 3절 연속 (성공 시 +${r.event} 달란트)`],
+    ["bg-violet-400", "선물 칸", `성공하면 랜덤 아이템 (성공 시 +${r.item} 달란트)`],
+    ["bg-teal-400", "해프닝 칸", "멈추면 게임판에 사건(?) 발생"],
+    ["bg-pink-400", "축복 칸", "축복합니다~"],
   ];
   return (
     <div className="fixed inset-0 z-50 bg-[#0b1033]/95 backdrop-blur-sm text-white overflow-auto p-5">
