@@ -1024,16 +1024,7 @@ function SettingsTab({ game, admin }: { game: GameData; admin: Admin }) {
       <div>
         <h3 className="font-display text-xl text-red-600">위험 구역</h3>
         <p className="text-sm text-slate-500">모든 진행 기록을 지우고 게임 시작 전으로 돌아갑니다. 팀·참가자는 유지됩니다.</p>
-        <button
-          className={`${btn} bg-red-600 text-white mt-2`}
-          disabled={admin.busy || game.events.length === 0}
-          onClick={() => {
-            const word = prompt('정말 초기화하려면 "초기화"라고 입력하세요');
-            if (word === "초기화") admin.resetGame();
-          }}
-        >
-          게임 기록 초기화
-        </button>
+        <ResetButton busy={admin.busy} disabled={game.events.length === 0} onReset={() => admin.resetGame()} />
       </div>
     </div>
   );
@@ -1079,6 +1070,36 @@ function DiceInput({ n, mode, busy, onDone }: { n: number; mode: TurnCtx["rollMo
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** 초기화: 브라우저 입력창(prompt) 대신 화면 안에서 두 번 눌러 확인 (대화상자가 차단돼도 동작) */
+function ResetButton({ busy, disabled, onReset }: { busy: boolean; disabled: boolean; onReset: () => void }) {
+  const [armed, setArmed] = useState(false);
+  if (disabled) return <p className="mt-2 text-sm text-slate-400">지울 진행 기록이 없어요.</p>;
+  if (!armed)
+    return (
+      <button className={`${btn} bg-red-600 text-white mt-2`} disabled={busy} onClick={() => setArmed(true)}>
+        게임 기록 초기화
+      </button>
+    );
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <span className="text-sm text-red-700 font-bold">정말 모든 진행 기록을 지울까요? 되돌릴 수 없어요.</span>
+      <button
+        className={`${btn} bg-red-600 text-white`}
+        disabled={busy}
+        onClick={() => {
+          setArmed(false);
+          onReset();
+        }}
+      >
+        네, 초기화
+      </button>
+      <button className={`${btn} bg-slate-200`} onClick={() => setArmed(false)}>
+        취소
+      </button>
     </div>
   );
 }

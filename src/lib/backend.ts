@@ -95,7 +95,9 @@ class SupabaseBackend implements Backend {
       if (e2) throw new Error(e2.message);
       events = [...events, ...((rows ?? []) as unknown as GameEvent[])];
     } else if (v.e < maxSeq) {
-      // 초기화됨
+      // 초기화됨: 처음부터 다시 받고 변경 감지 상태도 비운다
+      this.lastVersion = null;
+      this.lastSnap = null;
       return this.load();
     }
     if (v.v !== voidedCount || (v.e > maxSeq && v.v !== events.filter((x) => x.voided).length)) {

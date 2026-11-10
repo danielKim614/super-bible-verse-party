@@ -85,7 +85,7 @@ const EVENT_MODES: EventMode[] = ["relay", "threeVerses"];
 export const BOARD_W = 1000;
 export const BOARD_H = 640;
 /** 출발 표시(START) 위치: 길 위가 아니라 1절 옆에 따로 둔다. 39 → 1은 길이 바로 이어짐 */
-export const T_POS = { x: 62, y: 70 };
+export const T_POS = { x: 112, y: 92 };
 
 type Pt = { x: number; y: number };
 type Cubic = [Pt, Pt, Pt, Pt];
@@ -152,7 +152,7 @@ const M1 = { x: 640, y: 150 }; // 11 앞
 const F2 = { x: 920, y: 330 }; // 15 다음
 const M2 = { x: 430, y: 530 }; // 28 앞 (상점)
 const F3 = { x: 230, y: 545 }; // 30 다음
-const M4 = { x: 150, y: 245 }; // 39 앞 (왼쪽길·안쪽길 합류)
+const M4 = { x: 178, y: 208 }; // 39 앞 (왼쪽길·안쪽길 합류)
 
 // 각 길의 곡선 (시작점·끝점은 분기/합류 지점 또는 T)
 const ROUTE_CURVES: Record<RouteId, Cubic[]> = {
@@ -163,9 +163,9 @@ const ROUTE_CURVES: Record<RouteId, Cubic[]> = {
   b1: [[F2, { x: 960, y: 560 }, { x: 700, y: 650 }, M2]], // 바깥길: 오른쪽 아래를 크게 돎
   b2: [[F2, { x: 780, y: 400 }, { x: 560, y: 380 }, M2]], // 지름길: 안쪽으로 질러감
   c2: [[M2, { x: 340, y: 560 }, { x: 270, y: 560 }, F3]],
-  d1: [[F3, { x: 30, y: 575 }, { x: 15, y: 300 }, M4]], // 왼쪽길: 가장자리로 크게
-  d2: [[F3, { x: 335, y: 470 }, { x: 335, y: 290 }, M4]], // 안쪽길: 보드 안쪽으로 불룩하게
-  c3: [[M4, { x: 105, y: 165 }, { x: 165, y: 72 }, F1]], // 39 → 1 → 2 (끊김 없이 이어짐)
+  d1: [[F3, { x: 30, y: 575 }, { x: 10, y: 270 }, M4]], // 왼쪽길: 가장자리로 크게
+  d2: [[F3, { x: 345, y: 470 }, { x: 350, y: 280 }, M4]], // 안쪽길: 보드 안쪽으로 불룩하게
+  c3: [[M4, { x: 196, y: 160 }, { x: 246, y: 112 }, F1]], // 39 → 1 → 2 (짧고 완만하게 이어짐)
 };
 
 const PAD_J = 34; // 분기/합류 지점 주변
@@ -188,8 +188,8 @@ export const ROUTE_D: Record<RouteId, string> = Object.fromEntries(
 ) as Record<RouteId, string>;
 
 export const JUNCTIONS = { F1, M1, F2, M2, F3, M4 };
-/** 상점 그림 위치: 합류 칸(28) 왼쪽 위 */
-export const SHOP_POS = { x: M2.x - 46, y: M2.y - 48 };
+/** 상점 그림 위치: 합류 칸(28) 바로 위에 붙여서 */
+export const SHOP_POS = { x: M2.x - 20, y: M2.y - 42 };
 export const FORK_POINTS: Record<number, Pt> = { 2: F1, 15: F2, 30: F3 };
 
 function buildSpaces(): Space[] {

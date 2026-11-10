@@ -552,7 +552,8 @@ export function placeStar(s: GameState, r: () => number, buyerPos?: number) {
     for (const [sp, dist] of d) if (dist <= 6) blocked.add(sp);
     blocked.add(buyerPos);
   }
-  const base = SPACES.filter((sp) => sp.type !== "item" && sp.id !== 1 && !blocked.has(sp.id)).map((sp) => sp.id);
+  // 상점 칸(28)은 가게 그림과 별이 겹치므로 제외
+  const base = SPACES.filter((sp) => sp.type !== "item" && sp.id !== 1 && sp.id !== SHOP_AT && !blocked.has(sp.id)).map((sp) => sp.id);
   const gapOk = (c: number, gap: number) =>
     s.stars.every((st) => {
       const a = forwardDistances(st).get(c) ?? 99;
