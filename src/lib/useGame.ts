@@ -32,10 +32,12 @@ export function useGame(): GameData {
   const load = useCallback(async (b: Backend) => {
     try {
       const snap = await b.load();
-      setEvents(snap.events);
-      setTeams(snap.teams);
-      setMembers(snap.members);
-      setVerses(snap.verses);
+      // 내용이 같으면 상태를 바꾸지 않아 불필요한 재렌더·애니메이션 재시작을 막음
+      const same = <T,>(prev: T, next: T) => JSON.stringify(prev) === JSON.stringify(next);
+      setEvents((prev) => (same(prev, snap.events) ? prev : snap.events));
+      setTeams((prev) => (same(prev, snap.teams) ? prev : snap.teams));
+      setMembers((prev) => (same(prev, snap.members) ? prev : snap.members));
+      setVerses((prev) => (same(prev, snap.verses) ? prev : snap.verses));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

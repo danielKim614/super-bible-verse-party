@@ -76,11 +76,21 @@ class SupabaseBackend implements Backend {
       .on("postgres_changes", { event: "*", schema: "public", table: "verses", filter: `game_id=eq.${GAME_ID}` }, onChange)
       .subscribe((status) => {
         if (status === "SUBSCRIBED") onChange();
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.warn("realtime:", status);
       });
-    // 실시간 연결이 끊겨도 따라잡도록 주기적 새로고침
-    const iv = setInterval(onChange, 15000);
+    // 실시간이 끊기거나 폰이 절전에서 깨어나도 따라잡도록: 주기 폴링 + 화면 복귀 시 새로고침
+    const iv = setInterval(onChange, 4000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") onChange();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onChange);
+    window.addEventListener("online", onChange);
     return () => {
       clearInterval(iv);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onChange);
+      window.removeEventListener("online", onChange);
       this.sb.removeChannel(ch);
     };
   }
@@ -166,9 +176,13 @@ class LocalBackend implements Backend {
     const h = () => onChange();
     this.ch?.addEventListener("message", h);
     window.addEventListener("storage", h);
+    window.addEventListener("focus", h);
+    const iv = setInterval(h, 3000);
     return () => {
+      clearInterval(iv);
       this.ch?.removeEventListener("message", h);
       window.removeEventListener("storage", h);
+      window.removeEventListener("focus", h);
     };
   }
   async verifyAdmin(pass: string) {
