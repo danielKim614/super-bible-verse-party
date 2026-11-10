@@ -99,6 +99,33 @@ function useAnimatedPositions(state: GameState, stepMs: number, initialDelayMs: 
   return shown;
 }
 
+/** START에서 1번 칸으로 휘어지는 뭉툭한 화살표 */
+function StartArrow() {
+  const to = SPACE_BY_ID[1];
+  const dx = to.x - T_POS.x;
+  const dy = to.y - T_POS.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  // 시작: START 가장자리 밖, 끝: 1번 칸 앞. 위쪽으로 살짝 휘게
+  const sx = T_POS.x + ux * 44;
+  const sy = T_POS.y + uy * 44;
+  const ex = to.x - ux * 40;
+  const ey = to.y - uy * 40;
+  const cx = (sx + ex) / 2 + uy * 16;
+  const cy = (sy + ey) / 2 - ux * 16;
+  const ang = (Math.atan2(ey - cy, ex - cx) * 180) / Math.PI;
+  return (
+    <g className="animate-pulse-fast" filter="url(#soft)">
+      <path d={`M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`} fill="none" stroke="#b45309" strokeWidth={15} strokeLinecap="round" />
+      <path d={`M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`} fill="none" stroke="#fff" strokeWidth={10} strokeLinecap="round" />
+      <g transform={`translate(${ex},${ey}) rotate(${ang})`}>
+        <path d="M -6 -15 L 16 0 L -6 15 Z" fill="#fff" stroke="#b45309" strokeWidth={3} strokeLinejoin="round" />
+      </g>
+    </g>
+  );
+}
+
 /** 출발 표시: 모든 말이 출발을 떠나면 한 번 반짝이며 사라짐 (Undo 등으로 다시 돌아오면 다시 보임) */
 const START_VANISH_MS = 1000;
 function useStartMark(state: GameState, shown: Record<string, number>): "visible" | "leaving" | "hidden" {
@@ -371,6 +398,8 @@ export function Board({
         </g>
       ))}
 
+      {/* START → 1번 칸 방향 화살표 (START가 보이는 동안만) */}
+      {startMark === "visible" && <StartArrow />}
       {/* 출발점: 모든 말이 떠나면 반짝이며 사라짐 */}
       {startMark !== "hidden" && (
         <g transform={`translate(${T_POS.x},${T_POS.y})`}>
@@ -526,8 +555,16 @@ export function Board({
         const r = n === 1 ? 18 : n === 2 ? 16 : 13;
         const gap = r * 2 + 3;
         return ids.map((id, i) => {
-          const x = base.x + (i - (n - 1) / 2) * (n === 1 ? 0 : gap);
-          const y = atStart ? base.y + 34 + r + 4 : base.y + 22 + r;
+          let x = base.x + (i - (n - 1) / 2) * (n === 1 ? 0 : gap);
+          let y = base.y + 22 + r;
+          if (atStart) {
+            // START 둘레(길 반대편인 왼쪽 위)를 따라 둥글게 세워 1번 칸·길과 겹치지 않게
+            const ring = 34 + r + 5;
+            const step = n === 1 ? 0 : Math.min(((gap + 2) / ring) * (180 / Math.PI), 250 / (n - 1));
+            const ang = ((-135 + (i - (n - 1) / 2) * step) * Math.PI) / 180;
+            x = base.x + Math.cos(ang) * ring;
+            y = base.y + Math.sin(ang) * ring;
+          }
           const t = teamById[id];
           const isCur = id === cur && state.phase !== "ended";
           const isMine = highlightTeam === id;

@@ -405,6 +405,19 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
 function PreStart({ game, admin, goSettings }: { game: GameData; admin: Admin; goSettings: () => void }) {
   const settings = useSettingsDraft();
   const teams = game.teams;
+  // 진행 순서: 운영자가 직접 정함. 저장된 순서에 없는 팀은 뒤에 붙고, 삭제된 팀은 빠진다.
+  const [orderIds, setOrderIds] = useState<string[]>([]);
+  const ordered = [
+    ...orderIds.map((id) => teams.find((t) => t.id === id)).filter((t): t is TeamInfo => !!t),
+    ...teams.filter((t) => !orderIds.includes(t.id)),
+  ];
+  const move = (i: number, d: -1 | 1) => {
+    const ids = ordered.map((t) => t.id);
+    const j = i + d;
+    if (j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    setOrderIds(ids);
+  };
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
       <h2 className="font-display text-3xl">게임 시작 전 준비</h2>
@@ -414,14 +427,25 @@ function PreStart({ game, admin, goSettings }: { game: GameData; admin: Admin; g
         <li>“설정” 탭에서 턴 수 확인</li>
       </ol>
       <div className="rounded-2xl bg-slate-50 p-3">
-        <div className="font-bold mb-2">참가 팀 ({teams.length})</div>
-        <div className="flex flex-wrap gap-2">
-          {teams.map((t) => (
-            <span key={t.id} className="flex items-center gap-1 rounded-full bg-white px-2 py-1 border">
-              <TeamAvatar team={t} size={24} /> {t.name} · {game.members.filter((m) => m.team_id === t.id).length}명
-            </span>
-          ))}
+        <div className="font-bold mb-2">
+          진행 순서 ({teams.length}팀) <span className="font-normal text-sm text-slate-500">▲▼로 순서를 정하세요</span>
         </div>
+        <ol className="flex flex-col gap-1.5">
+          {ordered.map((t, i) => (
+            <li key={t.id} className="flex items-center gap-2 rounded-xl bg-white px-2 py-1.5 border">
+              <span className="w-7 text-center font-display text-xl text-slate-500">{i + 1}</span>
+              <TeamAvatar team={t} size={28} />
+              <span className="flex-1 font-bold">{t.name}</span>
+              <span className="text-sm text-slate-500">{game.members.filter((m) => m.team_id === t.id).length}명</span>
+              <button className={`${btn} bg-slate-100 px-3 py-1`} disabled={i === 0} onClick={() => move(i, -1)} aria-label={`${t.name} 위로`}>
+                ▲
+              </button>
+              <button className={`${btn} bg-slate-100 px-3 py-1`} disabled={i === ordered.length - 1} onClick={() => move(i, 1)} aria-label={`${t.name} 아래로`}>
+                ▼
+              </button>
+            </li>
+          ))}
+        </ol>
       </div>
       <div className="text-sm text-slate-500">
         설정: {settings.totalTurns}턴 · 시작 {settings.startTalents}달란트 · 스타 {settings.starCount}개/{settings.starPrice}달란트 ·{" "}
@@ -433,8 +457,8 @@ function PreStart({ game, admin, goSettings }: { game: GameData; admin: Admin; g
         className={`${btn} bg-green-500 text-white font-display text-3xl py-5`}
         disabled={admin.busy || teams.length < 2}
         onClick={() => {
-          if (!confirm(`${teams.length}팀으로 게임을 시작할까요? (팀 순서 = 슬롯 순서)`)) return;
-          admin.send({ type: "start_game", payload: { teamIds: teams.map((t) => t.id), settings, seed: newSeed() } });
+          if (!confirm(`${teams.length}팀으로 게임을 시작할까요?\n순서: ${ordered.map((t) => t.name).join(" → ")}`)) return;
+          admin.send({ type: "start_game", payload: { teamIds: ordered.map((t) => t.id), settings, seed: newSeed() } });
         }}
       >
         🎲 게임 시작
