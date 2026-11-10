@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ITEMS, ITEM_IDS } from "@/game/items";
 import type { Settings } from "@/game/types";
+import { FULL_BAG_TALENTS } from "@/game/reducer";
 import { ItemIcon } from "./ItemIcon";
 
 /**
@@ -92,7 +93,7 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
 
         <section className="glass p-4">
           <h3 className="font-display text-xl mb-2">아이템</h3>
-          <p className="text-sm text-white/60 mb-2">선물 칸에서 얻거나 상점(지름길과 바깥길이 만나는 곳)을 지날 때 살 수 있어요. (팀당 최대 {settings.inventoryLimit}개 소지 가능)</p>
+          <p className="text-sm text-white/60 mb-2">선물 칸에서 얻거나 상점(지름길과 바깥길이 만나는 곳)을 지날 때 살 수 있어요. (팀당 최대 {settings.inventoryLimit}개 소지 가능, 가득 찼을 때 아이템을 받으면 대신 +{FULL_BAG_TALENTS} 달란트)</p>
           <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-2">
             {ITEM_IDS.map((id) => (
               <li key={id} className="flex gap-2 items-center">
@@ -101,7 +102,7 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
                 </span>
                 <span>
                   <b>{ITEMS[id].name}</b> <span className="text-white/75">{ITEMS[id].desc}</span>
-                  <span className="text-amber-200/80 text-sm"> · {ITEMS[id].price}</span>
+                  <span className="text-amber-200/80 text-sm"> (가격: {ITEMS[id].price} 달란트)</span>
                 </span>
               </li>
             ))}

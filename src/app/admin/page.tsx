@@ -13,6 +13,7 @@ import {
   currentTeamId,
   isBoost,
   payoutText,
+  FULL_BAG_TALENTS,
   replay,
   rollRange,
   starPriceFor,
@@ -384,7 +385,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
                 return (
                   <button key={id} className={`${btn} bg-white border`} disabled={busy || !ok} onClick={() => send({ type: "shop_buy", payload: { item: id } })} title={d.desc}>
                     <ItemIcon id={id} size={20} className="inline mr-1 align-middle" />
-                    {d.name} · {d.price}
+                    {d.name} · 가격: {d.price} 달란트
                   </button>
                 );
               })}
@@ -398,7 +399,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
     case "resolve": {
       return (
         <div className="flex flex-col gap-3">
-          {ctx.gainedItem === "full" && <div className="text-amber-700">아이템 가방이 가득 차서 아이템을 받지 못했어요.</div>}
+          {ctx.gainedItem === "full" && <div className="text-amber-700">아이템 가방이 가득 차서 아이템 대신 +{FULL_BAG_TALENTS} 달란트를 받았어요.</div>}
           <button className={`${btn} bg-sky-600 text-white font-display text-3xl py-5`} disabled={busy} onClick={() => send({ type: "end_turn", payload: {} })}>
             다음 팀으로 ▶
           </button>

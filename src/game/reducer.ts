@@ -142,6 +142,9 @@ export function payoutBreakdown(amount: number): { d10: number; d5: number; d1: 
   return { d10: Math.floor(a / 10), d5: Math.floor((a % 10) / 5), d1: a % 5 };
 }
 
+/** 아이템 가방이 가득 찼을 때 아이템 대신 지급하는 달란트 */
+export const FULL_BAG_TALENTS = 5;
+
 export function payoutText(amount: number): string {
   const b = payoutBreakdown(amount);
   const parts = [];
@@ -338,7 +341,8 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
           feed(s, { seq, teamId: tid, kind: "item", text: `${ITEMS[item].name} 획득!` });
         } else {
           ctx.gainedItem = "full";
-          feed(s, { seq, teamId: tid, kind: "info", text: "아이템 가방이 가득 차서 받지 못함" });
+          credit(s, seq, tid, FULL_BAG_TALENTS, "선물 칸: 가방 가득 → 달란트");
+          feed(s, { seq, teamId: tid, kind: "payout", text: "가방이 가득 차서 달란트로 대신 받음", amount: FULL_BAG_TALENTS });
         }
       }
       if (s.stars.includes(space) && canAffordStar(s, team)) {
@@ -478,8 +482,8 @@ function applyHappening(s: GameState, tid: string, seq: number) {
         team.items.push(item);
         text = `깜짝 선물! ${ITEMS[item].name}`;
       } else {
-        credit(s, seq, tid, 3, "해프닝: 깜짝 선물(가방 가득 → 달란트)");
-        text = "깜짝 선물! 가방이 가득 차서 +3 달란트";
+        credit(s, seq, tid, FULL_BAG_TALENTS, "해프닝: 깜짝 선물(가방 가득 → 달란트)");
+        text = `깜짝 선물! 가방이 가득 차서 +${FULL_BAG_TALENTS} 달란트`;
       }
       break;
     }

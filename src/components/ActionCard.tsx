@@ -53,7 +53,7 @@ export function ActionCard({
         <div className={`mt-3 flex flex-wrap gap-2 ${big ? "text-lg" : "text-sm"}`}>
           {Object.values(ITEMS).map((d) => (
             <span key={d.id} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 pl-1.5 pr-3 py-1">
-              <ItemIcon id={d.id} size={22} /> {d.name} <b className="text-amber-300">{d.price}</b>
+              <ItemIcon id={d.id} size={22} /> {d.name} <b className="text-amber-300">{d.price} 달란트</b>
             </span>
           ))}
         </div>
