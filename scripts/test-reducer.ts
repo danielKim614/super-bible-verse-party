@@ -25,12 +25,12 @@ for (const t of teams) assert.equal(s.teams[t].talents, 10);
 // 스타를 경로 밖에 고정
 s = ev(s, { type: "override", payload: { action: "starPositions", stars: [22, 38] } });
 
-// A팀: 3칸 → 3절(빨간 칸, 갈림길 칸) 도착 → 성공 +6
+// A팀: 3칸 → 3절(빨간 칸, 갈림길 칸) 도착 → 성공 +5
 s = ev(s, { type: "roll", payload: { value: 3 } });
 assert.equal(s.teams.A.pos, 3);
 assert.equal(s.phase, "recite");
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 1 } });
-assert.equal(s.teams.A.talents, 16);
+assert.equal(s.teams.A.talents, 10 + s.settings.rewards.red);
 assert.equal(s.teams.A.challengeSuccess, 1);
 s = ev(s, { type: "end_turn", payload: {} });
 
