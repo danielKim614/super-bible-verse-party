@@ -11,6 +11,7 @@ import { ITEMS } from "@/game/items";
 import { ItemIcon } from "@/components/ItemIcon";
 import { HelpButton, OverlayHeader } from "@/components/HelpOverlay";
 import { isBoost } from "@/game/reducer";
+import { StartIntro } from "@/components/StartIntro";
 import { useGame } from "@/lib/useGame";
 
 const ME_KEY = "sbvp:me";
@@ -215,6 +216,7 @@ export default function JoinPage() {
         </div>
       )}
 
+      <StartIntro state={state} teamById={teamById} big={false} />
       {state.paused && <div className="fixed bottom-4 left-4 right-4 rounded-2xl bg-black/70 text-white text-center py-3 font-display text-xl">잠시만요 ⏸</div>}
       <HelpButton settings={state.settings} className="fixed bottom-5 right-5 w-14 h-14 text-3xl z-40" />
     </main>

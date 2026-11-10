@@ -10,6 +10,7 @@ import { Ceremony } from "@/components/Ceremony";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { HelpButton } from "@/components/HelpOverlay";
 import { boostReason } from "@/game/reducer";
+import { StartIntro } from "@/components/StartIntro";
 import { useGame } from "@/lib/useGame";
 
 export default function DisplayPage() {
@@ -90,6 +91,7 @@ export default function DisplayPage() {
         </div>
       )}
 
+      <StartIntro state={state} teamById={teamById} />
       {state.paused && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
           <div className="font-display text-7xl text-white">잠시만요 ⏸</div>
