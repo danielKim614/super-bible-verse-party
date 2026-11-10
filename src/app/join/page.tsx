@@ -9,7 +9,7 @@ import { Ceremony } from "@/components/Ceremony";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { ITEMS } from "@/game/items";
 import { ItemIcon } from "@/components/ItemIcon";
-import { HelpButton } from "@/components/HelpOverlay";
+import { HelpButton, OverlayHeader } from "@/components/HelpOverlay";
 import { isBoost } from "@/game/reducer";
 import { useGame } from "@/lib/useGame";
 
@@ -29,6 +29,7 @@ export default function JoinPage() {
   const [nickname, setNickname] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [boardOpen, setBoardOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -188,11 +189,28 @@ export default function JoinPage() {
           )}
           <ActionCard state={state} teamById={teamById} verses={game.verses} size="sm" />
           <div className="relative rounded-3xl overflow-hidden shadow-lg ring-1 ring-white/10">
-            <Board state={state} teamById={teamById} highlightTeam={me.teamId} compact />
-            <div className="absolute top-2 left-0 right-0 flex justify-center">
+            <button type="button" className="block w-full text-left cursor-zoom-in" aria-label="게임판 크게 보기" onClick={() => setBoardOpen(true)}>
+              <Board state={state} teamById={teamById} highlightTeam={me.teamId} compact />
+            </button>
+            <div className="absolute top-2 left-0 right-0 flex justify-center pointer-events-none">
               <FeedToasts state={state} teamById={teamById} big={false} />
             </div>
+            <span className="absolute bottom-2 right-2 w-7 h-7 rounded-lg bg-black/40 text-white/80 flex items-center justify-center pointer-events-none" aria-hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+              </svg>
+            </span>
           </div>
+          {boardOpen && (
+            <div className="fixed inset-0 z-50 bg-[#0b1033] text-white flex flex-col">
+              <OverlayHeader onClose={() => setBoardOpen(false)}>게임판</OverlayHeader>
+              <div className="flex-1 overflow-auto overscroll-contain">
+                <div style={{ width: "max(100%, calc((100dvh - 76px) * 1.5625))", height: "calc(100dvh - 76px)" }}>
+                  <Board state={state} teamById={teamById} highlightTeam={me.teamId} />
+                </div>
+              </div>
+            </div>
+          )}
           <Scoreboard state={state} teamById={teamById} highlightTeam={me.teamId} compact />
         </div>
       )}

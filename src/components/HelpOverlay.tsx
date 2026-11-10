@@ -44,28 +44,19 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
     ["bg-pink-400", "축복 칸", "축복합니다~"],
   ];
   return (
-    <div className="fixed inset-0 z-50 bg-[#0b1033]/95 backdrop-blur-sm text-white overflow-auto p-5">
+    <div className="fixed inset-0 z-50 bg-[#0b1033]/95 backdrop-blur-sm text-white flex flex-col">
+      <OverlayHeader onClose={onClose}>
+        <span className="text-yellow-300">★</span> 게임 도움말
+      </OverlayHeader>
+      <div className="flex-1 overflow-auto p-5 pt-3">
       <div className="max-w-3xl mx-auto flex flex-col gap-5">
-        <div className="flex items-center">
-          <h2 className="font-display text-3xl">
-            <span className="text-yellow-300">★</span> 게임 도움말
-          </h2>
-          <button
-            type="button"
-            aria-label="닫기"
-            onClick={onClose}
-            className="ml-auto w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-2xl font-bold flex items-center justify-center"
-          >
-            ×
-          </button>
-        </div>
 
         <section className="glass p-4">
           <h3 className="font-display text-xl mb-2">이기는 법</h3>
           <p className="text-white/85 leading-relaxed">
             주사위로 보드를 돌며 도착한 칸의 로마서 8장 구절을 암송해 <b className="text-amber-200">달란트</b>를 모으고, 달란트로{" "}
-            <b className="text-yellow-300">스타</b>를 사세요. 게임이 끝나면 보너스 스타(암송 최다·달란트 최다·도전 최다)를 더해{" "}
-            <b>스타가 가장 많은 팀</b>이 우승! 마지막 {settings.finalBoostTurns}턴은 달란트가 2배예요.
+            <b className="text-yellow-300">스타</b>를 사세요. 게임이 끝나면 보너스 스타를 더해{" "}
+            <b>스타가 가장 많은 팀</b>이 우승!
           </p>
         </section>
 
@@ -82,9 +73,10 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
           <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
             {spaces.map(([c, n, d, reward]) => (
               <li key={n} className="flex gap-2 items-center">
-                <span className={`inline-block w-4 h-4 rounded-full shrink-0 ${c} ring-2 ring-white/70`} />
-                <span className="min-w-0 flex-1">
-                  <b>{n}</b> <span className="text-white/75">{d}</span>
+                <span className={`inline-block w-5 h-5 rounded-full shrink-0 ${c} ring-2 ring-white/70`} />
+                <span className="min-w-0 flex-1 leading-tight">
+                  <b className="block">{n}</b>
+                  <span className="block text-sm text-white/70 truncate">{d}</span>
                 </span>
                 {reward !== undefined && <Talent n={reward} plus />}
               </li>
@@ -95,7 +87,7 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         <section className="glass p-4">
           <SectionTitle title="아이템" note="상점 가격" />
           <p className="text-sm text-white/60 mb-2">
-            선물 칸에서 얻거나 상점(지름길과 바깥길이 만나는 곳)을 지날 때 살 수 있어요. 팀당 최대 {settings.inventoryLimit}개, 가득 찼을 때 받은 아이템은{" "}
+            선물 칸에서 얻거나 상점을 지날 때 살 수 있어요. 팀당 최대 {settings.inventoryLimit}개, 가득 찼을 때 받은 아이템은{" "}
             <Talent n={FULL_BAG_TALENTS} plus />로 대신 받아요.
           </p>
           <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
@@ -104,19 +96,34 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
                 <span className="inline-flex w-9 h-9 rounded-xl bg-white/10 items-center justify-center shrink-0">
                   <ItemIcon id={id} size={24} />
                 </span>
-                <span className="min-w-0 flex-1">
-                  <b>{ITEMS[id].name}</b> <span className="text-white/75">{ITEMS[id].desc}</span>
+                <span className="min-w-0 flex-1 leading-tight">
+                  <b className="block">{ITEMS[id].name}</b>
+                  <span className="block text-sm text-white/70 truncate">{ITEMS[id].desc}</span>
                 </span>
                 <Talent n={ITEMS[id].price} />
               </li>
             ))}
           </ul>
         </section>
-
-        <button className="self-center rounded-full bg-white text-slate-900 font-display px-8 py-2" onClick={onClose}>
-          닫기
-        </button>
       </div>
+      </div>
+    </div>
+  );
+}
+
+/** 전체 화면 오버레이 상단 고정 헤더 (제목 + × 버튼) */
+export function OverlayHeader({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="shrink-0 flex items-center px-5 py-4 border-b border-white/10 bg-[#0b1033]/80">
+      <h2 className="font-display text-2xl sm:text-3xl">{children}</h2>
+      <button
+        type="button"
+        aria-label="닫기"
+        onClick={onClose}
+        className="ml-auto w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-2xl font-bold flex items-center justify-center"
+      >
+        ×
+      </button>
     </div>
   );
 }

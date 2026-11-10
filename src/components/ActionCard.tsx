@@ -7,6 +7,7 @@ import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 import type { VerseMap } from "@/game/verses";
 import { phaseHeadline, verseCard } from "./describe";
+import { DieBadge } from "./DieBadge";
 import { TeamAvatar } from "./TeamAvatar";
 
 const TYPE_BG: Record<string, string> = {
@@ -45,7 +46,9 @@ export function ActionCard({
         <TeamAvatar team={team} size={big ? 52 : 36} />
         <div className={`font-display ${big ? "text-3xl" : "text-lg"} leading-tight`}>{phaseHeadline(state, teamById)}</div>
         {ctx.roll !== undefined && (
-          <div className={`ml-auto font-display ${big ? "text-4xl" : "text-xl"} bg-white text-slate-900 rounded-2xl px-4 py-1 shadow-lg`}>🎲 {ctx.roll}</div>
+          <div className="ml-auto">
+            <DieBadge value={ctx.roll} double={ctx.rollMode === "double"} big={big} />
+          </div>
         )}
       </div>
 
