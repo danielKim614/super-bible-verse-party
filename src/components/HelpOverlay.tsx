@@ -35,11 +35,11 @@ export function HelpButton({ settings, className = "" }: { settings: Settings; m
 
 function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () => void }) {
   const r = settings.rewards;
-  const spaces: [string, string, string][] = [
-    ["bg-sky-400", "일반 칸", `장절을 보고 암송 (성공 시 +${r.blue} 달란트)`],
-    ["bg-rose-400", "어려운 칸", `일반 칸보다 어려운 난이도!! (성공 시 +${r.red} 달란트)`],
-    ["bg-emerald-400", "이벤트 칸", "그냥 외우기만 하면 심심하잖아요~"],
-    ["bg-violet-400", "선물 칸", `성공하면 랜덤 아이템 (성공 시 +${r.item} 달란트)`],
+  const spaces: [string, string, string, number?][] = [
+    ["bg-sky-400", "일반 칸", "장절을 보고 암송", r.blue],
+    ["bg-rose-400", "어려운 칸", "일반 칸보다 어려운 난이도!!", r.red],
+    ["bg-emerald-400", "이벤트 칸", "그냥 외우기만 하면 심심하잖아요~", r.event],
+    ["bg-violet-400", "선물 칸", "성공하면 랜덤 아이템", r.item],
     ["bg-teal-400", "해프닝 칸", "멈추면 게임판에 사건(?) 발생"],
     ["bg-pink-400", "축복 칸", "축복합니다~"],
   ];
@@ -78,32 +78,36 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         </section>
 
         <section className="glass p-4">
-          <h3 className="font-display text-xl mb-2">칸 종류</h3>
-          <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-2">
-            {spaces.map(([c, n, d]) => (
-              <li key={n} className="flex gap-2 items-start">
-                <span className={`mt-1 inline-block w-4 h-4 rounded-full shrink-0 ${c} ring-2 ring-white/70`} />
-                <span>
+          <SectionTitle title="칸 종류" note="암송 성공 시 받는 달란트" />
+          <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
+            {spaces.map(([c, n, d, reward]) => (
+              <li key={n} className="flex gap-2 items-center">
+                <span className={`inline-block w-4 h-4 rounded-full shrink-0 ${c} ring-2 ring-white/70`} />
+                <span className="min-w-0 flex-1">
                   <b>{n}</b> <span className="text-white/75">{d}</span>
                 </span>
+                {reward !== undefined && <Talent n={reward} plus />}
               </li>
             ))}
           </ul>
         </section>
 
         <section className="glass p-4">
-          <h3 className="font-display text-xl mb-2">아이템</h3>
-          <p className="text-sm text-white/60 mb-2">선물 칸에서 얻거나 상점(지름길과 바깥길이 만나는 곳)을 지날 때 살 수 있어요. (팀당 최대 {settings.inventoryLimit}개 소지 가능, 가득 찼을 때 아이템을 받으면 대신 +{FULL_BAG_TALENTS} 달란트)</p>
-          <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-2">
+          <SectionTitle title="아이템" note="상점 가격" />
+          <p className="text-sm text-white/60 mb-2">
+            선물 칸에서 얻거나 상점(지름길과 바깥길이 만나는 곳)을 지날 때 살 수 있어요. 팀당 최대 {settings.inventoryLimit}개, 가득 찼을 때 받은 아이템은{" "}
+            <Talent n={FULL_BAG_TALENTS} plus />로 대신 받아요.
+          </p>
+          <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
             {ITEM_IDS.map((id) => (
               <li key={id} className="flex gap-2 items-center">
                 <span className="inline-flex w-9 h-9 rounded-xl bg-white/10 items-center justify-center shrink-0">
                   <ItemIcon id={id} size={24} />
                 </span>
-                <span>
+                <span className="min-w-0 flex-1">
                   <b>{ITEMS[id].name}</b> <span className="text-white/75">{ITEMS[id].desc}</span>
-                  <span className="text-amber-200/80 text-sm"> (가격: {ITEMS[id].price} 달란트)</span>
                 </span>
+                <Talent n={ITEMS[id].price} />
               </li>
             ))}
           </ul>
@@ -114,5 +118,35 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         </button>
       </div>
     </div>
+  );
+}
+
+function SectionTitle({ title, note }: { title: string; note: string }) {
+  return (
+    <div className="flex items-baseline gap-2 mb-2">
+      <h3 className="font-display text-xl">{title}</h3>
+      <span className="ml-auto text-xs text-white/50 flex items-center gap-1">
+        <TalentCoin size={12} /> = {note}
+      </span>
+    </div>
+  );
+}
+
+/** 달란트 금액 뱃지: 코인 아이콘 + 숫자 */
+function Talent({ n, plus }: { n: number; plus?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-300/15 text-amber-200 font-display px-2 py-0.5 text-sm leading-none">
+      <TalentCoin size={12} />
+      {plus ? `+${n}` : n}
+    </span>
+  );
+}
+
+function TalentCoin({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      <circle cx="12" cy="12" r="10" fill="#fbbf24" stroke="#b45309" strokeWidth="2" />
+      <circle cx="12" cy="12" r="5.5" fill="none" stroke="#b45309" strokeWidth="1.5" />
+    </svg>
   );
 }
