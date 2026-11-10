@@ -199,7 +199,8 @@ function buildSpaces(): Space[] {
     const n = b - a + 1;
     if (r.id === "c0" || r.id === "c3") continue;
     // 갈림길 칸(다음이 -1)은 갈라지는 지점에, 합류 칸은 만나는 지점에 정확히 놓는다
-    const startPad = MERGE_ROUTES.includes(r.id) ? 0 : PAD_FORK_OUT;
+    // 왼쪽길(d1)은 길이가 길어 첫 칸(31)을 30에서 조금 더 띄운다
+    const startPad = MERGE_ROUTES.includes(r.id) ? 0 : r.id === "d1" ? 100 : PAD_FORK_OUT;
     const endPad = r.next === -1 ? 0 : MERGE_TARGETS.has(r.next) ? PAD_MERGE : PAD_J;
     const pts = along(ROUTE_CURVES[r.id], n, startPad, endPad);
     for (let v = a; v <= b; v++) coords[v] = pts[v - a];
