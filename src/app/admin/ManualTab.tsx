@@ -74,7 +74,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
             </li>
           ))}
         </ul>
-        <p className="text-sm text-slate-600 mt-1">3절 연속은 앞뒤 절을 포함해 3절(예: 20·21·22절)을 이어서 암송해요. 어려운 칸·이벤트 칸 성공은 “도전 스타” 집계에 들어가요.</p>
+        <p className="text-sm text-slate-600 mt-1">2절 연속은 그 절과 다음 절(예: 6·7절), 3절 연속은 앞뒤 절을 포함해 3절(예: 20·21·22절)을 한 사람이 이어서 암송해요. 어려운 칸·이벤트 칸 성공은 “도전 스타” 집계에 들어가요.</p>
       </Section>
 
       <Section title="해프닝 (참가자에게는 비공개)">

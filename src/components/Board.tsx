@@ -2,7 +2,7 @@
 
 import { splitSum } from "./DieBadge";
 import { useEffect, useMemo, useRef, useState, memo } from "react";
-import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId, type SpaceType } from "@/game/board";
+import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_AT, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId, type SpaceType } from "@/game/board";
 import { currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
@@ -360,6 +360,19 @@ export function Board({
             <stop offset="100%" stopColor={TYPE_FILL[t][1]} />
           </radialGradient>
         ))}
+        <linearGradient id="goldDie" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#fff1a8" />
+          <stop offset="45%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#b7791f" />
+        </linearGradient>
+        <linearGradient id="shopHull" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#c4b5fd" />
+          <stop offset="100%" stopColor="#6d28d9" />
+        </linearGradient>
+        <linearGradient id="shopBeam" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fde047" stopOpacity={0.55} />
+          <stop offset="100%" stopColor="#fde047" stopOpacity={0.05} />
+        </linearGradient>
         <radialGradient id="planetShade" cx="30%" cy="26%" r="85%">
           <stop offset="55%" stopColor="#000" stopOpacity={0} />
           <stop offset="100%" stopColor="#060a2a" stopOpacity={0.55} />
@@ -428,24 +441,30 @@ export function Board({
           )}
         </g>
       )}
-      {/* 상점 (지나가며 이용) — 자체 SVG */}
-      <g transform={`translate(${SHOP_POS.x},${SHOP_POS.y - 6})`} filter="url(#soft)">
-        {/* 몸체 */}
-        <rect x={-26} y={-6} width={52} height={30} rx={4} fill="#fde68a" stroke="#b45309" strokeWidth={2} />
-        {/* 문·창 */}
-        <rect x={-18} y={4} width={12} height={20} rx={2} fill="#7c2d12" />
-        <rect x={2} y={4} width={16} height={11} rx={2} fill="#bfdbfe" stroke="#1e3a8a" strokeWidth={1.5} />
-        {/* 차양 */}
-        <path d="M-32 -6 L32 -6 L26 -20 L-26 -20 Z" fill="#ef4444" />
-        {[-26, -14, -2, 10].map((x) => (
-          <path key={x} d={`M${x} -20 L${x + 6} -20 L${x + 7} -6 L${x} -6 Z`} fill="#fff" opacity={0.9} />
-        ))}
-        <path d="M-32 -6 Q-28 2 -24 -6 Q-20 2 -16 -6 Q-12 2 -8 -6 Q-4 2 0 -6 Q4 2 8 -6 Q12 2 16 -6 Q20 2 24 -6 Q28 2 32 -6 Z" fill="#dc2626" />
-        {/* 간판 */}
-        <rect x={-20} y={-34} width={40} height={14} rx={4} fill="#fff" stroke="#b45309" strokeWidth={1.5} />
-        <text textAnchor="middle" y={-23} fontSize={10} className="font-display" fill="#7c2d12">
-          상점
-        </text>
+      {/* 상점: 28번 행성 위에 떠 있는 우주 상점선. 빛줄기가 28번 칸을 비춘다 */}
+      <g transform={`translate(${SHOP_POS.x},${SHOP_POS.y})`}>
+        {/* 빛줄기와 UFO가 함께 살짝 떠다님 (진폭 3px) */}
+        <g className="animate-ufo">
+          {/* 28번 칸으로 내려오는 빛줄기 */}
+          <path d={`M -12 10 L 12 10 L ${SHOP_AT_DX + 17} ${SHOP_AT_DY - 6} L ${SHOP_AT_DX - 17} ${SHOP_AT_DY - 6} Z`} fill="url(#shopBeam)" />
+          <g filter="url(#soft)">
+          {/* 유리 돔 */}
+          <path d="M -15 -4 A 15 15 0 0 1 15 -4 Z" fill="#7dd3fc" fillOpacity={0.85} stroke="#e0f2fe" strokeWidth={1.5} />
+          <ellipse cx={-5} cy={-12} rx={4} ry={2.2} fill="#fff" opacity={0.7} />
+          {/* 선체 */}
+          <ellipse cx={0} cy={2} rx={32} ry={10} fill="url(#shopHull)" stroke="#f5f3ff" strokeWidth={1.6} />
+          <ellipse cx={0} cy={-1} rx={22} ry={4} fill="#fff" opacity={0.18} />
+          {/* 불빛 */}
+          {[-22, -11, 0, 11, 22].map((x, i) => (
+            <circle key={x} cx={x} cy={5 - Math.abs(x) * 0.09} r={2.6} fill="#fde047" className="animate-twinkle" style={{ animationDelay: `${i * 0.3}s` }} />
+          ))}
+          {/* 간판 */}
+          <rect x={-19} y={-34} width={38} height={15} rx={7.5} fill="#fde047" stroke="#fff" strokeWidth={1.5} />
+          <text textAnchor="middle" y={-22.5} fontSize={10.5} className="font-display" fill="#4c1d95">
+            상점
+          </text>
+          </g>
+        </g>
       </g>
 
       {/* 칸 */}
@@ -628,6 +647,11 @@ export function Board({
           );
         })()}
 
+      {/* 주사위 아이템 사용 중: 굴리기 전까지 화면 가운데에 주사위가 준비된 채로 떠 있음 */}
+      {!dice && state.phase === "pre_roll" && state.ctx.rollMode !== "normal" && !state.paused && (
+        <DiceReady mode={state.ctx.rollMode} count={state.ctx.rollMode === "triple" ? 3 : Math.max(1, state.settings.diceCount ?? 2)} />
+      )}
+
       {/* 주사위 연출 */}
       {dice && (
         <g transform={`translate(${BOARD_W / 2},${BOARD_H / 2})`}>
@@ -706,7 +730,63 @@ const BoardBackdrop = memo(function BoardBackdrop({ roadW }: { roadW: number }) 
   );
 });
 
+/** 트리플·선택 다이스를 쓴 뒤 굴리기를 기다리는 동안의 표시 */
+function DiceReady({ mode, count }: { mode: "triple" | "low" | "high" | "normal"; count: number }) {
+  const triple = mode === "triple";
+  const label = triple ? "트리플 다이스!" : mode === "low" ? "선택 다이스: 낮음 1~3" : "선택 다이스: 높음 4~6";
+  const tint = triple ? "#fbbf24" : mode === "low" ? "#7dd3fc" : "#fdba74";
+  const w = Math.max(label.length * 17 + 36, 180);
+  // 트리플은 피라미드(위 1개, 아래 2개), 나머지는 한 줄
+  const slots: [number, number][] = triple
+    ? [
+        [0, -26],
+        [-42, 52],
+        [42, 52],
+      ]
+    : Array.from({ length: count }, (_, i) => [(i - (count - 1) / 2) * 92, 14] as [number, number]);
+  const labelY = triple ? -112 : -74;
+  return (
+    // 바깥 g는 위치만, 안쪽 g가 등장 애니메이션 (CSS transform 애니메이션이 SVG transform 속성을 덮어쓰지 않게 분리)
+    <g transform={`translate(${BOARD_W / 2},${BOARD_H / 2 + (triple ? -14 : 0)})`}>
+      <g className="animate-pop" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+        <ellipse cy={triple ? 6 : 0} rx={triple ? 170 : count * 52 + 60} ry={triple ? 150 : 112} fill="#05081f" opacity={0.6} />
+        <g transform={`translate(0,${labelY})`} filter="url(#soft)">
+          <rect x={-w / 2} y={-19} width={w} height={38} rx={19} fill={tint} stroke="#fff" strokeWidth={2.5} />
+          <text textAnchor="middle" dy={7} fontSize={21} className="font-display" fill="#1e1b4b">
+            {label}
+          </text>
+        </g>
+        {slots.map(([x, y], i) => (
+          <g key={i} transform={`translate(${x},${y})`}>
+            <g className="animate-bob" style={{ animationDelay: `${i * 0.18}s` }} filter="url(#soft)">
+              {triple ? (
+                <>
+                  <rect x={-34} y={-34} width={68} height={68} rx={14} fill="url(#goldDie)" stroke="#fff7d6" strokeWidth={3} />
+                  <rect x={-27} y={-29} width={34} height={10} rx={5} fill="#fff" opacity={0.35} />
+                  <text textAnchor="middle" dy={14} fontSize={42} className="font-display" fill="#111">
+                    ?
+                  </text>
+                </>
+              ) : (
+                <>
+                  <rect x={-34} y={-34} width={68} height={68} rx={14} fill="#fff" stroke={tint} strokeWidth={4} />
+                  <text textAnchor="middle" dy={14} fontSize={40} className="font-display" fill="#1e1b4b">
+                    ?
+                  </text>
+                </>
+              )}
+            </g>
+          </g>
+        ))}
+      </g>
+    </g>
+  );
+}
+
 const PLANET_R = 20;
+// 상점선에서 본 28번 칸의 상대 위치
+const SHOP_AT_DX = SPACE_BY_ID[SHOP_AT].x - SHOP_POS.x;
+const SHOP_AT_DY = SPACE_BY_ID[SHOP_AT].y - SHOP_POS.y;
 
 /**
  * 칸 = 작은 행성. 칸 종류 색의 구체에 표면 무늬(줄무늬·크레이터·소용돌이)를 번갈아 입히고,

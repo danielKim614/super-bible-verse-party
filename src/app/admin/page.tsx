@@ -761,7 +761,14 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
               </option>
             ))}
           </select>
-          <button className={`${btn} bg-purple-100`} onClick={() => send({ type: "override", payload: { action: "addItem", teamId, item } })}>추가</button>
+          <button
+            className={`${btn} bg-purple-100`}
+            disabled={(t?.items.length ?? 0) >= state.settings.inventoryLimit}
+            title={`팀당 최대 ${state.settings.inventoryLimit}개`}
+            onClick={() => send({ type: "override", payload: { action: "addItem", teamId, item } })}
+          >
+            추가
+          </button>
           <button className={`${btn} bg-purple-50`} disabled={!t?.items.includes(item)} onClick={() => send({ type: "override", payload: { action: "removeItem", teamId, item } })}>삭제</button>
         </Row>
         <Row label="위치">

@@ -25,7 +25,7 @@ export default function DisplayPage() {
     <main className="h-screen w-screen overflow-hidden bg-[#0b1033] text-white flex flex-col p-5 gap-4">
       <header className="flex items-center gap-4 shrink-0">
         <h1 className="font-display text-4xl tracking-wide">
-          <span className="text-yellow-300">★</span> 2026 더드림 성경 암송 축제
+          <span className="text-yellow-300">★</span> 2026 더드림 성경 암송 파티
         </h1>
         {state.started && state.phase !== "ended" && (
           <div className="glass font-display text-2xl px-5 py-1.5">

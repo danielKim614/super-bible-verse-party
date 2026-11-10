@@ -75,7 +75,7 @@ export default function JoinPage() {
   if (!me) {
     return (
       <main className="min-h-full bg-[#0b1033] text-white p-5">
-        <h1 className="font-display text-3xl text-center"><span className="text-yellow-300">★</span> 2026 더드림 성경 암송 축제</h1>
+        <h1 className="font-display text-3xl text-center"><span className="text-yellow-300">★</span> 2026 더드림 성경 암송 파티</h1>
         <p className="text-center text-white/60 mt-1">우리 팀을 골라 주세요</p>
         {teams.length === 0 && <p className="text-center mt-8 text-white/50">아직 팀이 등록되지 않았어요. 잠시 후 다시 열어 주세요.</p>}
         <div className="grid grid-cols-2 gap-3 mt-5">

@@ -632,6 +632,8 @@ function applyOverride(
       feed(s, { seq, teamId: p.teamId, kind: "info", text: `스타 ${p.delta > 0 ? "+" : ""}${p.delta} (수동)` });
       break;
     case "addItem":
+      // 강제 개입으로도 보유 한도는 넘기지 않는다
+      if (team!.items.length >= s.settings.inventoryLimit) return prev;
       team!.items.push(p.item);
       break;
     case "removeItem":

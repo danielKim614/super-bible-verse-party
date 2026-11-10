@@ -8,7 +8,7 @@
 
 export type SpaceType = "blue" | "red" | "event" | "item" | "happening" | "bless";
 export type RedMode = "blank" | "firstWord" | "noHint";
-export type EventMode = "relay" | "threeVerses";
+export type EventMode = "twoVerses" | "threeVerses";
 export type RouteId = "c0" | "a1" | "a2" | "c1" | "b1" | "b2" | "c2" | "d1" | "d2" | "c3";
 
 export interface Space {
@@ -79,7 +79,7 @@ const SPACE_TYPES: Record<number, SpaceType> = {
 };
 
 const RED_MODES: RedMode[] = ["blank", "firstWord", "noHint"];
-const EVENT_MODES: EventMode[] = ["relay", "threeVerses"];
+const EVENT_MODES: EventMode[] = ["twoVerses", "threeVerses"];
 
 // ---- 좌표 (viewBox 1000 x 640) ----
 export const BOARD_W = 1000;
@@ -149,7 +149,7 @@ function along(curves: Cubic[], n: number, startPad: number, endPad: number): Pt
 // 분기·합류 지점 (칸이 아니라 길이 만나는 곳)
 const F1 = { x: 300, y: 105 }; // 2 다음
 const M1 = { x: 640, y: 150 }; // 11 앞
-const F2 = { x: 920, y: 330 }; // 15 다음
+const F2 = { x: 915, y: 295 }; // 15 다음
 const M2 = { x: 430, y: 530 }; // 28 앞 (상점)
 const F3 = { x: 230, y: 545 }; // 30 다음
 const M4 = { x: 178, y: 208 }; // 39 앞 (왼쪽길·안쪽길 합류)
@@ -189,7 +189,7 @@ export const ROUTE_D: Record<RouteId, string> = Object.fromEntries(
 
 export const JUNCTIONS = { F1, M1, F2, M2, F3, M4 };
 /** 상점 그림 위치: 합류 칸(28) 바로 위에 붙여서 */
-export const SHOP_POS = { x: M2.x - 20, y: M2.y - 42 };
+export const SHOP_POS = { x: M2.x - 18, y: M2.y - 40 };
 export const FORK_POINTS: Record<number, Pt> = { 2: F1, 15: F2, 30: F3 };
 
 function buildSpaces(): Space[] {
@@ -290,6 +290,6 @@ export const RED_MODE_LABEL: Record<RedMode, string> = {
 };
 
 export const EVENT_MODE_LABEL: Record<EventMode, string> = {
-  relay: "팀 전원 릴레이 (한 명씩 이어 말하기)",
+  twoVerses: "다음 절까지 2절 연속",
   threeVerses: "앞뒤 절 포함 3절 연속",
 };

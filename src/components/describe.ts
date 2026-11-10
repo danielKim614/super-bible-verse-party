@@ -36,18 +36,16 @@ export function verseCard(s: GameState, space: number, verses: VerseMap): VerseC
   }
   if (eff === "event" && sp.eventMode) {
     modeLabel = EVENT_MODE_LABEL[sp.eventMode];
-    if (sp.eventMode === "threeVerses") {
-      const a = Math.max(1, space - 1);
-      const b = Math.min(39, space + 1);
-      ref = `로마서 8:${a}~${b}`;
-    }
+    const [a, b] = eventRange(sp.eventMode, space);
+    if (b > a) ref = `로마서 8:${a}~${b}`;
   }
   let fullText = verseText(verses, space);
-  if (eff === "event" && sp.eventMode === "threeVerses") {
-    fullText = [space - 1, space, space + 1]
-      .filter((v) => v >= 1 && v <= 39)
-      .map((v) => `${v} ${verseText(verses, v)}`)
-      .join("\n");
+  if (eff === "event" && sp.eventMode) {
+    const [a, b] = eventRange(sp.eventMode, space);
+    if (b > a)
+      fullText = Array.from({ length: b - a + 1 }, (_, i) => a + i)
+        .map((v) => `${v} ${verseText(verses, v)}`)
+        .join("\n");
   }
   const typeLabel = sp.type === "red" && s.ctx.shieldOn === space ? "어려운 칸 (방패: 빈칸 채우기)" : SPACE_LABEL[sp.type];
   return { ref, space, typeLabel, type: sp.type, modeLabel, prompt, fullText };
@@ -86,4 +84,10 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
     case "ended":
       return "게임 종료! 시상식";
   }
+}
+
+/** 이벤트 칸에서 이어서 암송할 절 범위 */
+function eventRange(mode: "twoVerses" | "threeVerses", space: number): [number, number] {
+  if (mode === "twoVerses") return space < 39 ? [space, space + 1] : [space - 1, space];
+  return [Math.max(1, space - 1), Math.min(39, space + 1)];
 }

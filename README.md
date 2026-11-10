@@ -1,4 +1,4 @@
-# ⭐ 2026 더드림 성경 암송 축제 (Super Bible Verse Party)
+# ⭐ 2026 더드림 성경 암송 파티 (Super Bible Verse Party)
 
 **교회 성경 암송 대회를 위한 마리오 파티 컨셉의 웹 앱**입니다.
 
