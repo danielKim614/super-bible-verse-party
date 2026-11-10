@@ -353,6 +353,12 @@ export function Board({
           <stop offset="0%" stopColor="#3b4a86" />
           <stop offset="100%" stopColor="#26315f" />
         </linearGradient>
+        <filter id="milky" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+        <filter id="milkyWide" x="-20%" y="-20%" width="140%" height="140%" filterUnits="userSpaceOnUse">
+          <feGaussianBlur stdDeviation="14" />
+        </filter>
         <filter id="soft" x="-30%" y="-30%" width="160%" height="180%">
           <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.45" />
         </filter>
@@ -380,24 +386,24 @@ export function Board({
         <circle key={i} cx={sp.x} cy={sp.y} r={sp.r} fill="#fff" opacity={0.7} className="animate-twinkle" style={{ animationDelay: `${sp.d}s` }} />
       ))}
 
-      {/* 길 */}
-      {ROUTE_IDS.map((rid) => (
-        <g key={rid}>
-          <path d={ROUTE_D[rid]} fill="none" stroke="#000" strokeOpacity={0.35} strokeWidth={roadW + 10} strokeLinecap="round" transform="translate(0,6)" />
-          <path d={ROUTE_D[rid]} fill="none" stroke="#7f8fd6" strokeOpacity={0.9} strokeWidth={roadW + 5} strokeLinecap="round" />
-          <path d={ROUTE_D[rid]} fill="none" stroke="url(#roadFill)" strokeWidth={roadW} strokeLinecap="round" />
-          <path
-            d={ROUTE_D[rid]}
-            fill="none"
-            stroke={HARD_ROUTES.includes(rid) ? "#ffb15c" : "#cfe3ff"}
-            strokeOpacity={0.7}
-            strokeWidth={2.5}
-            strokeDasharray="8 14"
-            strokeLinecap="round"
-            className="animate-dash"
-          />
-        </g>
-      ))}
+      {/* 길: 은하수. 은은한 빛의 띠 위로 별가루가 진행 방향으로 흐른다 (어려운 길은 주황빛) */}
+      {ROUTE_IDS.map((rid) => {
+        const hard = HARD_ROUTES.includes(rid);
+        const haze = hard ? "#ffb877" : "#9db4ff";
+        const core = hard ? "#ffe3c2" : "#e6edff";
+        const dust = hard ? "#ffd9a8" : "#ffffff";
+        const d = ROUTE_D[rid];
+        return (
+          <g key={rid} fill="none" strokeLinecap="round">
+            <path d={d} stroke={haze} strokeOpacity={0.16} strokeWidth={roadW + 30} filter="url(#milkyWide)" />
+            <path d={d} stroke={haze} strokeOpacity={0.3} strokeWidth={roadW + 4} filter="url(#milky)" />
+            <path d={d} stroke={core} strokeOpacity={0.3} strokeWidth={roadW * 0.4} filter="url(#milky)" />
+            <path d={d} stroke={dust} strokeOpacity={0.55} strokeWidth={1.4} strokeDasharray="0.1 6 0.1 9 0.1 28.7" className="animate-dash" style={{ animationDuration: "5s" }} transform="translate(0,-7)" />
+            <path d={d} stroke={dust} strokeOpacity={0.9} strokeWidth={2.4} strokeDasharray="0.1 21.9" className="animate-dash" style={{ animationDuration: "3.2s" }} />
+            <path d={d} stroke={dust} strokeOpacity={0.7} strokeWidth={3.4} strokeDasharray="0.1 13 0.1 30.8" className="animate-dash" style={{ animationDuration: "4.2s" }} transform="translate(0,6)" />
+          </g>
+        );
+      })}
 
       {/* START → 1번 칸 방향 화살표 (START가 보이는 동안만) */}
       {startMark === "visible" && <StartArrow />}
