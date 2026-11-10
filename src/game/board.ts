@@ -85,7 +85,7 @@ const EVENT_MODES: EventMode[] = ["relay", "threeVerses"];
 export const BOARD_W = 1000;
 export const BOARD_H = 640;
 /** 출발 표시(START) 위치: 길 위가 아니라 1절 옆에 따로 둔다. 39 → 1은 길이 바로 이어짐 */
-export const T_POS = { x: 112, y: 92 };
+export const T_POS = { x: 96, y: 80 };
 
 type Pt = { x: number; y: number };
 type Cubic = [Pt, Pt, Pt, Pt];

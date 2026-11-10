@@ -99,7 +99,7 @@ function useAnimatedPositions(state: GameState, stepMs: number, initialDelayMs: 
   return shown;
 }
 
-/** START에서 1번 칸으로 휘어지는 뭉툭한 화살표 */
+/** START에서 1번 칸으로 휘어지는 뭉툭한 화살표 (단색, START 중심에서 1번 칸 중심을 향함) */
 function StartArrow() {
   const to = SPACE_BY_ID[1];
   const dx = to.x - T_POS.x;
@@ -107,20 +107,21 @@ function StartArrow() {
   const len = Math.hypot(dx, dy) || 1;
   const ux = dx / len;
   const uy = dy / len;
-  // 시작: START 가장자리 밖, 끝: 1번 칸 앞. 위쪽으로 살짝 휘게
-  const sx = T_POS.x + ux * 44;
-  const sy = T_POS.y + uy * 44;
-  const ex = to.x - ux * 40;
-  const ey = to.y - uy * 40;
-  const cx = (sx + ex) / 2 + uy * 16;
-  const cy = (sy + ey) / 2 - ux * 16;
-  const ang = (Math.atan2(ey - cy, ex - cx) * 180) / Math.PI;
+  // START 중심과 1번 칸 중심을 잇는 선 위에 놓고, 아주 살짝만 휘게 한다
+  const sx = T_POS.x + ux * (34 + 12);
+  const sy = T_POS.y + uy * (34 + 12);
+  // 화살촉 끝은 1번 칸 가장자리에서 12 떨어진 곳, 몸통은 그 16 앞에서 끝남
+  const bx = to.x - ux * (24 + 12 + 16);
+  const by = to.y - uy * (24 + 12 + 16);
+  const cx = (sx + bx) / 2 + uy * 5;
+  const cy = (sy + by) / 2 - ux * 5;
+  const ang = (Math.atan2(uy, ux) * 180) / Math.PI;
+  const color = "#fff";
   return (
     <g className="animate-pulse-fast" filter="url(#soft)">
-      <path d={`M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`} fill="none" stroke="#b45309" strokeWidth={15} strokeLinecap="round" />
-      <path d={`M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`} fill="none" stroke="#fff" strokeWidth={10} strokeLinecap="round" />
-      <g transform={`translate(${ex},${ey}) rotate(${ang})`}>
-        <path d="M -6 -15 L 16 0 L -6 15 Z" fill="#fff" stroke="#b45309" strokeWidth={3} strokeLinejoin="round" />
+      <path d={`M ${sx} ${sy} Q ${cx} ${cy} ${bx} ${by}`} fill="none" stroke={color} strokeWidth={11} strokeLinecap="round" />
+      <g transform={`translate(${bx},${by}) rotate(${ang})`}>
+        <path d="M -2 -12 L 16 0 L -2 12 Z" fill={color} stroke={color} strokeWidth={4} strokeLinejoin="round" />
       </g>
     </g>
   );
