@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { SPACE_BY_ID } from "../src/game/board";
 import { applyEvent, effectiveRedMode, finalRanking, initialState, isBoost, replay } from "../src/game/reducer";
+import { ITEMS } from "../src/game/items";
 import { DEFAULT_SETTINGS, type GameEvent, type GameEventBody, type GameState } from "../src/game/types";
 
 let seq = 0;
@@ -89,7 +90,7 @@ assert.equal(s.phase, "shop_offer");
 assert.equal(s.teams.E.pos, 28);
 s = ev(s, { type: "shop_buy", payload: { item: "shield" } });
 assert.equal(s.teams.E.items[0], "shield");
-assert.equal(s.teams.E.talents, 5);
+assert.equal(s.teams.E.talents, 10 - ITEMS.shield.price);
 s = ev(s, { type: "shop_buy", payload: { item: "goldenPipe" } });
 assert.equal(s.teams.E.items.length, 1);
 s = ev(s, { type: "shop_leave", payload: {} });
