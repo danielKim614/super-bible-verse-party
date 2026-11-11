@@ -54,9 +54,17 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         <section className="glass p-4">
           <h3 className="font-display text-xl mb-2">이기는 법</h3>
           <p className="text-white/85 leading-relaxed">
-            주사위 2개로 보드를 돌며 도착한 칸의 로마서 8장 구절을 암송해 <b className="text-amber-200">달란트</b>를 모으고, 달란트로{" "}
+            보드를 돌며 도착한 칸의 로마서 8장 구절을 암송해 <b className="text-amber-200">달란트</b>를 모으고, 달란트로{" "}
             <b className="text-yellow-300">스타</b>를 사세요. 게임이 끝나면 보너스 스타를 더해{" "}
             <b>스타가 가장 많은 팀</b>이 우승!
+          </p>
+        </section>
+
+        <section className="glass p-4">
+          <h3 className="font-display text-xl mb-2">이동</h3>
+          <p className="text-white/85 leading-relaxed">
+            주사위 {settings.diceCount ?? 2}개를 굴려 <b>나온 수의 합만큼</b> 앞으로 가요. <b>갈림길</b>에서는 어느 길로 갈지 골라서 남은 칸만큼 계속 가요.
+            암송은 마지막에 도착한 칸에서만 해요.
           </p>
         </section>
 
