@@ -281,3 +281,25 @@ console.log("✅ 39 merge ok");
   assert.equal(t.teams.A.talents, 20);
   console.log("✅ bless ties ok");
 }
+
+// 상점: 3팀이 지나가면 다른 칸으로 날아감
+{
+  const base = [
+    { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B", "C", "D"], settings: { ...DEFAULT_SETTINGS, diceCount: 1 }, seed: 3 } },
+  ] as GameEvent[];
+  let t = replay(base);
+  assert.equal(t.shopAt, 28);
+  let seq2 = 2;
+  const e = (type: string, payload: object) => (t = applyEvent(t, { id: seq2, seq: seq2++, voided: false, type, payload } as GameEvent));
+  for (const id of ["A", "B", "C"]) {
+    e("override", { action: "position", teamId: id, pos: 27 });
+    e("roll", { value: 1, faces: [1] });
+    if (t.phase === "shop_offer") e("shop_leave", {});
+    if (t.phase === "star_offer") e("star_decision", { buy: false });
+    if (t.phase === "recite") e("recite_result", { success: true, seed: 1 });
+    e("end_turn", {});
+  }
+  assert.notEqual(t.shopAt, 28);
+  assert.equal(t.shopVisits, 0);
+  console.log("✅ shop moves after 3 visits →", t.shopAt);
+}

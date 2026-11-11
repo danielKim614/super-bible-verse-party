@@ -43,7 +43,11 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
     ["bg-violet-400", "선물 칸", "성공하면 랜덤 아이템을 드려요", r.item],
     ["bg-teal-400", "해프닝 칸", "멈추면 게임판에 사건(?) 발생", r.happening],
     ["bg-pink-400", "축복 칸", "축복합니다~", r.bless],
-    ["", "상점 (UFO)", "멈추지 않아도 지나가며 아이템을 살 수 있어요", undefined, <UfoIcon key="ufo" size={24} />],
+    [
+      "",
+      "상점",
+      "아이템을 구매할 수 있어요",
+      undefined, <UfoIcon key="ufo" size={30} />],
   ];
   return (
     <div className="fixed inset-0 z-50 bg-[#0b1033]/95 backdrop-blur-sm text-white flex flex-col">
@@ -57,7 +61,9 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
           <h3 className="font-display text-xl mb-2">이기는 법</h3>
           <p className="text-white/85 leading-relaxed">
             보드를 돌며 도착한 칸의 로마서 8장 구절을 암송해 <b className="text-amber-200">달란트</b>를 모으고, 달란트로{" "}
-            <b className="text-yellow-300">스타</b>를 사세요. 게임이 끝나면 보너스 스타를 더해{" "}
+            <b className="text-yellow-300">스타</b>를 사세요.
+            <br />
+            게임이 끝나면 보너스 스타를 더해{" "}
             <b>스타가 가장 많은 팀</b>이 우승!
           </p>
         </section>
@@ -73,8 +79,9 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         <section className="glass p-4">
           <h3 className="font-display text-xl mb-2">스타 ★</h3>
           <p className="text-white/85 leading-relaxed">
-            보드 위에 떠 있는 별의 위치에 <b>도달하면(혹은 지나가면)</b> {settings.starPrice}달란트를 지불하여 구매할 수 있어요. 스타를 구매하면 기존 별은
-            사라지고 다른 무작위 장소에 새로운 별이 생성돼요.
+            보드 위에 떠 있는 별의 위치에 <b>도달하면(혹은 지나가면)</b> {settings.starPrice}달란트를 지불하여 구매할 수 있어요.
+            <br />
+            스타를 구매하면 기존 별은 사라지고 다른 무작위 장소에 새로운 별이 생성돼요.
           </p>
         </section>
 

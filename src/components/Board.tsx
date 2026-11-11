@@ -336,6 +336,9 @@ export function Board({
   const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : dice ? DICE_MS : 0);
   const startMark = useStartMark(state, shown);
   const warp = useWarpFx(state);
+  const shopFlying = useShopFlying(state.shopAt ?? SHOP_AT);
+  const shopSpace = SPACE_BY_ID[state.shopAt ?? SHOP_AT] ?? SPACE_BY_ID[SHOP_AT];
+  const shopPos = { x: shopSpace.x - SHOP_DX, y: shopSpace.y - SHOP_DY };
   const sparkles = useSparkles(70);
   const cur = currentTeamId(state);
   const focus =
@@ -481,12 +484,19 @@ export function Board({
           )}
         </g>
       )}
-      {/* 상점: 28번 행성 위에 떠 있는 우주 상점선. 빛줄기가 28번 칸을 비춘다 */}
-      <g transform={`translate(${SHOP_POS.x},${SHOP_POS.y})`}>
-        {/* 빛줄기와 UFO가 함께 살짝 떠다님 (진폭 3px) */}
-        <g className="animate-ufo">
-          {/* 28번 칸으로 내려오는 빛줄기 */}
-          <path d={`M -12 10 L 12 10 L ${SHOP_AT_DX + 17} ${SHOP_AT_DY - 6} L ${SHOP_AT_DX - 17} ${SHOP_AT_DY - 6} Z`} fill="url(#shopBeam)" />
+      {/* 상점: 칸 위에 떠 있는 우주 상점선. 빛줄기가 그 칸을 비춘다. 자리를 옮길 때는 우웅~ 하고 날아감 */}
+      <g
+        style={{
+          transform: `translate(${shopPos.x}px, ${shopPos.y}px)`,
+          transition: `transform ${SHOP_FLY_MS}ms cubic-bezier(0.45, 0, 0.25, 1)`,
+        }}
+      >
+        {/* 빛줄기와 UFO가 함께 살짝 떠다님 (진폭 3px). 날아가는 동안은 기울어지며 흔들림 */}
+        <g className={shopFlying ? "animate-ufo-fly" : "animate-ufo"}>
+          {/* 칸으로 내려오는 빛줄기 (날아가는 동안은 끔) */}
+          {!shopFlying && (
+            <path d={`M -12 10 L 12 10 L ${SHOP_DX + 17} ${SHOP_DY - 6} L ${SHOP_DX - 17} ${SHOP_DY - 6} Z`} fill="url(#shopBeam)" className="animate-pop" />
+          )}
           <g filter="url(#soft)">
           {/* 유리 돔 */}
           <path d="M -15 -4 A 15 15 0 0 1 15 -4 Z" fill="#7dd3fc" fillOpacity={0.85} stroke="#e0f2fe" strokeWidth={1.5} />
@@ -979,9 +989,24 @@ function WarpFx({ fx, team }: { fx: WarpInfo; team: TeamInfo | undefined }) {
 }
 
 const PLANET_R = 20;
-// 상점선에서 본 28번 칸의 상대 위치
-const SHOP_AT_DX = SPACE_BY_ID[SHOP_AT].x - SHOP_POS.x;
-const SHOP_AT_DY = SPACE_BY_ID[SHOP_AT].y - SHOP_POS.y;
+// 상점선은 칸에서 이만큼 떨어져 떠 있다 (빛줄기 방향)
+const SHOP_DX = SPACE_BY_ID[SHOP_AT].x - SHOP_POS.x;
+const SHOP_DY = SPACE_BY_ID[SHOP_AT].y - SHOP_POS.y;
+const SHOP_FLY_MS = 2600;
+
+/** 상점이 다른 칸으로 옮겨질 때 날아가는 중인지 */
+function useShopFlying(shopAt: number) {
+  const [flying, setFlying] = useState(false);
+  const prev = useRef(shopAt);
+  useEffect(() => {
+    if (prev.current === shopAt) return;
+    prev.current = shopAt;
+    setFlying(true);
+    const t = setTimeout(() => setFlying(false), SHOP_FLY_MS);
+    return () => clearTimeout(t);
+  }, [shopAt]);
+  return flying;
+}
 
 /**
  * 칸 = 작은 행성. 칸 종류 색의 구체에 표면 무늬(줄무늬·크레이터·소용돌이)를 번갈아 입히고,

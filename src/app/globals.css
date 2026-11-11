@@ -137,6 +137,14 @@ body {
 
 @keyframes ufo { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
 .animate-ufo { animation: ufo 2.4s ease-in-out infinite; }
+@keyframes ufo-fly {
+  0% { transform: rotate(0deg) translateY(0); }
+  15% { transform: rotate(-12deg) translateY(-14px); }
+  50% { transform: rotate(8deg) translateY(-22px); }
+  85% { transform: rotate(-6deg) translateY(-10px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+.animate-ufo-fly { animation: ufo-fly 2.6s ease-in-out both; transform-box: fill-box; transform-origin: center; }
 @keyframes bob {
   0%, 100% { translate: 0 0; }
   50% { translate: 0 -6px; }
@@ -170,7 +178,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pop, .animate-bob, .animate-ufo, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-toast-life, .animate-start-ring, .animate-start-spark, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
+  .animate-pop, .animate-bob, .animate-ufo, .animate-ufo-fly, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-toast-life, .animate-start-ring, .animate-start-spark, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
 }
 
 /* 출발 표시 사라짐: 살짝 부풀었다가 작아지며 사라지고, 링과 반짝이가 퍼짐 */

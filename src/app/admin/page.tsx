@@ -1015,6 +1015,7 @@ function SettingsTab({ game, admin }: { game: GameData; admin: Admin }) {
       {num("종반 2배 턴 수", "finalBoostTurns", 0)}
       {num("아이템 보유 한도", "inventoryLimit", 1)}
       {num("남은 아이템 환급(개당)", "itemRefund", 0)}
+      {num("상점 이동까지 방문 팀 수 (0=고정)", "shopMoveAfter", 0)}
       <div className="grid grid-cols-5 gap-2">
         {(Object.keys(s.rewards) as (keyof Settings["rewards"])[]).map((k) => (
           <label key={k} className="text-sm">

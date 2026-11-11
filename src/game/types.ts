@@ -11,6 +11,7 @@ export interface Settings {
   finalBoostTurns: number; // 마지막 N턴 달란트 2배
   rewards: Record<SpaceType, number>;
   inventoryLimit: number;
+  shopMoveAfter: number; // 상점에 이만큼 팀이 다녀가면 다른 칸으로 날아감 (0이면 고정)
   itemRefund: number; // 종료 시 남은 아이템 1개당 환급
   bonusStars: { recite: boolean; talent: boolean; challenge: boolean };
 }
@@ -23,8 +24,9 @@ export const DEFAULT_SETTINGS: Settings = {
   starCount: 2,
   diceCount: 2,
   finalBoostTurns: 3,
-  rewards: { blue: 3, red: 5, event: 8, item: 3, happening: 3, bless: 3 },
+  rewards: { blue: 3, red: 5, event: 6, item: 3, happening: 3, bless: 3 },
   inventoryLimit: 3,
+  shopMoveAfter: 3,
   itemRefund: 1,
   bonusStars: { recite: true, talent: true, challenge: true },
 };
@@ -190,4 +192,6 @@ export interface GameState {
   ceremony: Ceremony | null;
   lastSeq: number;
   moveSeq: number; // 마지막으로 말이 움직인 이벤트 seq
+  shopAt: number; // 상점이 있는 칸 (이 칸으로 들어갈 때 열림)
+  shopVisits: number; // 지금 위치에서 상점을 지나간 팀 수
 }

@@ -34,6 +34,8 @@ export function initialState(): GameState {
     ceremony: null,
     lastSeq: 0,
     moveSeq: 0,
+    shopAt: SHOP_AT,
+    shopVisits: 0,
   };
 }
 
@@ -403,6 +405,7 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
 
     case "shop_leave": {
       if (s.phase !== "shop_offer") return prev;
+      maybeMoveShop(s, seq);
       s.moveSeq = seq;
       advance(s, tid, seq);
       return s;
@@ -442,6 +445,27 @@ function nextTeam(s: GameState, seq: number) {
   startTurn(s, seq);
 }
 
+/** 상점에 정해진 수만큼 팀이 다녀갔으면 다른 칸으로 날아간다 (결정적 랜덤) */
+function maybeMoveShop(s: GameState, seq: number) {
+  const limit = s.settings.shopMoveAfter ?? 3;
+  if (limit <= 0 || s.shopVisits < limit) return;
+  const occupied = new Set(s.teamIds.map((id) => s.teams[id].pos));
+  // 아이콘이 떠 있는 칸(선물·해프닝·축복)과 스타 칸, 말이 있는 칸, 지금 자리 근처는 피한다
+  const near = forwardDistances(s.shopAt);
+  const cands = SPACES.filter(
+    (sp) =>
+      (sp.type === "blue" || sp.type === "red" || sp.type === "event") &&
+      sp.id !== s.shopAt &&
+      !s.stars.includes(sp.id) &&
+      !occupied.has(sp.id) &&
+      (near.get(sp.id) ?? 99) > 5,
+  ).map((sp) => sp.id);
+  if (!cands.length) return;
+  s.shopAt = pick(rng(seq * 31337 + 11), cands);
+  s.shopVisits = 0;
+  feed(s, { seq, kind: "info", text: `상점이 ${s.shopAt}절로 날아갔어요!` });
+}
+
 function advance(s: GameState, tid: string, seq: number) {
   const team = s.teams[tid];
   const ctx = s.ctx;
@@ -453,13 +477,15 @@ function advance(s: GameState, tid: string, seq: number) {
     }
     if (FORKS[team.pos]) ctx.forkChoice = undefined;
     if (n === 1 && team.pos !== T) team.laps += 1;
-    if (n === SHOP_AT && !ctx.shopVisited) {
-      // 상점(30절→31절 사이)을 지나감
+    if (n === s.shopAt && !ctx.shopVisited) {
+      // 상점이 떠 있는 칸으로 들어가며 상점을 지나감
       ctx.shopVisited = true;
+      s.shopVisits += 1;
       if (canShop(s, team)) {
         s.phase = "shop_offer";
         return;
       }
+      maybeMoveShop(s, seq);
     }
     team.pos = n;
     ctx.path.push(n);
@@ -572,7 +598,7 @@ export function placeStar(s: GameState, r: () => number, buyerPos?: number) {
     blocked.add(buyerPos);
   }
   // 상점 칸(28)은 가게 그림과 별이 겹치므로 제외
-  const base = SPACES.filter((sp) => sp.type !== "item" && sp.id !== 1 && sp.id !== SHOP_AT && !blocked.has(sp.id)).map((sp) => sp.id);
+  const base = SPACES.filter((sp) => sp.type !== "item" && sp.id !== 1 && sp.id !== s.shopAt && !blocked.has(sp.id)).map((sp) => sp.id);
   const gapOk = (c: number, gap: number) =>
     s.stars.every((st) => {
       const a = forwardDistances(st).get(c) ?? 99;
