@@ -740,6 +740,7 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
   const [item, setItem] = useState<ItemId>("tripleDice");
   const [pos, setPos] = useState(1);
   const [stars, setStars] = useState("");
+  const [shopPos, setShopPos] = useState(0);
   const [turns, setTurns] = useState(state.settings.totalTurns);
   const [cur, setCur] = useState({ turn: state.turn, idx: state.teamIndex });
   const send = admin.send;
@@ -821,6 +822,25 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
             }
           >
             적용
+          </button>
+        </Row>
+        <Row label="상점 위치">
+          <select value={shopPos || state.shopAt} onChange={(e) => setShopPos(Number(e.target.value))} className="rounded-lg border px-2 py-1">
+            {SPACES.map((sp) => (
+              <option key={sp.id} value={sp.id}>
+                {sp.id}절 ({SPACE_LABEL[sp.type]})
+              </option>
+            ))}
+          </select>
+          <span className="text-sm text-slate-500">
+            지금 {state.shopAt}절 · {state.shopVisits}/{state.settings.shopMoveAfter}팀 방문
+          </span>
+          <button
+            className={`${btn} bg-violet-200`}
+            disabled={!shopPos || shopPos === state.shopAt}
+            onClick={() => send({ type: "override", payload: { action: "shopPosition", pos: shopPos } })}
+          >
+            이동
           </button>
         </Row>
         <Row label="총 턴 수">

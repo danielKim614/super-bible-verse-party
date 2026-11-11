@@ -697,6 +697,12 @@ function applyOverride(
     case "starPositions":
       s.stars = [...new Set(p.stars.filter((x) => SPACE_BY_ID[x]))];
       break;
+    case "shopPosition":
+      // 상점 위치를 직접 옮김 (방문 횟수는 처음부터 다시 셈)
+      if (!SPACE_BY_ID[p.pos] || p.pos === s.shopAt) return prev;
+      s.shopAt = p.pos;
+      s.shopVisits = 0;
+      break;
     case "totalTurns":
       if (p.value >= 1) s.settings.totalTurns = p.value;
       break;

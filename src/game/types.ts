@@ -55,6 +55,7 @@ export type OverrideAction =
   | { action: "removeItem"; teamId: string; item: ItemId }
   | { action: "position"; teamId: string; pos: number }
   | { action: "starPositions"; stars: number[] }
+  | { action: "shopPosition"; pos: number }
   | { action: "totalTurns"; value: number }
   | { action: "boost"; on: boolean | null }
   | { action: "skipTurn" }

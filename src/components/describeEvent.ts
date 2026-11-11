@@ -43,6 +43,8 @@ export function describeEvent(e: GameEvent, teamById: Record<string, TeamInfo>):
           return `[수동] ${tn(p.teamId)} 위치 → ${p.pos === 0 ? "출발" : `${p.pos}절`}`;
         case "starPositions":
           return `[수동] 스타 위치 → ${p.stars.join(", ")}`;
+        case "shopPosition":
+          return `[수동] 상점 위치 → ${p.pos}절`;
         case "totalTurns":
           return `[수동] 총 턴 수 → ${p.value}`;
         case "boost":
