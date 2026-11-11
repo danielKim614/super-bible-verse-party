@@ -19,7 +19,7 @@ export interface ItemDef {
 
 export const ITEMS: Record<ItemId, ItemDef> = {
   tripleDice: { id: "tripleDice", name: "트리플 다이스", kind: "move", price: 5, desc: "주사위 3개 합산 (3~18)" },
-  selectDice: { id: "selectDice", name: "선택 다이스", kind: "move", price: 5, desc: "주사위 하나는 원하는 눈으로" },
+  selectDice: { id: "selectDice", name: "선택 다이스", kind: "move", price: 5, desc: "두 주사위 중 하나의 눈을 직접 정해요" },
   warpPipe: { id: "warpPipe", name: "워프 파이프", kind: "move", price: 5, desc: "다른 팀 위치로 랜덤 이동" },
   goldenPipe: { id: "goldenPipe", name: "황금 파이프", kind: "move", price: 15, desc: "원하는 칸으로 이동" },
   doubleTalent: { id: "doubleTalent", name: "달란트 2배권", kind: "recite", price: 5, desc: "이번 턴 암송 보상 2배 (굴리기 전 사용)" },
