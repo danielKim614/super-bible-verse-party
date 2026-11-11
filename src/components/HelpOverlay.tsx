@@ -77,7 +77,7 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         </section>
 
         <section className="glass p-4">
-          <SectionTitle title="칸 종류" note="암송 성공 시 받는 달란트" />
+          <SectionTitle title="칸 종류" column="보상(달란트)" />
           <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
             {spaces.map(([c, n, d, reward]) => (
               <li key={n} className="flex gap-2 items-center">
@@ -93,7 +93,7 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         </section>
 
         <section className="glass p-4">
-          <SectionTitle title="아이템" note="상점 가격" />
+          <SectionTitle title="아이템" column="가격(달란트)" />
           <p className="text-sm text-white/60 mb-2">
             선물 칸에서 얻거나 상점을 지날 때 살 수 있어요. 팀당 최대 {settings.inventoryLimit}개, 가득 찼을 때 받은 아이템은{" "}
             <Talent n={FULL_BAG_TALENTS} plus />로 대신 받아요.
@@ -136,13 +136,12 @@ export function OverlayHeader({ children, onClose }: { children: React.ReactNode
   );
 }
 
-function SectionTitle({ title, note }: { title: string; note: string }) {
+/** 섹션 제목 + 오른쪽 숫자 열의 이름 */
+function SectionTitle({ title, column }: { title: string; column: string }) {
   return (
     <div className="flex items-baseline gap-2 mb-2">
       <h3 className="font-display text-xl">{title}</h3>
-      <span className="ml-auto text-xs text-white/50 flex items-center gap-1">
-        <TalentCoin size={12} /> = {note}
-      </span>
+      <span className="ml-auto text-xs text-white/50">{column}</span>
     </div>
   );
 }
