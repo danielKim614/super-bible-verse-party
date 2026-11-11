@@ -5,6 +5,7 @@ import { ITEMS, ITEM_IDS } from "@/game/items";
 import type { Settings } from "@/game/types";
 import { FULL_BAG_TALENTS } from "@/game/reducer";
 import { ItemIcon } from "./ItemIcon";
+import { UfoIcon } from "./UfoIcon";
 
 /**
  * 도움말: 폰에서는 "?"를 꾹 누르는 동안, 큰 화면에서는 클릭으로 켜고 끔.
@@ -35,14 +36,14 @@ export function HelpButton({ settings, className = "" }: { settings: Settings; m
 
 function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () => void }) {
   const r = settings.rewards;
-  const spaces: [string, string, string, number?][] = [
+  const spaces: [string, string, string, number?, React.ReactNode?][] = [
     ["bg-sky-400", "일반 칸", "장절만 보고 외워서 암송", r.blue],
     ["bg-rose-400", "어려운 칸", "일반 칸보다 어려운 난이도!!", r.red],
     ["bg-emerald-400", "이벤트 칸", "그냥 외우기만 하면 심심하잖아요~", r.event],
     ["bg-violet-400", "선물 칸", "성공하면 랜덤 아이템을 드려요", r.item],
     ["bg-teal-400", "해프닝 칸", "멈추면 게임판에 사건(?) 발생", r.happening],
     ["bg-pink-400", "축복 칸", "축복합니다~", r.bless],
-    ["bg-amber-300", "상점 (UFO)", "멈추지 않아도 지나가며 아이템을 살 수 있어요"],
+    ["", "상점 (UFO)", "멈추지 않아도 지나가며 아이템을 살 수 있어요", undefined, <UfoIcon key="ufo" size={24} />],
   ];
   return (
     <div className="fixed inset-0 z-50 bg-[#0b1033]/95 backdrop-blur-sm text-white flex flex-col">
@@ -80,9 +81,13 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         <section className="glass p-4">
           <SectionTitle title="칸 종류" column="보상(달란트)" />
           <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
-            {spaces.map(([c, n, d, reward]) => (
+            {spaces.map(([c, n, d, reward, icon]) => (
               <li key={n} className="flex gap-2 items-center">
-                <span className={`inline-block w-5 h-5 rounded-full shrink-0 ${c} ring-2 ring-white/70`} />
+                {icon ? (
+                  <span className="inline-flex w-5 h-5 items-center justify-center shrink-0 overflow-visible">{icon}</span>
+                ) : (
+                  <span className={`inline-block w-5 h-5 rounded-full shrink-0 ${c} ring-2 ring-white/70`} />
+                )}
                 <span className="min-w-0 flex-1 leading-tight">
                   <b className="block">{n}</b>
                   <span className="block text-sm text-white/70 truncate">{d}</span>
