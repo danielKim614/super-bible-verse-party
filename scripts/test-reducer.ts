@@ -304,7 +304,7 @@ console.log("✅ 39 merge ok");
   console.log("✅ shop moves after 3 visits →", t.shopAt);
 }
 
-// 상점은 보드 맨 위쪽 칸(2~6절)으로는 날아가지 않는다
+// 상점은 보드 맨 위쪽 칸(3~5절)으로는 날아가지 않는다
 {
   for (let k = 0; k < 40; k++) {
     let t = replay([
@@ -320,7 +320,7 @@ console.log("✅ 39 merge ok");
       if (t.phase === "recite") e("recite_result", { success: true, seed: 1 });
       e("end_turn", {});
     }
-    assert.ok(![2, 3, 4, 5, 6].includes(t.shopAt), `shop flew to top row ${t.shopAt}`);
+    assert.ok(![3, 4, 5].includes(t.shopAt), `shop flew to top row ${t.shopAt}`);
   }
   console.log("✅ shop avoids top row");
 }

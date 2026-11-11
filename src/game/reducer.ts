@@ -446,7 +446,7 @@ function nextTeam(s: GameState, seq: number) {
 }
 
 /** 상점 UFO는 칸보다 위에 떠 있으므로, 이보다 위쪽 칸으로는 보내지 않는다 */
-const SHOP_MIN_Y = 130;
+const SHOP_MIN_Y = 90;
 
 /** 상점에 정해진 수만큼 팀이 다녀갔으면 다른 칸으로 날아간다 (결정적 랜덤) */
 function maybeMoveShop(s: GameState, seq: number) {
@@ -454,7 +454,7 @@ function maybeMoveShop(s: GameState, seq: number) {
   if (limit <= 0 || s.shopVisits < limit) return;
   const occupied = new Set(s.teamIds.map((id) => s.teams[id].pos));
   // 아이콘이 떠 있는 칸(선물·해프닝·축복)과 스타 칸, 말이 있는 칸, 지금 자리 근처,
-  // 그리고 UFO가 화면 위로 잘리는 보드 맨 위쪽 칸(2~6절)은 피한다
+  // 그리고 UFO가 화면 위로 잘리는 보드 맨 위쪽 칸(3~5절)은 피한다
   const near = forwardDistances(s.shopAt);
   const cands = SPACES.filter(
     (sp) =>
