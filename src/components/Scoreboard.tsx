@@ -51,7 +51,16 @@ export function Scoreboard({
             <span className={`font-display ${compact ? "text-lg w-6" : "text-2xl w-8"} text-center ${r.rank === 1 ? "text-yellow-300" : "text-white/40"}`}>{r.rank}</span>
             <TeamAvatar team={t} size={compact ? 34 : 44} />
             <div className="min-w-0 flex-1">
-              <div className={`font-display truncate ${compact ? "text-base" : "text-xl"}`}>{t?.name ?? "?"}</div>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className={`font-display truncate ${compact ? "text-base" : "text-xl"}`}>{t?.name ?? "?"}</span>
+                {/* 폰(축약)에서는 이름 옆에 작은 아이콘으로 보유 아이템 표시 */}
+                {compact &&
+                  ts.items.map((i, k) => (
+                    <span key={k} title={ITEMS[i]?.name ?? i} className="inline-flex w-5 h-5 rounded-md bg-white/15 items-center justify-center shrink-0">
+                      <ItemIcon id={i} size={14} />
+                    </span>
+                  ))}
+              </div>
               {!compact && ts.items.length > 0 && (
                 <div className="flex gap-1 mt-0.5">
                   {ts.items.map((i, k) => (
