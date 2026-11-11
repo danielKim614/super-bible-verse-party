@@ -46,7 +46,7 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
     [
       "",
       "상점",
-      "아이템을 구매할 수 있어요",
+      "아이템을 구매할 수 있어요. 상점이 이동(?) 할 수 있어요.",
       undefined, <UfoIcon key="ufo" size={30} />],
   ];
   return (
@@ -97,7 +97,7 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
                 )}
                 <span className="min-w-0 flex-1 leading-tight">
                   <b className="block">{n}</b>
-                  <span className="block text-sm text-white/70 truncate">{d}</span>
+                  <span className="block text-sm text-white/70 break-keep">{d}</span>
                 </span>
                 {reward !== undefined && <Talent n={reward} plus />}
               </li>
