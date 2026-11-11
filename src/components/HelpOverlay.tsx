@@ -63,8 +63,8 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         <section className="glass p-4">
           <h3 className="font-display text-xl mb-2">스타 ★</h3>
           <p className="text-white/85 leading-relaxed">
-            보드 위에 떠 있는 별을 <b>지나가기만 해도</b> 살 수 있어요 ({settings.starPrice}달란트). 단, 그 칸의 구절을 먼저 암송해야 해요. 스타를 사면 별은 다른 곳에
-            다시 나타나요.
+            스타는 {settings.starPrice}달란트예요. 별이 있는 칸에 <b>멈추면</b> 바로 살 수 있고, 별을 <b>지나갈 때</b>는 그 칸의 구절을
+            암송하는 데 성공하면 살 수 있어요. 스타를 사면 별은 다른 곳에 다시 나타나요.
           </p>
         </section>
 
