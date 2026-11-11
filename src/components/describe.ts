@@ -25,7 +25,7 @@ export interface VerseCardInfo {
 export function verseCard(s: GameState, space: number, verses: VerseMap): VerseCardInfo {
   const sp = SPACE_BY_ID[space];
   const eff = effectiveType(s, space);
-  let modeLabel = "장절을 보고 그대로 암송";
+  let modeLabel = "장절만 보고 외워서 암송";
   let prompt: string | null = null;
   let ref = `로마서 8:${space}`;
   const redMode = effectiveRedMode(s, space);

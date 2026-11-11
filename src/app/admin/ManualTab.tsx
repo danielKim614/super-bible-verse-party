@@ -46,7 +46,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
       <Section title="칸 종류와 보상">
         <table className="w-full text-sm">
           <tbody>
-            <Row k="일반 칸" v={`장절을 보고 그대로 암송. 성공 +${r.blue}`} ids={byType("blue")} />
+            <Row k="일반 칸" v={`장절만 보고 외워서 암송. 성공 +${r.blue}`} ids={byType("blue")} />
             <Row k="어려운 칸" v={`긴 구절. 칸마다 난이도 방식이 정해져 있어요(아래 표). 성공 +${r.red}`} ids={byType("red")} />
             <Row k="이벤트 칸" v={`특별한 방식으로 암송(아래 표). 성공 +${r.event}`} ids={byType("event")} />
             <Row k="선물 칸" v={`성공하면 +${r.item} 달란트와 랜덤 아이템 1개`} ids={byType("item")} />
