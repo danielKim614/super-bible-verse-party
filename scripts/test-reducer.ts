@@ -303,3 +303,24 @@ console.log("✅ 39 merge ok");
   assert.equal(t.shopVisits, 0);
   console.log("✅ shop moves after 3 visits →", t.shopAt);
 }
+
+// 상점은 보드 맨 위쪽 칸(2~6절)으로는 날아가지 않는다
+{
+  for (let k = 0; k < 40; k++) {
+    let t = replay([
+      { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B", "C"], settings: { ...DEFAULT_SETTINGS, diceCount: 1 }, seed: k } },
+    ] as GameEvent[]);
+    let sq = 2 + k * 3;
+    const e = (type: string, payload: object) => (t = applyEvent(t, { id: sq, seq: sq++, voided: false, type, payload } as GameEvent));
+    for (const id of ["A", "B", "C"]) {
+      e("override", { action: "position", teamId: id, pos: 27 });
+      e("roll", { value: 1, faces: [1] });
+      if (t.phase === "shop_offer") e("shop_leave", {});
+      if (t.phase === "star_offer") e("star_decision", { buy: false });
+      if (t.phase === "recite") e("recite_result", { success: true, seed: 1 });
+      e("end_turn", {});
+    }
+    assert.ok(![2, 3, 4, 5, 6].includes(t.shopAt), `shop flew to top row ${t.shopAt}`);
+  }
+  console.log("✅ shop avoids top row");
+}
