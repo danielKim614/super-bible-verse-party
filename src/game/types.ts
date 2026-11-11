@@ -132,7 +132,7 @@ export interface TurnCtx {
   hintUsed?: boolean;
   landed?: number;
   happening?: { kind: HappeningKind; text: string };
-  blessTo?: string; // 축복 받은 팀
+  blessTo?: string[]; // 축복 받은 팀들 (공동 꼴찌면 여럿)
   reciteResult?: boolean;
   payout?: number;
   gainedItem?: ItemId | "full";

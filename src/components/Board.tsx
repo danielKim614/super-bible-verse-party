@@ -227,12 +227,15 @@ function useDiceRoll(state: GameState) {
 const STAR_FX_MS = 2400;
 
 /** 스타 구매 직후 연출: 그 칸 위에서 별이 빠르게 돌며 빛나다 사라짐 */
-const STAR_SPAWN_MS = 1200;
+const STAR_SPAWN_MS = 2200;
+/** 산 별이 사라진 뒤 새 별이 나타나기까지 잠깐 쉬는 시간 (화면은 계속 어둡게) */
+const STAR_GAP_MS = 1000;
 
 function useStarBurst(state: GameState) {
   const [burst, setBurst] = useState<{ key: number; at: number } | null>(null);
   const [hidden, setHidden] = useState<number | null>(null); // 아직 등장 연출 전인 새 별
   const [spawn, setSpawn] = useState<{ key: number; at: number } | null>(null);
+  const [pause, setPause] = useState(false);
   const prevBought = useRef(false);
   const prevStart = useRef(state.ctx.startSeq);
   const prevStars = useRef<number[]>(state.stars);
@@ -248,19 +251,26 @@ function useStarBurst(state: GameState) {
     const key = Date.now();
     setBurst({ key, at });
     setHidden(fresh);
+    // 산 별 연출 → 잠깐 쉼(어두운 채로) → 새 별 등장
     const t1 = setTimeout(() => {
       setBurst((b) => (b && b.key === key ? null : b));
+      setPause(true);
+    }, STAR_FX_MS);
+    const t2 = setTimeout(() => {
+      setPause(false);
       setHidden(null);
       if (fresh !== null) setSpawn({ key, at: fresh });
-    }, STAR_FX_MS);
-    const t2 = setTimeout(() => setSpawn((sp) => (sp && sp.key === key ? null : sp)), STAR_FX_MS + STAR_SPAWN_MS);
+    }, STAR_FX_MS + STAR_GAP_MS);
+    const t3 = setTimeout(() => setSpawn((sp) => (sp && sp.key === key ? null : sp)), STAR_FX_MS + STAR_GAP_MS + STAR_SPAWN_MS);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
+      setPause(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ctx.starBought, state.ctx.startSeq]);
-  return { burst, hidden, spawn };
+  return { burst, hidden, spawn, pause };
 }
 
 const PIPS: Record<number, [number, number][]> = {
@@ -322,7 +332,7 @@ export function Board({
 }) {
   const forkFlash = useForkFlash(state);
   const dice = useDiceRoll(state);
-  const { burst: starBurst, hidden: hiddenStar, spawn: starSpawn } = useStarBurst(state);
+  const { burst: starBurst, hidden: hiddenStar, spawn: starSpawn, pause: starPause } = useStarBurst(state);
   const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : dice ? DICE_MS : 0);
   const startMark = useStartMark(state, shown);
   const warp = useWarpFx(state);
@@ -518,7 +528,7 @@ export function Board({
       })}
 
       {/* 스타 획득·등장 동안 화면 어둡게 */}
-      {(starBurst || starSpawn) && <rect width={BOARD_W} height={BOARD_H} rx={36} fill="#05081f" opacity={0.72} className="animate-dim-in" />}
+      {(starBurst || starPause || starSpawn) && <rect width={BOARD_W} height={BOARD_H} rx={36} fill="#05081f" opacity={0.72} className="animate-dim-in" />}
 
       {/* 스타: 칸 위에 떠서 Y축 회전 */}
       {state.stars.map((st) => {
@@ -528,7 +538,18 @@ export function Board({
         return (
           <g key={`star-${st}`} transform={`translate(${sp.x},${sp.y - 40})`}>
             {spawning && (
-              <g className="animate-starfx-rays">
+              <g transform={`translate(0,${sp.y < 170 ? 118 : -84})`}>
+                {/* 위치(transform 속성)와 애니메이션(CSS transform)을 다른 g에 나눠야 위치가 유지된다 */}
+                <g className="animate-pop" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+                  <rect x={-58} y={-16} width={116} height={32} rx={16} fill="#fde047" stroke="#fff" strokeWidth={2.5} />
+                  <text textAnchor="middle" dy={7} fontSize={18} className="font-display" fill="#4c1d95">
+                    새 스타 등장!
+                  </text>
+                </g>
+              </g>
+            )}
+            {spawning && (
+              <g className="animate-starfx-rays" style={{ animationDuration: "2.2s" }}>
                 {Array.from({ length: 10 }, (_, i) => (
                   <rect key={i} x={-2.5} y={-80} width={5} height={46} rx={2.5} fill="#fff7c2" opacity={0.9} transform={`rotate(${i * 36})`} />
                 ))}

@@ -120,7 +120,7 @@ body {
   70% { transform: scale(0.9) rotateY(540deg); }
   100% { transform: scale(1) rotateY(720deg); opacity: 1; }
 }
-.animate-star-spawn { animation: star-spawn 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) both; transform-box: fill-box; transform-origin: center; }
+.animate-star-spawn { animation: star-spawn 2.2s cubic-bezier(0.25, 0.7, 0.3, 1) both; transform-box: fill-box; transform-origin: center; }
 
 @keyframes dim-in { from { opacity: 0; } to { opacity: 0.72; } }
 .animate-dim-in { animation: dim-in 0.4s ease-out both; }

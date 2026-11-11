@@ -108,8 +108,8 @@ s = ev(s, { type: "override", payload: { action: "position", teamId: "A", pos: 1
 const beforeBless = Object.fromEntries(teams.map((t) => [t, s.teams[t].talents]));
 s = ev(s, { type: "roll", payload: { value: 1 } });
 assert.equal(s.teams.A.pos, 14);
-assert.ok(s.ctx.blessTo);
-assert.equal(s.teams[s.ctx.blessTo!].talents, beforeBless[s.ctx.blessTo!] + 5);
+assert.ok(s.ctx.blessTo && s.ctx.blessTo.length > 0);
+for (const id of s.ctx.blessTo!) assert.equal(s.teams[id].talents, beforeBless[id] + 5);
 s = ev(s, { type: "recite_result", payload: { success: true, seed: 9 } });
 s = ev(s, { type: "end_turn", payload: {} });
 
@@ -264,4 +264,20 @@ console.log("✅ 39 merge ok");
   assert.equal(u.teams.A.stars, 0);
   assert.equal(u.teams.A.talents, before + u.settings.rewards.blue);
   console.log("✅ star landing: buy first, recite separately ok");
+}
+
+// 축복 칸: 공동 꼴찌면 모두 +5
+{
+  let t = replay([
+    { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B", "C"], settings: { ...DEFAULT_SETTINGS, diceCount: 1 }, seed: 3 } },
+    { id: 2, seq: 2, voided: false, type: "override", payload: { action: "talents", teamId: "A", delta: 10 } },
+    { id: 3, seq: 3, voided: false, type: "override", payload: { action: "position", teamId: "A", pos: 13 } },
+  ] as GameEvent[]);
+  t = applyEvent(t, { id: 4, seq: 4, voided: false, type: "roll", payload: { value: 1, faces: [1] } } as GameEvent);
+  assert.equal(t.teams.A.pos, 14);
+  assert.deepEqual([...t.ctx.blessTo!].sort(), ["B", "C"]);
+  assert.equal(t.teams.B.talents, 15);
+  assert.equal(t.teams.C.talents, 15);
+  assert.equal(t.teams.A.talents, 20);
+  console.log("✅ bless ties ok");
 }

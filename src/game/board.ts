@@ -279,7 +279,7 @@ export const SPACE_LABEL: Record<SpaceType, string> = {
   blue: "일반 칸",
   red: "어려운 칸",
   event: "이벤트 칸",
-  item: "아이템 칸",
+  item: "선물 칸",
   happening: "해프닝 칸",
   bless: "축복 칸",
 };

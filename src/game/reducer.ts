@@ -68,10 +68,12 @@ export function boostReason(s: GameState): "manual" | "golden" | "final" | null 
   return null;
 }
 
-/** 꼴찌 팀 (스타 → 달란트 기준, 동점이면 턴 순서 뒤쪽) */
-export function lastPlaceTeam(s: GameState): string | undefined {
+/** 꼴찌 팀들 (스타 → 달란트 기준). 공동 꼴찌면 모두 */
+export function lastPlaceTeams(s: GameState): string[] {
   const rows = finalRanking(s);
-  return rows[rows.length - 1]?.id;
+  const worst = rows[rows.length - 1];
+  if (!worst) return [];
+  return rows.filter((r) => r.rank === worst.rank).map((r) => r.id);
 }
 
 /** 칸의 실제 보상 종류 */
@@ -477,11 +479,12 @@ function land(s: GameState, tid: string, space: number, seq: number) {
   s.phase = "recite";
   const t = SPACE_BY_ID[space]?.type;
   if (t === "bless") {
-    const last = lastPlaceTeam(s);
-    if (last) {
-      s.ctx.blessTo = last;
-      credit(s, seq, last, 5, "축복 칸 (꼴찌 응원)");
-      feed(s, { seq, teamId: last, kind: "bless", text: "축복! 꼴찌 팀에게", amount: 5 });
+    // 꼴찌 팀(공동 꼴찌면 모두)에게 +5
+    const last = lastPlaceTeams(s);
+    s.ctx.blessTo = last;
+    for (const id of last) {
+      credit(s, seq, id, 5, "축복 칸 (꼴찌 응원)");
+      feed(s, { seq, teamId: id, kind: "bless", text: "축복해요!", amount: 5 });
     }
   }
   if (t === "happening") applyHappening(s, tid, seq);

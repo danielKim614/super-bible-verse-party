@@ -83,9 +83,9 @@ export function ActionCard({
           ❔ {ctx.happening.text}
         </div>
       )}
-      {state.phase === "recite" && ctx.blessTo && (
+      {state.phase === "recite" && ctx.blessTo && ctx.blessTo.length > 0 && (
         <div className={`mt-3 rounded-2xl bg-pink-300/20 border border-pink-200/40 px-4 py-2 font-display animate-pop ${big ? "text-2xl" : "text-base"}`}>
-          🕊️ 축복! {teamById[ctx.blessTo]?.name} 팀에게 +5 달란트
+          💗 축복해요! {ctx.blessTo.map((id) => teamById[id]?.name).join(", ")} 팀에게 +5 달란트
         </div>
       )}
 

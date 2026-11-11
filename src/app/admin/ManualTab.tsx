@@ -51,7 +51,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
             <Row k="이벤트 칸" v={`특별한 방식으로 암송(아래 표). 성공 +${r.event}`} ids={byType("event")} />
             <Row k="선물 칸" v={`성공하면 +${r.item} 달란트와 랜덤 아이템 1개`} ids={byType("item")} />
             <Row k="해프닝 칸" v={`멈추는 즉시 해프닝 1개가 랜덤 발생(아래). 그 후 암송, 성공 +${r.happening}`} ids={byType("happening")} />
-            <Row k="축복 칸" v={`멈추는 즉시 꼴찌 팀(스타→달란트 최하위)에 +5 달란트. 그 후 암송, 성공 +${r.bless}`} ids={byType("bless")} />
+            <Row k="축복 칸" v={`멈추는 즉시 꼴찌 팀(스타→달란트 최하위, 공동 꼴찌면 모두)에 +5 달란트. 그 후 암송, 성공 +${r.bless}`} ids={byType("bless")} />
           </tbody>
         </table>
         <p className="text-sm text-slate-600 mt-2">실패하면 달란트를 받지 못해요(차감은 없어요). 아이템을 쓴 경우에도 아이템은 돌려주지 않아요.</p>
