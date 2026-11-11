@@ -46,7 +46,7 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
     [
       "",
       "상점",
-      "아이템을 구매할 수 있어요. 상점이 이동(?) 할 수 있어요.",
+      "아이템을 구매할 수 있어요. 상점은 이동(?) 할 수 있어요.",
       undefined, <UfoIcon key="ufo" size={30} />],
   ];
   return (
