@@ -319,14 +319,17 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
       const useCoupon = !!coupon && team.items.includes("starCoupon");
       if (team.talents < starPriceFor(s, useCoupon)) return prev;
       ctx.couponUsed = useCoupon;
+      // 지나갈 때든 멈췄을 때든 스타는 암송과 상관없이 바로 산다
+      buyStar(s, tid, seq, { seed: ev.payload.seed });
+      ctx.starAt = undefined;
       if (ctx.starLanding) {
-        // 도착 칸: 스타는 바로 사고, 그 칸 암송은 별개로 이어서 진행
-        buyStar(s, tid, seq, { seed: ev.payload.seed });
+        // 멈춘 칸: 이어서 그 칸 암송을 따로 진행
         ctx.starLanding = false;
-        ctx.starAt = undefined;
         s.phase = "recite";
       } else {
-        s.phase = "star_recite";
+        // 지나가는 중: 남은 칸을 계속 이동
+        s.moveSeq = seq;
+        advance(s, tid, seq);
       }
       return s;
     }

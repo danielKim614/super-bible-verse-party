@@ -340,7 +340,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       return (
         <div className="flex flex-col gap-3">
           <div className="text-slate-600">
-            {ctx.starLanding ? `도착 칸(${ctx.starAt}절)에 스타가 있어요. 사면 바로 스타를 얻고, 사든 안 사든 이어서 이 칸 암송을 해요.` : `${ctx.starAt}절의 스타를 지나갑니다. 구매하려면 이 절을 암송해야 해요.`}
+            {ctx.starLanding ? `도착 칸(${ctx.starAt}절)에 스타가 있어요. 사면 바로 스타를 얻고, 사든 안 사든 이어서 이 칸 암송을 해요.` : `${ctx.starAt}절의 스타를 지나갑니다. 사면 바로 스타를 얻고 남은 칸을 계속 가요.`}
           </div>
           <div className="flex flex-wrap gap-2">
             <button className={`${btn} bg-yellow-400 font-display text-2xl py-4`} disabled={busy || team.talents < normal} onClick={() => send({ type: "star_decision", payload: { buy: true, seed: newSeed() } })}>

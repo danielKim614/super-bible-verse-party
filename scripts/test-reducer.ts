@@ -49,15 +49,13 @@ assert.equal(s.teams.B.talents, 10);
 assert.equal(s.teams.B.items.length, 0); // 실패 시 아이템 없음
 s = ev(s, { type: "end_turn", payload: {} });
 
-// C팀: 스타 지나가기 → 구매 → 암송 성공 → 상점 통과 → 계속 이동
+// C팀: 스타 지나가기 → 구매(암송 없이 바로) → 상점 통과 → 계속 이동
 s = ev(s, { type: "override", payload: { action: "talents", teamId: "C", delta: 20 } });
 s = ev(s, { type: "override", payload: { action: "position", teamId: "C", pos: 20 } });
 s = ev(s, { type: "roll", payload: { value: 5 } }); // 21, 22(★), 🏪, 28, 29, 30
 assert.equal(s.phase, "star_offer");
 assert.equal(s.ctx.starAt, 22);
-s = ev(s, { type: "star_decision", payload: { buy: true } });
-assert.equal(s.phase, "star_recite");
-s = ev(s, { type: "recite_result", payload: { success: true, seed: 3 } });
+s = ev(s, { type: "star_decision", payload: { buy: true, seed: 3 } });
 assert.equal(s.teams.C.stars, 1);
 assert.equal(s.teams.C.talents, 10);
 assert.ok(!s.stars.includes(22));
