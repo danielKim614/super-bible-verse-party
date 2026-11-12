@@ -16,12 +16,12 @@ const KIND_STYLE: Record<FeedEntry["kind"], string> = {
   bless: "bg-pink-300 text-pink-950",
 };
 
-/** 한 번에 보이는 알림 수. 넘치면 맨 아래 것이 밀려나며 사라짐 */
-const MAX_VISIBLE = 3;
-/** 여러 알림이 한꺼번에 생기면 이 간격으로 하나씩 내려보냄 */
-const GAP_MS = 1400;
-/** 알림 하나가 머무는 시간 */
-const LIFE_MS = 4800;
+/** 알림 자리는 한 칸. 새 알림이 오면 기존 알림은 아래로 밀려나며 사라짐 */
+const MAX_VISIBLE = 1;
+/** 여러 알림이 한꺼번에 생기면 앞 알림을 이만큼 보여 준 뒤 다음 알림이 밀어냄 */
+const GAP_MS = 2000;
+/** 다음 알림이 없을 때 알림 하나가 머무는 시간 */
+const LIFE_MS = 4000;
 /** 사라지는(밀려나는) 데 걸리는 시간 */
 const LEAVE_MS = 450;
 /** 대기열이 너무 길면 오래된 것은 건너뜀 */
@@ -30,8 +30,8 @@ const MAX_QUEUE = 6;
 type Toast = FeedEntry & { key: string; leaving: false | "pushed" | "expired" };
 
 /**
- * 새로 생긴 피드 항목을 위에서부터 하나씩 띄움 (Undo로 사라진 항목은 무시).
- * 새 알림이 맨 위에 나오면 기존 알림은 한 칸씩 아래로 밀리고, 맨 아래를 넘친 것은 흐려지며 사라짐.
+ * 새로 생긴 피드 항목을 한 자리에 하나씩 띄움 (Undo로 사라진 항목은 무시).
+ * 다음 알림이 위에서 내려오면 지금 알림은 아래로 밀려나며 흐려져 사라진다.
  */
 export function FeedToasts({ state, teamById, big = true }: { state: GameState; teamById: Record<string, TeamInfo>; big?: boolean }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -114,7 +114,7 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
   const slot = big ? 54 : 46;
   let i = 0;
   const placed = toasts.map((t) => {
-    if (t.leaving === "pushed") return { t, y: MAX_VISIBLE * slot - slot * 0.4 };
+    if (t.leaving === "pushed") return { t, y: MAX_VISIBLE * slot - slot * 0.2 };
     const y = i * slot;
     if (!t.leaving) i += 1;
     return { t, y };
