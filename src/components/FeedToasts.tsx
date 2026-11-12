@@ -19,9 +19,9 @@ const KIND_STYLE: Record<FeedEntry["kind"], string> = {
 /** 한 번에 보이는 알림 수. 넘치면 맨 아래 것이 밀려나며 사라짐 */
 const MAX_VISIBLE = 3;
 /** 여러 알림이 한꺼번에 생기면 이 간격으로 하나씩 내려보냄 */
-const GAP_MS = 750;
+const GAP_MS = 1400;
 /** 알림 하나가 머무는 시간 */
-const LIFE_MS = 4200;
+const LIFE_MS = 4800;
 /** 사라지는(밀려나는) 데 걸리는 시간 */
 const LEAVE_MS = 450;
 /** 대기열이 너무 길면 오래된 것은 건너뜀 */
