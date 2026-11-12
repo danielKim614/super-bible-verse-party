@@ -378,3 +378,24 @@ console.log("✅ 39 merge ok");
   assert.equal(t.teams.B.talents, tb + t.settings.rewards.item + 3);
   console.log("✅ unique items ok");
 }
+
+// 워프 파이프: 지금 칸을 뺀 아무 칸으로 (다른 팀이 없는 칸도 포함)
+{
+  const dests = new Set<number>();
+  for (let k = 0; k < 60; k++) {
+    let t = replay([
+      { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS }, seed: 9 } },
+    ] as GameEvent[]);
+    let sq = 2;
+    const e = (type: string, payload: object) => (t = applyEvent(t, { id: sq, seq: sq++, voided: false, type, payload } as GameEvent));
+    e("override", { action: "position", teamId: "A", pos: 12 });
+    e("override", { action: "addItem", teamId: "A", item: "warpPipe" });
+    e("use_item", { item: "warpPipe", seed: 1000 + k });
+    assert.notEqual(t.teams.A.pos, 12);
+    assert.ok(t.teams.A.pos >= 1 && t.teams.A.pos <= 39);
+    assert.ok(!t.teams.A.items.includes("warpPipe"));
+    dests.add(t.teams.A.pos);
+  }
+  assert.ok(dests.size > 10, `warp destinations too few: ${dests.size}`);
+  console.log("✅ warp pipe goes to any other space:", dests.size, "different spaces");
+}

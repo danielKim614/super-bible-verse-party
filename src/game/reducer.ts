@@ -162,11 +162,10 @@ export function usableItems(s: GameState): ItemId[] {
   return [...out];
 }
 
+/** 워프 파이프: 지금 서 있는 칸을 뺀 1~39절 아무 칸 */
 function warpTargets(s: GameState, tid: string): number[] {
   const me = s.teams[tid].pos;
-  return [...new Set(s.teamIds.filter((id) => id !== tid).map((id) => s.teams[id].pos))].filter(
-    (p) => p !== T && p !== me,
-  );
+  return SPACES.map((sp) => sp.id).filter((p) => p !== me);
 }
 
 export function payoutBreakdown(amount: number): { d10: number; d5: number; d1: number } {
