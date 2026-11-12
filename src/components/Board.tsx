@@ -336,8 +336,9 @@ export function Board({
   const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : dice ? DICE_MS : 0);
   const startMark = useStartMark(state, shown);
   const warp = useWarpFx(state);
-  const shopFlying = useShopFlying(state.shopAt ?? SHOP_AT);
-  const shopSpace = SPACE_BY_ID[state.shopAt ?? SHOP_AT] ?? SPACE_BY_ID[SHOP_AT];
+  const shopMove = useShopMove(state.shopAt ?? SHOP_AT);
+  const shopFlying = shopMove.phase === "fly";
+  const shopSpace = SPACE_BY_ID[shopMove.at] ?? SPACE_BY_ID[SHOP_AT];
   const shopPos = { x: shopSpace.x - SHOP_DX, y: shopSpace.y - SHOP_DY };
   const sparkles = useSparkles(70);
   const cur = currentTeamId(state);
@@ -491,10 +492,10 @@ export function Board({
           transition: `transform ${SHOP_FLY_MS}ms cubic-bezier(0.45, 0, 0.25, 1)`,
         }}
       >
-        {/* 빛줄기와 UFO가 함께 살짝 떠다님 (진폭 3px). 날아가는 동안은 기울어지며 흔들림 */}
-        <g className={shopFlying ? "animate-ufo-fly" : "animate-ufo"}>
-          {/* 칸으로 내려오는 빛줄기 (날아가는 동안은 끔) */}
-          {!shopFlying && (
+        {/* 빛줄기와 UFO가 함께 살짝 떠다님 (진폭 3px). 출발 전엔 덜덜 떨고, 날아가는 동안은 기울어지며 흔들림 */}
+        <g className={shopFlying ? "animate-ufo-fly" : shopMove.phase === "shake" ? "animate-ufo-shake" : "animate-ufo"}>
+          {/* 칸으로 내려오는 빛줄기 (떨기 시작하면 끔) */}
+          {shopMove.phase === "idle" && (
             <path d={`M -12 10 L 12 10 L ${SHOP_DX + 17} ${SHOP_DY - 6} L ${SHOP_DX - 17} ${SHOP_DY - 6} Z`} fill="url(#shopBeam)" className="animate-pop" />
           )}
           <g filter="url(#soft)">
@@ -714,6 +715,18 @@ export function Board({
       {/* 주사위 아이템 사용 중: 굴리기 전까지 화면 가운데에 주사위가 준비된 채로 떠 있음 */}
       {!dice && state.phase === "pre_roll" && state.ctx.rollMode !== "normal" && !state.paused && (
         <DiceReady mode={state.ctx.rollMode} count={diceCount(state)} fixed={state.ctx.fixedFace} />
+      )}
+
+      {/* 상점이 옮겨 갈 때 말풍선: 칸·말보다 위에 그리고, UFO와 같은 속도로 따라감 (기울지는 않음) */}
+      {shopMove.phase !== "idle" && (
+        <g
+          style={{
+            transform: `translate(${shopPos.x}px, ${shopPos.y}px)`,
+            transition: `transform ${SHOP_FLY_MS}ms cubic-bezier(0.45, 0, 0.25, 1)`,
+          }}
+        >
+          <ShopAlert from={shopMove.from} to={state.shopAt ?? SHOP_AT} />
+        </g>
       )}
 
       {/* 주사위 연출 */}
@@ -993,19 +1006,59 @@ const PLANET_R = 20;
 const SHOP_DX = SPACE_BY_ID[SHOP_AT].x - SHOP_POS.x;
 const SHOP_DY = SPACE_BY_ID[SHOP_AT].y - SHOP_POS.y;
 const SHOP_FLY_MS = 2600;
+/** 날아가기 전에 제자리에서 덜덜 떠는 시간 */
+const SHOP_SHAKE_MS = 1300;
 
-/** 상점이 다른 칸으로 옮겨질 때 날아가는 중인지 */
-function useShopFlying(shopAt: number) {
-  const [flying, setFlying] = useState(false);
+/**
+ * 상점이 다른 칸으로 옮겨질 때: 제자리에서 떨며 "어..어엇..?!" (shake) → 새 칸으로 날아감 (fly) → 원래대로 (idle).
+ * at은 화면에 그릴 상점 위치. 떠는 동안은 아직 예전 칸에 둔다.
+ */
+type ShopMove = { at: number; from: number; phase: "idle" | "shake" | "fly" };
+function useShopMove(shopAt: number): ShopMove {
+  const [move, setMove] = useState<ShopMove>({ at: shopAt, from: shopAt, phase: "idle" });
   const prev = useRef(shopAt);
   useEffect(() => {
     if (prev.current === shopAt) return;
+    const from = prev.current;
     prev.current = shopAt;
-    setFlying(true);
-    const t = setTimeout(() => setFlying(false), SHOP_FLY_MS);
-    return () => clearTimeout(t);
+    setMove({ at: from, from, phase: "shake" });
+    const t1 = setTimeout(() => setMove({ at: shopAt, from, phase: "fly" }), SHOP_SHAKE_MS);
+    const t2 = setTimeout(() => setMove({ at: shopAt, from: shopAt, phase: "idle" }), SHOP_SHAKE_MS + SHOP_FLY_MS);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      setMove({ at: shopAt, from: shopAt, phase: "idle" });
+    };
   }, [shopAt]);
-  return flying;
+  return move;
+}
+
+const SHOP_ALERT_W = 270;
+/**
+ * 상점 이동 말풍선. 보드 밖으로 나가지 않게 좌우를 밀고, 출발·도착 중 한 곳이라도 위쪽 끝이면 아래에 띄운다.
+ * 날아가는 도중에 위아래가 뒤집히거나 옆으로 튀지 않도록 출발·도착 칸을 함께 보고 정한다.
+ */
+function ShopAlert({ from, to }: { from: number; to: number }) {
+  const ends = [from, to].map((n) => SPACE_BY_ID[n] ?? SPACE_BY_ID[SHOP_AT]).map((sp) => ({ x: sp.x - SHOP_DX, y: sp.y - SHOP_DY }));
+  const below = ends.some((p) => p.y < 130);
+  const half = SHOP_ALERT_W / 2;
+  const shift = (px: number) => Math.max(16 + half - px, Math.min(0, BOARD_W - 16 - half - px));
+  const dx = ends.map((p) => shift(p.x)).find((v) => v !== 0) ?? 0;
+  const by = below ? 44 : -82;
+  return (
+    <g transform={`translate(${dx},${by})`}>
+      <g className="animate-shop-alert" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+        <path
+          d={below ? `M ${-dx - 9} -18 L ${-dx} -30 L ${-dx + 9} -18 Z` : `M ${-dx - 9} 18 L ${-dx} 30 L ${-dx + 9} 18 Z`}
+          fill="#fff"
+        />
+        <rect x={-half} y={-20} width={SHOP_ALERT_W} height={40} rx={20} fill="#fff" stroke="#fde047" strokeWidth={3} />
+        <text textAnchor="middle" dy={7} fontSize={19} className="font-display" fill="#4c1d95">
+          어..어엇..?! 상점이 이동한다!!
+        </text>
+      </g>
+    </g>
+  );
 }
 
 /**
