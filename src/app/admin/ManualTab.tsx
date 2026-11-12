@@ -49,7 +49,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
             <Row k="일반 칸" v={`장절만 보고 외워서 암송. 성공 +${r.blue}`} ids={byType("blue")} />
             <Row k="어려운 칸" v={`긴 구절. 칸마다 난이도 방식이 정해져 있어요(아래 표). 성공 +${r.red}`} ids={byType("red")} />
             <Row k="이벤트 칸" v={`특별한 방식으로 암송(아래 표). 성공 +${r.event}`} ids={byType("event")} />
-            <Row k="선물 칸" v={`성공하면 +${r.item} 달란트와 랜덤 아이템 1개`} ids={byType("item")} />
+            <Row k="선물 칸" v={`성공하면 +${r.item} 달란트와 랜덤 아이템 1개(이미 가진 종류 제외)`} ids={byType("item")} />
             <Row k="해프닝 칸" v={`멈추는 즉시 해프닝 1개가 랜덤 발생(아래). 그 후 암송, 성공 +${r.happening}`} ids={byType("happening")} />
             <Row k="축복 칸" v={`멈추는 즉시 꼴찌 팀(스타→달란트 최하위, 공동 꼴찌면 모두)에 +5 달란트. 그 후 암송, 성공 +${r.bless}`} ids={byType("bless")} />
           </tbody>
@@ -83,7 +83,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
           <li><b>스타 대이동</b>: 보드의 스타가 모두 다른 곳으로 옮겨져요.</li>
           <li><b>달란트 비</b>: 모든 팀 +2 달란트.</li>
           <li><b>황금 라운드</b>: 이번 턴(라운드) 동안 모든 팀의 암송 보상 2배.</li>
-          <li><b>깜짝 선물</b>: 랜덤 아이템 1개. 가방이 가득 차 있으면 대신 +{FULL_BAG_TALENTS} 달란트.</li>
+          <li><b>깜짝 선물</b>: 아직 없는 종류 중 랜덤 아이템 1개. 가방이 가득 찼거나 받을 새 아이템이 없으면 대신 +{FULL_BAG_TALENTS} 달란트.</li>
         </ul>
       </Section>
 
@@ -98,8 +98,8 @@ export function ManualTab({ settings }: { settings: Settings }) {
 
       <Section title="아이템">
         <ul className="list-disc pl-5 mb-3">
-          <li>팀당 최대 {settings.inventoryLimit}개. 가득 찬 상태에서 아이템을 받게 되면 대신 +{FULL_BAG_TALENTS} 달란트.</li>
-          <li>상점은 통과할 때만 열려요(도착해서가 아니라). 보유 달란트와 가방 여유가 있어야 구매 버튼이 활성화돼요.</li>
+          <li>팀당 최대 {settings.inventoryLimit}개, <b>같은 아이템은 하나씩만</b> 가질 수 있어요. 선물 칸·깜짝 선물은 아직 없는 종류 중에서 랜덤으로 나와요. 가득 찬 상태라면 대신 +{FULL_BAG_TALENTS} 달란트.</li>
+          <li>상점은 통과할 때만 열려요(도착해서가 아니라). 보유 달란트와 가방 여유가 있고, 아직 없는 아이템이어야 구매 버튼이 활성화돼요.</li>
           <li>게임 종료 시 남은 아이템은 1개당 {settings.itemRefund}달란트로 환급돼요.</li>
         </ul>
         <ul className="flex flex-col gap-2">

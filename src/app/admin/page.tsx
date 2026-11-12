@@ -399,11 +399,12 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
             <div className="flex flex-wrap gap-2">
               {ITEM_IDS.map((id) => {
                 const d = ITEMS[id];
-                const ok = team.talents >= d.price && team.items.length < state.settings.inventoryLimit;
+                const owned = team.items.includes(id);
+                const ok = !owned && team.talents >= d.price && team.items.length < state.settings.inventoryLimit;
                 return (
-                  <button key={id} className={`${btn} bg-white border`} disabled={busy || !ok} onClick={() => send({ type: "shop_buy", payload: { item: id } })} title={d.desc}>
+                  <button key={id} className={`${btn} bg-white border`} disabled={busy || !ok} onClick={() => send({ type: "shop_buy", payload: { item: id } })} title={owned ? "이미 가지고 있어요" : d.desc}>
                     <ItemIcon id={id} size={20} className="inline mr-1 align-middle" />
-                    {d.name} · 가격: {d.price} 달란트
+                    {d.name} · {owned ? "보유 중" : `가격: ${d.price} 달란트`}
                   </button>
                 );
               })}
@@ -417,7 +418,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
     case "resolve": {
       return (
         <div className="flex flex-col gap-3">
-          {ctx.gainedItem === "full" && <div className="text-amber-700">아이템 가방이 가득 차서 아이템 대신 +{FULL_BAG_TALENTS} 달란트를 받았어요.</div>}
+          {ctx.gainedItem === "full" && <div className="text-amber-700">가방이 가득 찼거나 받을 수 있는 새 아이템이 없어서 아이템 대신 +{FULL_BAG_TALENTS} 달란트를 받았어요.</div>}
           <button className={`${btn} bg-sky-600 text-white font-display text-3xl py-5`} disabled={busy} onClick={() => send({ type: "end_turn", payload: {} })}>
             다음 팀으로 ▶
           </button>
@@ -790,8 +791,8 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
           </select>
           <button
             className={`${btn} bg-purple-100`}
-            disabled={(t?.items.length ?? 0) >= state.settings.inventoryLimit}
-            title={`팀당 최대 ${state.settings.inventoryLimit}개`}
+            disabled={!t || t.items.includes(item) || t.items.length >= state.settings.inventoryLimit}
+            title={t?.items.includes(item) ? "이미 가지고 있어요 (같은 아이템은 하나만)" : `팀당 최대 ${state.settings.inventoryLimit}개`}
             onClick={() => send({ type: "override", payload: { action: "addItem", teamId, item } })}
           >
             추가

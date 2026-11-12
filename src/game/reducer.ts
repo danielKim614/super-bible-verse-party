@@ -98,8 +98,22 @@ export function cheapestItemPrice(): number {
   return Math.min(...Object.values(ITEMS).map((i) => i.price));
 }
 
+/** 같은 아이템은 팀당 하나만 가질 수 있어요. */
+export function canGetItem(s: GameState, team: TeamState, item: ItemId): boolean {
+  return !!ITEMS[item] && !team.items.includes(item) && team.items.length < s.settings.inventoryLimit;
+}
+
+/** 랜덤 아이템: 이미 가진 종류는 빼고 뽑아요. 받을 수 없으면 null. */
+function randomNewItem(s: GameState, team: TeamState, r: () => number): ItemId | null {
+  if (team.items.length >= s.settings.inventoryLimit) return null;
+  const pool = RANDOM_ITEM_POOL.filter((i) => !team.items.includes(i));
+  return pool.length ? pick(r, pool) : null;
+}
+
 export function canShop(s: GameState, team: TeamState): boolean {
-  return team.items.length < s.settings.inventoryLimit && team.talents >= cheapestItemPrice();
+  if (team.items.length >= s.settings.inventoryLimit) return false;
+  const prices = Object.values(ITEMS).filter((i) => !team.items.includes(i.id)).map((i) => i.price);
+  return prices.length > 0 && team.talents >= Math.min(...prices);
 }
 
 export function canAffordStar(s: GameState, team: TeamState): boolean {
@@ -160,7 +174,7 @@ export function payoutBreakdown(amount: number): { d10: number; d5: number; d1: 
   return { d10: Math.floor(a / 10), d5: Math.floor((a % 10) / 5), d1: a % 5 };
 }
 
-/** 아이템 가방이 가득 찼을 때 아이템 대신 지급하는 달란트 */
+/** 가방이 가득 찼거나 받을 수 있는 새 아이템이 없을 때 아이템 대신 지급하는 달란트 */
 export const FULL_BAG_TALENTS = 3;
 
 export function payoutText(amount: number): string {
@@ -378,15 +392,15 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
       feed(s, { seq, teamId: tid, kind: "payout", text: `${space}절 암송 성공`, amount });
       if (SPACE_BY_ID[space].type === "item") {
         const r = rng(seed);
-        const item = pick(r, RANDOM_ITEM_POOL);
-        if (team.items.length < s.settings.inventoryLimit) {
+        const item = randomNewItem(s, team, r);
+        if (item) {
           team.items.push(item);
           ctx.gainedItem = item;
           feed(s, { seq, teamId: tid, kind: "item", text: `${ITEMS[item].name} 획득!` });
         } else {
           ctx.gainedItem = "full";
-          credit(s, seq, tid, FULL_BAG_TALENTS, "선물 칸: 가방 가득 → 달란트");
-          feed(s, { seq, teamId: tid, kind: "payout", text: "가방이 가득 차서 달란트로 대신 받음", amount: FULL_BAG_TALENTS });
+          credit(s, seq, tid, FULL_BAG_TALENTS, "선물 칸: 받을 아이템 없음 → 달란트");
+          feed(s, { seq, teamId: tid, kind: "payout", text: "받을 수 있는 아이템이 없어서 달란트로 대신 받음", amount: FULL_BAG_TALENTS });
         }
       }
       s.phase = "resolve";
@@ -396,7 +410,7 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
     case "shop_buy": {
       if (s.phase !== "shop_offer") return prev;
       const def = ITEMS[ev.payload.item];
-      if (!def || team.talents < def.price || team.items.length >= s.settings.inventoryLimit) return prev;
+      if (!def || team.talents < def.price || !canGetItem(s, team, def.id)) return prev;
       team.items.push(def.id);
       credit(s, seq, tid, -def.price, `상점: ${def.name}`);
       feed(s, { seq, teamId: tid, kind: "cost", text: `${def.name} 구매`, amount: -def.price });
@@ -551,14 +565,14 @@ function applyHappening(s: GameState, tid: string, seq: number) {
       text = "황금 라운드! 이번 라운드 보상 2배";
       break;
     case "gift": {
-      const item = pick(r, RANDOM_ITEM_POOL);
       const team = s.teams[tid];
-      if (team.items.length < s.settings.inventoryLimit) {
+      const item = randomNewItem(s, team, r);
+      if (item) {
         team.items.push(item);
         text = `깜짝 선물! ${ITEMS[item].name}`;
       } else {
-        credit(s, seq, tid, FULL_BAG_TALENTS, "해프닝: 깜짝 선물(가방 가득 → 달란트)");
-        text = `깜짝 선물! 가방이 가득 차서 +${FULL_BAG_TALENTS} 달란트`;
+        credit(s, seq, tid, FULL_BAG_TALENTS, "해프닝: 깜짝 선물(받을 아이템 없음 → 달란트)");
+        text = `깜짝 선물! 받을 수 있는 아이템이 없어서 +${FULL_BAG_TALENTS} 달란트`;
       }
       break;
     }
@@ -682,8 +696,8 @@ function applyOverride(
       feed(s, { seq, teamId: p.teamId, kind: "info", text: `스타 ${p.delta > 0 ? "+" : ""}${p.delta} (수동)` });
       break;
     case "addItem":
-      // 강제 개입으로도 보유 한도는 넘기지 않고, 지금 없는 아이템(예전 버전의 방패 등)은 무시한다
-      if (!ITEMS[p.item] || team!.items.length >= s.settings.inventoryLimit) return prev;
+      // 강제 개입으로도 보유 한도·중복 금지는 지키고, 지금 없는 아이템(예전 버전의 방패 등)은 무시한다
+      if (!canGetItem(s, team!, p.item)) return prev;
       team!.items.push(p.item);
       break;
     case "removeItem":

@@ -108,8 +108,8 @@ function HelpOverlay({ settings, onClose }: { settings: Settings; onClose: () =>
         <section className="glass p-4">
           <SectionTitle title="아이템" column="가격(달란트)" />
           <p className="text-sm text-white/60 mb-2">
-            선물 칸에서 얻거나 상점을 지날 때 살 수 있어요. 팀당 최대 {settings.inventoryLimit}개, 가득 찼을 때 받은 아이템은{" "}
-            <Talent n={FULL_BAG_TALENTS} plus />로 대신 받아요.
+            선물 칸에서 얻거나 상점을 지날 때 살 수 있어요. 팀당 최대 {settings.inventoryLimit}개, 같은 아이템은 하나씩만 가질 수 있어요.
+            가득 찼을 때 받은 아이템은 <Talent n={FULL_BAG_TALENTS} plus />로 대신 받아요.
           </p>
           <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
             {ITEM_IDS.map((id) => (

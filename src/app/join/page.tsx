@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Board } from "@/components/Board";
 import { Scoreboard } from "@/components/Scoreboard";
 import { ActionCard } from "@/components/ActionCard";
 import { FeedToasts } from "@/components/FeedToasts";
@@ -9,7 +8,7 @@ import { Ceremony } from "@/components/Ceremony";
 import { TeamAvatar } from "@/components/TeamAvatar";
 import { ITEMS } from "@/game/items";
 import { ItemIcon } from "@/components/ItemIcon";
-import { HelpButton, OverlayHeader } from "@/components/HelpOverlay";
+import { HelpButton } from "@/components/HelpOverlay";
 import { isBoost } from "@/game/reducer";
 import { StartIntro } from "@/components/StartIntro";
 import { useGame } from "@/lib/useGame";
@@ -30,7 +29,6 @@ export default function JoinPage() {
   const [nickname, setNickname] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [boardOpen, setBoardOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -189,33 +187,13 @@ export default function JoinPage() {
             </div>
           )}
           <ActionCard state={state} teamById={teamById} verses={game.verses} size="sm" />
-          <div className="relative rounded-3xl overflow-hidden shadow-lg ring-1 ring-white/10">
-            <button type="button" className="block w-full text-left cursor-zoom-in" aria-label="게임판 크게 보기" onClick={() => setBoardOpen(true)}>
-              <Board state={state} teamById={teamById} highlightTeam={me.teamId} compact />
-            </button>
-            <div className="absolute top-2 left-0 right-0 flex justify-center pointer-events-none">
-              <FeedToasts state={state} teamById={teamById} big={false} />
-            </div>
-            <span className="absolute bottom-2 right-2 w-7 h-7 rounded-lg bg-black/40 text-white/80 flex items-center justify-center pointer-events-none" aria-hidden>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-              </svg>
-            </span>
-          </div>
-          {boardOpen && (
-            <div className="fixed inset-0 z-50 bg-[#0b1033] text-white flex flex-col">
-              <OverlayHeader onClose={() => setBoardOpen(false)}>게임판</OverlayHeader>
-              <div className="flex-1 overflow-auto overscroll-contain">
-                <div style={{ width: "max(100%, calc((100dvh - 76px) * 1.5625))", height: "calc(100dvh - 76px)" }}>
-                  <Board state={state} teamById={teamById} highlightTeam={me.teamId} />
-                </div>
-              </div>
-            </div>
-          )}
           <Scoreboard state={state} teamById={teamById} highlightTeam={me.teamId} compact members={game.members} />
         </div>
       )}
 
+      <div className="fixed top-3 left-0 right-0 z-30 flex justify-center pointer-events-none px-3">
+        <FeedToasts state={state} teamById={teamById} big={false} />
+      </div>
       <StartIntro state={state} teamById={teamById} big={false} />
       {state.paused && <div className="fixed bottom-4 left-4 right-4 rounded-2xl bg-black/70 text-white text-center py-3 font-display text-xl">잠시만요 ⏸</div>}
       <HelpButton settings={state.settings} className="fixed bottom-5 right-5 w-14 h-14 text-3xl z-40" />

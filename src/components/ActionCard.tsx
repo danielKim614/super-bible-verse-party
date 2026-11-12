@@ -58,13 +58,16 @@ export function ActionCard({
 
       {state.phase === "shop_offer" && tid && (
         <div className={`mt-3 grid gap-2 ${big ? "grid-cols-4 text-lg" : "grid-cols-2 text-sm"}`}>
-          {Object.values(ITEMS).map((d) => (
-            <span key={d.id} className="flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/15 pl-1.5 pr-2 py-1 min-w-0">
-              <ItemIcon id={d.id} size={big ? 26 : 22} />
-              <span className="truncate flex-1">{d.name}</span>
-              <Talent n={d.price} />
-            </span>
-          ))}
+          {Object.values(ITEMS).map((d) => {
+            const owned = state.teams[tid].items.includes(d.id);
+            return (
+              <span key={d.id} className={`flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/15 pl-1.5 pr-2 py-1 min-w-0 ${owned ? "opacity-40" : ""}`}>
+                <ItemIcon id={d.id} size={big ? 26 : 22} />
+                <span className="truncate flex-1">{d.name}</span>
+                {owned ? <span className="text-xs text-white/80 shrink-0">보유</span> : <Talent n={d.price} />}
+              </span>
+            );
+          })}
         </div>
       )}
 
