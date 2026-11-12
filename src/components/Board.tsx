@@ -424,13 +424,6 @@ export function Board({
         <clipPath id="planetClip">
           <circle r={PLANET_R} />
         </clipPath>
-        {state.teamIds.flatMap((id) =>
-          [21, 17, 14].map((r) => (
-            <clipPath id={`clip-${id}-${r}`} key={`${id}-${r}`}>
-              <circle r={r - 3} cx={0} cy={0} />
-            </clipPath>
-          )),
-        )}
       </defs>
 
       {/* 반짝이는 별 (배경·은하수 띠는 BoardBackdrop의 정지 레이어) */}
@@ -630,14 +623,15 @@ export function Board({
         const n = ids.length;
         const atStart = Number(posStr) === 0;
         // 말은 칸 아래쪽에 매달리듯 배치해 칸 번호·색이 항상 보이게 한다
-        const r = n === 1 ? 18 : n === 2 ? 16 : 13;
-        const gap = r * 2 + 3;
+        const r = n === 1 ? 21 : n === 2 ? 18 : 15;
+        const gap = r * 2 + 5;
         return ids.map((id, i) => {
           let x = base.x + (i - (n - 1) / 2) * (n === 1 ? 0 : gap);
-          let y = base.y + 22 + r;
+          // 칸 아래에 꼬리 길이만큼 띄워서 매단다
+          let y = base.y + 22 + TOKEN_TAIL + r;
           if (atStart) {
             // START 둘레(길 반대편인 왼쪽 위)를 따라 둥글게 세워 1번 칸·길과 겹치지 않게
-            const ring = 34 + r + 5;
+            const ring = 34 + TOKEN_TAIL + r + 3;
             const step = n === 1 ? 0 : Math.min(((gap + 2) / ring) * (180 / Math.PI), 250 / (n - 1));
             const ang = ((-135 + (i - (n - 1) / 2) * step) * Math.PI) / 180;
             x = base.x + Math.cos(ang) * ring;
@@ -646,26 +640,11 @@ export function Board({
           const t = teamById[id];
           const isCur = id === cur && state.phase !== "ended";
           const isMine = highlightTeam === id;
+          // 꼬리가 말이 서 있는 칸(또는 START)을 가리킨다
+          const point = (Math.atan2(base.y - y, base.x - x) * 180) / Math.PI + 90;
           return (
-            <g key={id} style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform 0.28s ease-out" }} filter="url(#soft)">
-              {isCur && <circle r={r + 7} fill="none" stroke="#fff" strokeWidth={4} strokeDasharray="6 5" className="animate-spin-slow" />}
-              {isMine && <circle r={r + 11} fill="none" stroke="#ffd23f" strokeWidth={4} />}
-              <circle r={r} fill={t?.color ?? "#888"} stroke="#fff" strokeWidth={3} />
-              {t?.image_url ? (
-                <image
-                  href={t.image_url}
-                  x={-(r - 3)}
-                  y={-(r - 3)}
-                  width={(r - 3) * 2}
-                  height={(r - 3) * 2}
-                  clipPath={`url(#clip-${id}-${r})`}
-                  preserveAspectRatio="xMidYMid slice"
-                />
-              ) : (
-                <text textAnchor="middle" dy={r * 0.3} fontSize={r * 0.8} fontWeight={800} fill="#fff">
-                  {(t?.name ?? "?").slice(0, 1)}
-                </text>
-              )}
+            <g key={id} style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform 0.28s ease-out" }}>
+              <TokenPiece team={t} r={r} point={point} current={isCur} mine={isMine} />
             </g>
           );
         });
@@ -946,6 +925,51 @@ function Pipe({ gold, delay, life }: { gold: boolean; delay: number; life: numbe
   );
 }
 
+/** 말 꼬리 길이: 꼬리 끝이 말이 서 있는 칸을 가리킨다 */
+const TOKEN_TAIL = 9;
+
+/**
+ * 팀 말. 동그란 행성 칸과 헷갈리지 않도록 둥근 네모 배지 + 칸을 가리키는 흰 꼬리 + 진한 그림자.
+ * point: 꼬리가 가리키는 방향(도, 위쪽이 0). 없으면 꼬리 없음.
+ * current: 지금 차례(흰 점선 테두리가 흐름), mine: 내 팀(금색 테두리).
+ */
+function TokenPiece({ team, r, point, current, mine }: { team: TeamInfo | undefined; r: number; point?: number; current?: boolean; mine?: boolean }) {
+  const rx = r * 0.42;
+  const inner = r - 3.5;
+  const clipId = `tok-${team?.id ?? "x"}-${r}`;
+  return (
+    <g>
+      {current && (
+        <rect x={-r - 6} y={-r - 6} width={(r + 6) * 2} height={(r + 6) * 2} rx={rx + 5} fill="none" stroke="#fff" strokeWidth={3.5} strokeDasharray="6 5" className="animate-dash" />
+      )}
+      {mine && <rect x={-r - 10} y={-r - 10} width={(r + 10) * 2} height={(r + 10) * 2} rx={rx + 8} fill="none" stroke="#ffd23f" strokeWidth={4} />}
+      {/* 그림자 */}
+      <rect x={-r} y={-r + 4} width={r * 2} height={r * 2} rx={rx} fill="#000" opacity={0.45} />
+      {/* 칸을 가리키는 꼬리 */}
+      {point !== undefined && (
+        <g transform={`rotate(${point})`}>
+          <path d={`M -8 ${-r + 2} L 0 ${-r - TOKEN_TAIL} L 8 ${-r + 2} Z`} fill="#fff" stroke="#0b1033" strokeWidth={1.2} strokeLinejoin="round" />
+        </g>
+      )}
+      {/* 배지: 진한 바깥선 + 두꺼운 흰 테두리 + 팀 색 */}
+      <rect x={-r - 1} y={-r - 1} width={r * 2 + 2} height={r * 2 + 2} rx={rx + 1} fill="#0b1033" />
+      <rect x={-r + 0.5} y={-r + 0.5} width={r * 2 - 1} height={r * 2 - 1} rx={rx} fill={team?.color ?? "#888"} stroke="#fff" strokeWidth={3.5} />
+      {team?.image_url ? (
+        <>
+          <clipPath id={clipId}>
+            <rect x={-inner} y={-inner} width={inner * 2} height={inner * 2} rx={rx - 2} />
+          </clipPath>
+          <image href={team.image_url} x={-inner} y={-inner} width={inner * 2} height={inner * 2} clipPath={`url(#${clipId})`} preserveAspectRatio="xMidYMid slice" />
+        </>
+      ) : (
+        <text textAnchor="middle" dy={r * 0.33} fontSize={r * 0.95} fontWeight={900} fill="#fff" stroke="#0b1033" strokeOpacity={0.35} strokeWidth={2} paintOrder="stroke">
+          {(team?.name ?? "?").slice(0, 1)}
+        </text>
+      )}
+    </g>
+  );
+}
+
 function WarpToken({ team, anim, delay }: { team: TeamInfo | undefined; anim: string; delay: number }) {
   const r = 17;
   return (
@@ -953,22 +977,7 @@ function WarpToken({ team, anim, delay }: { team: TeamInfo | undefined; anim: st
     <g clipPath="url(#pipeMouth)">
       <g className={anim} style={{ animationDelay: `${delay}ms` }}>
         <g transform={`translate(0,${PIPE_TOP - r + 2})`}>
-          <circle r={r} fill={team?.color ?? "#888"} stroke="#fff" strokeWidth={3} />
-          {team?.image_url ? (
-            <image
-              href={team.image_url}
-              x={-(r - 3)}
-              y={-(r - 3)}
-              width={(r - 3) * 2}
-              height={(r - 3) * 2}
-              clipPath={`url(#clip-${team.id}-${r})`}
-              preserveAspectRatio="xMidYMid slice"
-            />
-          ) : (
-            <text textAnchor="middle" dy={r * 0.3} fontSize={r * 0.8} fontWeight={800} fill="#fff">
-              {(team?.name ?? "?").slice(0, 1)}
-            </text>
-          )}
+          <TokenPiece team={team} r={r} />
         </g>
       </g>
     </g>
