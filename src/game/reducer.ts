@@ -560,7 +560,7 @@ function applyHappening(s: GameState, tid: string, seq: number) {
     }
     case "rain":
       for (const id of s.teamIds) credit(s, seq, id, 2, "해프닝: 달란트 비");
-      text = "달란트 비! 모든 팀 +2";
+      text = "달란트 비! 모든 팀이 2달란트씩 받아요";
       break;
     case "golden":
       s.goldenRound = s.turn;

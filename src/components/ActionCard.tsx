@@ -26,13 +26,16 @@ export function ActionCard({
   verses,
   size = "lg",
   hideHappening = false,
+  moving = false,
 }: {
   state: GameState;
   teamById: Record<string, TeamInfo>;
   verses: VerseMap;
   size?: "lg" | "sm";
-  /** 보드에서 해프닝 공개 연출 중이면 결과 줄을 잠시 숨김 */
+  /** 보드에서 해프닝·축복·선물 공개 연출 중이면 결과 줄을 잠시 숨김 */
   hideHappening?: boolean;
+  /** 보드에서 주사위·말 이동 등 연출 중이면 도착 칸 내용 대신 "이동 중"만 보여 줌 */
+  moving?: boolean;
 }) {
   const tid = currentTeamId(state);
   const team = tid ? teamById[tid] : undefined;
@@ -51,7 +54,9 @@ export function ActionCard({
       <span className={`now-chip absolute ${big ? "top-3 left-5 text-sm" : "top-2 left-3 text-[10px]"}`}>NOW</span>
       <div className={`flex items-center gap-3 ${big ? "mt-5" : "mt-3"}`}>
         <TeamAvatar team={team} size={big ? 52 : 36} />
-        <div className={`font-display ${big ? "text-3xl" : "text-xl"} leading-tight`}>{phaseHeadline(state, teamById)}</div>
+        <div className={`font-display ${big ? "text-3xl" : "text-xl"} leading-tight`}>
+          {moving ? `${team?.name ?? ""} 팀 이동 중…` : phaseHeadline(state, teamById)}
+        </div>
         {ctx.roll !== undefined && (
           <div className="ml-auto">
             <DieBadge value={ctx.roll} faces={ctx.faces} big={big} />
@@ -59,6 +64,8 @@ export function ActionCard({
         )}
       </div>
 
+      {!moving && (
+        <>
       {state.phase === "shop_offer" && tid && (
         <div className={`mt-3 grid gap-2 ${big ? "grid-cols-4 text-lg" : "grid-cols-2 text-sm"}`}>
           {Object.values(ITEMS).map((d) => {
@@ -89,7 +96,7 @@ export function ActionCard({
           ❔ {ctx.happening.text}
         </div>
       )}
-      {state.phase === "recite" && ctx.blessTo && ctx.blessTo.length > 0 && (
+      {state.phase === "recite" && ctx.blessTo && ctx.blessTo.length > 0 && !hideHappening && (
         <div className={`mt-3 rounded-2xl bg-pink-300/20 border border-pink-200/40 px-4 py-2 font-display animate-pop ${big ? "text-2xl" : "text-base"}`}>
           💗 축복해요! {ctx.blessTo.map((id) => teamById[id]?.name).join(", ")} 팀에게 +5 달란트
         </div>
@@ -119,13 +126,15 @@ export function ActionCard({
           ) : (
             <span className={`font-display text-white/50 ${big ? "text-4xl" : "text-xl"}`}>획득 없음</span>
           )}
-          {ctx.gainedItem && ctx.gainedItem !== "full" && (
+          {ctx.gainedItem && ctx.gainedItem !== "full" && !hideHappening && (
             <span className={`inline-flex items-center gap-2 rounded-2xl bg-violet-400/30 border border-violet-300/40 px-3 py-1 font-display ${big ? "text-2xl" : "text-base"}`}>
               <ItemIcon id={ctx.gainedItem} size={big ? 30 : 20} /> {ITEMS[ctx.gainedItem].name} 획득!
             </span>
           )}
           {ctx.starBought && <span className={`font-display text-yellow-300 ${big ? "text-3xl" : "text-lg"}`}>★ 스타 획득!</span>}
         </div>
+      )}
+        </>
       )}
     </div>
   );

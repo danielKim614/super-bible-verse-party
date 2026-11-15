@@ -1,10 +1,10 @@
 "use client";
 
 import { splitSum } from "./DieBadge";
-import { SpaceRevealFx, useSpaceReveal } from "./SpaceReveal";
-import { useEffect, useMemo, useRef, useState, memo } from "react";
+import { GiftRevealFx, SpaceRevealFx, useGiftReveal, useSpaceReveal } from "./SpaceReveal";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_AT, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId, type SpaceType } from "@/game/board";
-import { currentTeamId, diceCount } from "@/game/reducer";
+import { FULL_BAG_TALENTS, currentTeamId, diceCount } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
 // 네온 톤: [채움, 그림자/글로우]
@@ -325,14 +325,17 @@ export function Board({
   teamById,
   highlightTeam,
   compact = false,
-  onRevealChange,
+  onPresented,
 }: {
   state: GameState;
   teamById: Record<string, TeamInfo>;
   highlightTeam?: string;
   compact?: boolean;
-  /** 이벤트·해프닝 공개 연출 중인지 알려 줌 (메인 화면에서 결과 스포일러를 잠시 숨기려고) */
-  onRevealChange?: (revealing: boolean) => void;
+  /**
+   * 보드가 "다 보여 준" 마지막 상태를 알려 줌: 주사위·말 이동·파이프·스타 연출과 해프닝·축복·선물 공개가 끝난 상태.
+   * 메인 화면은 이걸로 상황판·알림·순위표가 보드보다 먼저 반응하지 않게 한다.
+   */
+  onPresented?: (state: GameState) => void;
 }) {
   const forkFlash = useForkFlash(state);
   const dice = useDiceRoll(state);
@@ -345,15 +348,23 @@ export function Board({
   }, [state.ctx.starBought, state.ctx.startSeq]);
   const shown = useAnimatedPositions(
     state,
-    compact ? 200 : 320,
+    compact ? 260 : 480,
     starJustBought ? STAR_FX_MS + STAR_GAP_MS + STAR_SPAWN_MS : forkFlash ? 700 : dice ? DICE_MS : 0,
   );
   const startMark = useStartMark(state, shown);
   const warp = useWarpFx(state);
   // 이벤트·해프닝 칸 도착 연출 (주사위·파이프 연출이 끝나고 말이 도착한 뒤)
   const spaceReveal = useSpaceReveal(state, shown, !!warp || !!dice);
-  const revealing = spaceReveal?.type === "happening" || spaceReveal?.type === "pending";
-  useEffect(() => onRevealChange?.(revealing), [revealing, onRevealChange]);
+  const { gift, pending: giftPending } = useGiftReveal(state, FULL_BAG_TALENTS);
+  const revealing =
+    spaceReveal?.type === "happening" || spaceReveal?.type === "bless" || spaceReveal?.type === "pending" || !!gift || giftPending;
+  // 렌더 시점에 계산: 말이 아직 새 위치에 안 갔으면(이동 애니메이션 전·중) 움직이는 중
+  const moving = state.teamIds.some((id) => shown[id] !== undefined && shown[id] !== state.teams[id].pos);
+  const presented = !dice && !warp && !moving && !starBurst && !starPause && !starSpawn && !revealing;
+  // 화면에 그려지기 전에(layout effect) 알려서 상황판이 한 프레임도 먼저 바뀌지 않게
+  useLayoutEffect(() => {
+    if (presented) onPresented?.(state);
+  }, [presented, state, onPresented]);
   const shopMove = useShopMove(state.shopAt ?? SHOP_AT);
   const shopFlying = shopMove.phase === "fly";
   const shopSpace = SPACE_BY_ID[shopMove.at] ?? SPACE_BY_ID[SHOP_AT];
@@ -711,7 +722,9 @@ export function Board({
         })()}
 
       {/* 이벤트·해프닝 칸 도착: 무슨 이벤트/해프닝인지 */}
-      {spaceReveal && spaceReveal.type !== "pending" && <SpaceRevealFx key={spaceReveal.key} info={spaceReveal} />}
+      {spaceReveal && spaceReveal.type !== "pending" && <SpaceRevealFx key={spaceReveal.key} info={spaceReveal} teamById={teamById} />}
+      {/* 선물 칸 성공: 받은 아이템 */}
+      {gift && <GiftRevealFx key={gift.key} info={gift} />}
 
       {/* 주사위 아이템 사용 중: 굴리기 전까지 화면 가운데에 주사위가 준비된 채로 떠 있음 */}
       {!dice && state.phase === "pre_roll" && state.ctx.rollMode !== "normal" && !state.paused && (

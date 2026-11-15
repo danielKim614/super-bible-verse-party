@@ -81,7 +81,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
         <p className="text-sm text-slate-600 mb-1">해프닝 칸에 멈추면 아래 넷 중 하나가 같은 확률로 일어나요. 결과는 이벤트 순번으로 정해지므로 되돌리기(Undo) 후 다시 해도 같은 결과예요.</p>
         <ul className="list-disc pl-5">
           <li><b>스타 대이동</b>: 보드의 스타가 모두 다른 곳으로 옮겨져요.</li>
-          <li><b>달란트 비</b>: 모든 팀 +2 달란트.</li>
+          <li><b>달란트 비</b>: 모든 팀이 2달란트씩 받아요. MC 안내에 팀별 지급이 모두 나와요.</li>
           <li><b>황금 라운드</b>: 이번 턴(라운드) 동안 모든 팀의 암송 보상 2배.</li>
           <li><b>깜짝 선물</b>: 아직 없는 종류 중 랜덤 아이템 1개. 가방이 가득 찼거나 받을 새 아이템이 없으면 대신 +{FULL_BAG_TALENTS} 달란트.</li>
         </ul>
