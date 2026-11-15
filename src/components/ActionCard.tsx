@@ -75,7 +75,7 @@ export function ActionCard({
         <div className={`mt-3 grid grid-cols-2 gap-3 ${big ? "text-2xl" : "text-base"} font-display`}>
           {(FORKS[state.teams[tid].pos] ?? []).map((f, i) => (
             <div key={f.to} className={`rounded-2xl p-3 text-center border ${i === 0 ? "bg-sky-400/20 border-sky-300/40" : "bg-amber-400/20 border-amber-300/40"}`}>
-              {f.label} {f.to}~
+              {f.label}로 갈래요
             </div>
           ))}
         </div>

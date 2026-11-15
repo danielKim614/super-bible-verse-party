@@ -326,7 +326,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
               disabled={busy}
               onClick={() => send({ type: "choose_path", payload: { option: i, label: f.label } })}
             >
-              {f.label}
+              {f.label}로 갈래요
               <br />
               <span className="text-base">
                 {f.to}절부터
