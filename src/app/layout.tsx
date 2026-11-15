@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ConfirmHost } from "@/components/ConfirmDialog";
 
 export const metadata: Metadata = {
   title: "2026 더드림 성경 암송 파티",
@@ -15,7 +16,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <ConfirmHost />
+      </body>
     </html>
   );
 }

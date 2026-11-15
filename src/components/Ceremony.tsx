@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { finalRanking } from "@/game/reducer";
-import type { GameState, TeamInfo } from "@/game/types";
+import type { Award, GameState, TeamInfo } from "@/game/types";
 import { TeamAvatar } from "./TeamAvatar";
 
 export function Ceremony({ state, teamById, big = true }: { state: GameState; teamById: Record<string, TeamInfo>; big?: boolean }) {
@@ -22,71 +22,241 @@ export function Ceremony({ state, teamById, big = true }: { state: GameState; te
   const ranking = finalRanking(state);
   const refunds = Object.entries(c.refunds).filter(([, v]) => v > 0);
 
+  const stepsLabel = ["환급", ...c.awards.map((a) => a.title), "최종 순위"];
+
   return (
-    <div className={`relative w-full h-full overflow-auto rounded-3xl bg-[radial-gradient(ellipse_at_top,#2b3a8f_0%,#141b4d_60%,#0a0f2e_100%)] ring-1 ring-white/10 text-white ${big ? "p-10" : "p-4"}`}>
-      <h2 className={`font-display text-center text-yellow-300 ${big ? "text-6xl mb-8" : "text-3xl mb-4"}`}>🏆 시상식</h2>
-
-      {step === 1 && (
-        <div className="text-center">
-          <p className={`${big ? "text-3xl" : "text-lg"} mb-4`}>남은 아이템은 1개당 {state.settings.itemRefund}달란트로 환급됩니다</p>
-          <div className="flex flex-wrap justify-center gap-4">
-            {refunds.length === 0 && <p className="opacity-70">환급할 아이템이 없어요</p>}
-            {refunds.map(([id, v]) => (
-              <div key={id} className="flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-2">
-                <TeamAvatar team={teamById[id]} size={big ? 48 : 28} />
-                <span className={`font-display ${big ? "text-3xl" : "text-lg"}`}>+{v}🪙</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className={`flex flex-col gap-4 ${showFinal ? "hidden" : ""}`}>
-        {awardsShown.map((a) => (
-          <div key={a.key} className="animate-pop rounded-3xl bg-white/10 p-4">
-            <div className={`font-display ${big ? "text-4xl" : "text-xl"} text-yellow-300`}>⭐ {a.title}</div>
-            <div className={`${big ? "text-xl" : "text-sm"} opacity-80`}>{a.desc}</div>
-            <div className="mt-3 flex flex-wrap gap-3">
-              {a.winners.length === 0 && <span className="opacity-70">해당 팀 없음</span>}
-              {a.winners.map((w) => (
-                <div key={w} className="flex items-center gap-2 rounded-2xl bg-yellow-300 text-indigo-900 px-4 py-2">
-                  <TeamAvatar team={teamById[w]} size={big ? 52 : 30} />
-                  <span className={`font-display ${big ? "text-3xl" : "text-lg"}`}>
-                    {teamById[w]?.name} ({a.values[w]})
+    <div className="relative w-full h-full overflow-hidden rounded-3xl ring-1 ring-amber-200/25 text-white bg-[radial-gradient(ellipse_at_50%_-10%,#3d3fa3_0%,#1b2063_45%,#0a0d2a_100%)]">
+      <StageBackdrop />
+      <div className={`relative h-full overflow-auto ${big ? "px-10 py-7" : "p-4"}`}>
+        <header className="text-center">
+          <div className={`text-amber-100/70 tracking-[0.35em] ${big ? "text-base" : "text-[11px]"}`}>2026 더드림 성경 암송 파티</div>
+          <h2 className={`font-display flex items-center justify-center gap-3 ${big ? "text-6xl mt-1" : "text-3xl"}`}>
+            <span aria-hidden className="animate-bob inline-block">🏆</span>
+            <span className="bg-gradient-to-b from-yellow-50 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_4px_0_rgba(0,0,0,0.35)]">시상식</span>
+          </h2>
+          {/* 진행 단계 */}
+          <ol className={`mt-3 flex flex-wrap justify-center items-center gap-1.5 ${big ? "text-sm" : "text-[10px]"}`}>
+            {stepsLabel.map((label, k) => {
+              const at = k + 1; // 1: 환급, 2..n+1: 보너스, n+2: 최종
+              const done = step > at;
+              const now = step === at;
+              return (
+                <li key={label} className="flex items-center gap-1.5">
+                  {k > 0 && <span className={`h-px ${big ? "w-6" : "w-3"} ${done || now ? "bg-amber-300/70" : "bg-white/20"}`} />}
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 border ${
+                      now ? "bg-amber-300 text-indigo-950 border-amber-200 font-bold" : done ? "border-amber-300/60 text-amber-200" : "border-white/20 text-white/40"
+                    }`}
+                  >
+                    {label}
                   </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showFinal && reveal !== "suspense" && (
-        <div className="mt-8">
-          <h3 className={`font-display text-center ${big ? "text-5xl mb-6" : "text-2xl mb-3"} ${reveal === "reveal" ? "animate-reveal-title" : ""}`}>최종 순위</h3>
-          <ol className="flex flex-col gap-3 max-w-3xl mx-auto">
-            {ranking.map((r, i) => (
-              <li
-                key={r.id}
-                className={`animate-pop flex items-center gap-4 rounded-3xl px-5 py-3 ${r.rank === 1 ? "bg-yellow-300 text-indigo-900 scale-105 animate-winner-glow" : "bg-white/10"}`}
-                style={reveal === "reveal" ? { animationDelay: `${i * 110}ms` } : undefined}
-              >
-                <span className={`font-display ${big ? "text-5xl w-14" : "text-2xl w-8"}`}>{r.rank === 1 ? "👑" : r.rank}</span>
-                <TeamAvatar team={teamById[r.id]} size={big ? 64 : 36} />
-                <span className={`font-display flex-1 ${big ? "text-4xl" : "text-xl"}`}>{teamById[r.id]?.name}</span>
-                <span className={`font-display ${big ? "text-4xl" : "text-xl"}`}>⭐{r.stars}</span>
-                <span className={`font-display ${big ? "text-3xl" : "text-lg"} opacity-80`}>🪙{r.talents}</span>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ol>
-        </div>
-      )}
+        </header>
+
+        {step === 1 && (
+          <div className={`mx-auto ${big ? "mt-10 max-w-3xl" : "mt-4"}`}>
+            <GoldCard>
+              <div className={`text-center ${big ? "p-8" : "p-4"}`}>
+                <div className={`${big ? "text-6xl" : "text-3xl"}`} aria-hidden>
+                  🎁
+                </div>
+                <div className={`font-display text-amber-200 ${big ? "text-4xl mt-2" : "text-xl mt-1"}`}>남은 아이템 환급</div>
+                <p className={`text-white/85 ${big ? "text-2xl mt-2" : "text-sm mt-1"}`}>
+                  남은 아이템은 1개당 {state.settings.itemRefund} 🪙 로 바꿔 드려요
+                </p>
+                <div className={`flex flex-wrap justify-center gap-3 ${big ? "mt-6" : "mt-3"}`}>
+                  {refunds.length === 0 && <p className="text-white/60">환급할 아이템이 없어요</p>}
+                  {refunds.map(([id, v], k) => (
+                    <div key={id} className="animate-pop flex items-center gap-2 rounded-2xl bg-white/10 border border-white/15 px-4 py-2" style={{ animationDelay: `${k * 90}ms` }}>
+                      <TeamAvatar team={teamById[id]} size={big ? 48 : 28} />
+                      <span className={`font-display ${big ? "text-2xl" : "text-base"}`}>{teamById[id]?.name}</span>
+                      <span className={`font-display text-amber-200 ${big ? "text-3xl" : "text-lg"}`}>+{v} 🪙</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </GoldCard>
+          </div>
+        )}
+
+        {!showFinal && awardsShown.length > 0 && (
+          <div
+            className={`mx-auto grid gap-5 ${big ? "mt-10" : "mt-4"}`}
+            style={big ? { gridTemplateColumns: `repeat(${Math.min(3, n)}, minmax(0, 1fr))`, maxWidth: Math.min(3, n) * 420 } : undefined}
+          >
+            {awardsShown.map((a, k) => (
+              <AwardCard key={a.key} award={a} teamById={teamById} big={big} fresh={k === awardsShown.length - 1} />
+            ))}
+          </div>
+        )}
+
+        {showFinal && reveal !== "suspense" && (
+          <div className={big ? "mt-6" : "mt-4"}>
+            <h3 className={`font-display text-center text-amber-100 ${big ? "text-4xl mb-2" : "text-2xl mb-3"} ${reveal === "reveal" ? "animate-reveal-title" : ""}`}>최종 순위</h3>
+            {big ? (
+              <Podium ranking={ranking} teamById={teamById} reveal={reveal === "reveal"} />
+            ) : (
+              <ol className="flex flex-col gap-2">
+                {ranking.map((r, k) => (
+                  <li
+                    key={r.id}
+                    className={`animate-pop flex items-center gap-3 rounded-2xl px-3 py-2 ${r.rank === 1 ? "bg-gradient-to-r from-yellow-200 to-amber-400 text-indigo-950 animate-winner-glow" : "bg-white/10"}`}
+                    style={reveal === "reveal" ? { animationDelay: `${k * 110}ms` } : undefined}
+                  >
+                    <span className="font-display text-xl w-7 text-center">{r.rank === 1 ? "👑" : r.rank}</span>
+                    <TeamAvatar team={teamById[r.id]} size={32} />
+                    <span className="font-display flex-1 truncate">{teamById[r.id]?.name}</span>
+                    <span className="font-display">⭐ {r.stars}</span>
+                    <span className="font-display opacity-80">🪙 {r.talents}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* 최종 순위 직전: 두구두구두구… (약 5초) → 빰! */}
       {showFinal && reveal === "suspense" && <Suspense big={big} />}
       {showFinal && reveal === "reveal" && <RevealBurst />}
       {/* 게임 종료 화면에서 넘어올 때 커튼이 양옆으로 열림 */}
       {opening && <Curtains mode="open" />}
+    </div>
+  );
+}
+
+/** 무대 배경: 반짝이는 별, 위에서 내리쬐는 금빛 조명, 바닥 빛 */
+function StageBackdrop() {
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden>
+      <div className="absolute -top-10 left-[12%] w-[38%] h-[85%] origin-top -rotate-12 bg-gradient-to-b from-amber-200/25 via-amber-200/5 to-transparent [clip-path:polygon(42%_0,58%_0,100%_100%,0_100%)]" />
+      <div className="absolute -top-10 right-[12%] w-[38%] h-[85%] origin-top rotate-12 bg-gradient-to-b from-sky-200/20 via-sky-200/5 to-transparent [clip-path:polygon(42%_0,58%_0,100%_100%,0_100%)]" />
+      <div className="absolute bottom-[-18%] left-1/2 -translate-x-1/2 w-[90%] h-[40%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(253,224,71,0.18),transparent_70%)]" />
+      {Array.from({ length: 46 }, (_, k) => (
+        <span
+          key={k}
+          className="absolute rounded-full bg-white animate-twinkle"
+          style={{
+            left: `${(k * 53) % 100}%`,
+            top: `${(k * 37) % 100}%`,
+            width: 1.5 + (k % 3),
+            height: 1.5 + (k % 3),
+            opacity: 0.35 + (k % 4) * 0.15,
+            animationDelay: `${(k % 9) * 0.35}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** 금테 카드 */
+function GoldCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`relative rounded-3xl p-[2px] bg-gradient-to-br from-yellow-100 via-amber-400 to-yellow-700 shadow-[0_12px_40px_rgba(251,191,36,0.22)] ${className}`}>
+      <div className="relative h-full rounded-[22px] bg-[#151b52]/95 overflow-hidden">{children}</div>
+    </div>
+  );
+}
+
+const AWARD_EMOJI: Record<string, string> = { recite: "📖", talent: "💰", challenge: "🔥" };
+
+/** 보너스 스타 카드: 메달 + 제목 + 받은 팀 */
+function AwardCard({ award: a, teamById, big, fresh }: { award: Award; teamById: Record<string, TeamInfo>; big: boolean; fresh: boolean }) {
+  return (
+    <GoldCard className="animate-pop">
+      {fresh && <span className="absolute inset-y-0 -left-1/2 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-[-20deg] animate-card-shine" />}
+      <div className={`relative text-center ${big ? "p-6" : "p-4"}`}>
+        <div
+          className={`mx-auto rounded-full bg-gradient-to-b from-yellow-100 to-amber-500 ring-4 ring-yellow-100/30 shadow-[0_6px_20px_rgba(251,191,36,0.45)] flex items-center justify-center ${big ? "w-20 h-20 text-5xl" : "w-12 h-12 text-2xl"}`}
+          aria-hidden
+        >
+          {AWARD_EMOJI[a.key] ?? "⭐"}
+        </div>
+        <div className={`font-display text-amber-200 ${big ? "text-4xl mt-3" : "text-xl mt-2"}`}>⭐ {a.title}</div>
+        <div className={`text-white/70 ${big ? "text-lg" : "text-xs"}`}>{a.desc}</div>
+        <div className={`flex flex-wrap justify-center gap-2 ${big ? "mt-5" : "mt-3"}`}>
+          {a.winners.length === 0 && <span className="text-white/50">해당 팀 없음</span>}
+          {a.winners.map((w) => (
+            <div key={w} className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-200 to-amber-400 text-indigo-950 pl-1.5 pr-3 py-1.5 shadow-lg">
+              <TeamAvatar team={teamById[w]} size={big ? 44 : 28} />
+              <span className={`font-display ${big ? "text-2xl" : "text-base"}`}>{teamById[w]?.name}</span>
+              <span className={`rounded-full bg-indigo-950/15 px-2 font-display ${big ? "text-lg" : "text-xs"}`}>{a.values[w]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </GoldCard>
+  );
+}
+
+const PODIUM: Record<number, { h: number; block: string; text: string }> = {
+  1: { h: 170, block: "from-yellow-200 via-amber-400 to-amber-600", text: "text-indigo-950" },
+  2: { h: 120, block: "from-slate-100 via-slate-300 to-slate-500", text: "text-slate-800" },
+  3: { h: 90, block: "from-orange-200 via-amber-600 to-orange-800", text: "text-orange-950" },
+};
+
+/** 최종 순위: 1~3위는 시상대(2위·1위·3위 순), 나머지는 아래 줄 */
+function Podium({ ranking, teamById, reveal }: { ranking: ReturnType<typeof finalRanking>; teamById: Record<string, TeamInfo>; reveal: boolean }) {
+  const top = ranking.slice(0, 3);
+  const rest = ranking.slice(3);
+  const slots = [top[1], top[0], top[2]].map((r, k) => ({ r, place: [2, 1, 3][k] }));
+  // 공개할 때 3위 → 2위 → 1위 순으로 올라옴
+  const delay = (place: number) => (reveal ? { 3: 150, 2: 450, 1: 850 }[place] ?? 0 : 0);
+  return (
+    <div>
+      <div className="flex items-end justify-center gap-5 pt-14">
+        {slots.map(({ r, place }) => {
+          if (!r) return <div key={place} className="w-56" />;
+          const style = PODIUM[Math.min(3, r.rank)] ?? PODIUM[3];
+          const first = r.rank === 1;
+          return (
+            <div key={r.id} className="w-56 flex flex-col items-center animate-podium-rise" style={{ animationDelay: `${delay(place)}ms` }}>
+              <div className="relative flex flex-col items-center">
+                {first && (
+                  <span className="absolute -top-12 text-5xl animate-bob" aria-hidden>
+                    👑
+                  </span>
+                )}
+                <div className={first ? "rounded-[28%] animate-winner-glow" : ""}>
+                  <TeamAvatar team={teamById[r.id]} size={first ? 96 : 76} />
+                </div>
+                <div className={`font-display mt-2 text-center leading-tight ${first ? "text-4xl text-yellow-200" : "text-3xl"}`}>{teamById[r.id]?.name}</div>
+                <div className="font-display text-xl mt-1 mb-2 flex gap-3">
+                  <span className="text-yellow-300">⭐ {r.stars}</span>
+                  <span className="text-amber-100/80">🪙 {r.talents}</span>
+                </div>
+              </div>
+              <div
+                className={`w-full rounded-t-2xl bg-gradient-to-b ${style.block} ${style.text} flex items-start justify-center pt-3 shadow-[inset_0_2px_0_rgba(255,255,255,0.6),0_10px_30px_rgba(0,0,0,0.35)]`}
+                style={{ height: style.h }}
+              >
+                <span className="font-display text-6xl drop-shadow-[0_2px_0_rgba(255,255,255,0.4)]">{r.rank}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {rest.length > 0 && (
+        <ol className="mt-5 mx-auto max-w-4xl grid grid-cols-2 gap-3">
+          {rest.map((r, k) => (
+            <li
+              key={r.id}
+              className="animate-pop flex items-center gap-3 rounded-2xl bg-white/10 border border-white/10 px-4 py-2"
+              style={reveal ? { animationDelay: `${1100 + k * 90}ms` } : undefined}
+            >
+              <span className="font-display text-3xl w-9 text-center text-white/60">{r.rank}</span>
+              <TeamAvatar team={teamById[r.id]} size={44} />
+              <span className="font-display text-2xl flex-1 truncate">{teamById[r.id]?.name}</span>
+              <span className="font-display text-xl text-yellow-300">⭐ {r.stars}</span>
+              <span className="font-display text-xl text-amber-100/80">🪙 {r.talents}</span>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }

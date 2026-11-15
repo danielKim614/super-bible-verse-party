@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { askConfirm } from "@/components/ConfirmDialog";
+import { useEffect, useRef, useState } from "react";
 import { Scoreboard } from "@/components/Scoreboard";
 import { ActionCard } from "@/components/ActionCard";
 import { FeedToasts } from "@/components/FeedToasts";
@@ -26,6 +27,17 @@ export default function JoinPage() {
   const { state, teams, teamById } = game;
   const [me, setMe] = useState<Me | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
+  const namePanel = useRef<HTMLDivElement>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
+  // 팀을 고르면 "내 이름" 칸으로 부드럽게 내려가고 입력 칸에 커서를 둔다
+  useEffect(() => {
+    if (!picked) return;
+    const id = requestAnimationFrame(() => {
+      namePanel.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      nameInput.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [picked]);
   const [nickname, setNickname] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -98,9 +110,10 @@ export default function JoinPage() {
           ))}
         </div>
         {picked && (
-          <div className="mt-5 glass p-4 flex flex-col gap-3">
+          <div ref={namePanel} className="mt-5 glass p-4 flex flex-col gap-3 scroll-mt-4">
             <label className="font-display text-xl">내 이름</label>
             <input
+              ref={nameInput}
               value={nickname}
               onChange={(e) => {
                 setNickname(e.target.value);
@@ -140,18 +153,19 @@ export default function JoinPage() {
           <div className="text-xs text-white/50 truncate">{me.nickname}</div>
         </div>
         {state.started && state.phase !== "ended" && (
-          <div className="ml-auto font-display text-lg">
-            {state.turn}/{state.settings.totalTurns}턴 {isBoost(state) && <span className="text-red-500">🔥2배</span>}
+          <div className="ml-auto font-display text-lg whitespace-nowrap">
+            {state.turn}/{state.settings.totalTurns}턴 {isBoost(state) && <span className="text-red-500 whitespace-nowrap">🔥 보상 2배</span>}
           </div>
         )}
         <button
           className="ml-2 text-xs text-white/40 underline"
           onClick={() => {
-            if (confirm("팀을 다시 고를까요?")) {
+            void askConfirm("팀을 다시 고를까요?").then((ok) => {
+              if (!ok) return;
               localStorage.removeItem(ME_KEY);
               setMe(null);
               setPicked(null);
-            }
+            });
           }}
         >
           팀 변경

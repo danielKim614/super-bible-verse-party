@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/components/ConfirmDialog";
 import { useEffect, useMemo, useState } from "react";
 import { Board } from "@/components/Board";
 import { TeamAvatar } from "@/components/TeamAvatar";
@@ -157,7 +158,7 @@ function UndoRedo({ game, admin }: { game: GameData; admin: Admin }) {
           if (!last) return;
           const lines = talentDiff(game, last, true);
           const msg = `마지막 입력을 되돌릴까요?\n\n"${describeEvent(last, game.teamById)}"${lines.length ? `\n\n⚠️ 실물 달란트 조정 필요:\n${lines.join("\n")}` : ""}`;
-          if (confirm(msg)) admin.undo();
+          void askConfirm(msg, { okLabel: "되돌리기" }).then((ok) => { if (ok) void admin.undo(); });
         }}
       >
         ↶ 되돌리기
@@ -170,7 +171,7 @@ function UndoRedo({ game, admin }: { game: GameData; admin: Admin }) {
           if (!redo) return;
           const lines = talentDiff(game, redo, false);
           const msg = `다시 실행할까요?\n\n"${describeEvent(redo, game.teamById)}"${lines.length ? `\n\n⚠️ 실물 달란트 조정 필요:\n${lines.join("\n")}` : ""}`;
-          if (confirm(msg)) admin.redo();
+          void askConfirm(msg, { okLabel: "다시 실행" }).then((ok) => { if (ok) void admin.redo(); });
         }}
       >
         ↷ 다시
@@ -203,7 +204,7 @@ function ControlTab({ game, admin, goSettings }: { game: GameData; admin: Admin;
               {info?.name}
             </div>
             <div className="text-sm text-slate-500">
-              위치 {team.pos === 0 ? "출발" : `${team.pos}절`} · ⭐{team.stars} · 🪙{team.talents} · 아이템{" "}
+              위치 {team.pos === 0 ? "출발" : `${team.pos}절`} · ⭐{team.stars} · 🪙 {team.talents} · 아이템{" "}
               {team.items.length ? team.items.map((i) => ITEMS[i]?.name ?? i).join(", ") : "없음"}
             </div>
           </div>
@@ -273,8 +274,9 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
             className={`${btn} bg-purple-100`}
             disabled={busy}
             onClick={() => {
-              if ((it === "warpPipe" || it === "goldenPipe") && !confirm(`${ITEMS[it].name}을(를) 사용할까요?`)) return;
-              send({ type: "use_item", payload: { item: it, seed: newSeed() } });
+              const go = () => send({ type: "use_item", payload: { item: it, seed: newSeed() } });
+              if (it === "warpPipe" || it === "goldenPipe") void askConfirm(`${ITEMS[it].name}을(를) 사용할까요?`, { okLabel: "사용" }).then((ok) => { if (ok) go(); });
+              else go();
             }}
           >
             <ItemIcon id={it} size={20} className="inline mr-1 align-middle" />
@@ -305,7 +307,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
                 key={sp.id}
                 className={`${btn} px-0 py-2 font-display text-lg ${state.stars.includes(sp.id) ? "bg-amber-300" : "bg-slate-100"}`}
                 disabled={busy || sp.id === team.pos}
-                onClick={() => confirm(`${sp.id}절 칸으로 나갈까요?`) && send({ type: "pipe_exit", payload: { to: sp.id } })}
+                onClick={() => void askConfirm(`${sp.id}절 칸으로 나갈까요?`).then((ok) => { if (ok) void (send({ type: "pipe_exit", payload: { to: sp.id } })); })}
               >
                 {state.stars.includes(sp.id) ? "★" : ""}
                 {sp.id}
@@ -394,7 +396,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       return (
         <div className="flex flex-col gap-3">
           <div className="rounded-2xl bg-orange-50 border-2 border-orange-200 p-3">
-            <div className="font-display text-xl mb-1">🏪 상점 (보유 {team.items.length}/{state.settings.inventoryLimit}, 🪙{team.talents})</div>
+            <div className="font-display text-xl mb-1">🏪 상점 (보유 {team.items.length}/{state.settings.inventoryLimit}, 🪙 {team.talents})</div>
             <div className="text-sm text-slate-500 mb-2">원하는 만큼 산 뒤 “나가기”를 누르면 남은 칸을 계속 이동합니다. (남은 {ctx.remaining}칸)</div>
             <div className="flex flex-wrap gap-2">
               {ITEM_IDS.map((id) => {
@@ -484,8 +486,11 @@ function PreStart({ game, admin, goSettings }: { game: GameData; admin: Admin; g
         className={`${btn} bg-green-500 text-white font-display text-3xl py-5`}
         disabled={admin.busy || teams.length < 2}
         onClick={() => {
-          if (!confirm(`${teams.length}팀으로 게임을 시작할까요?\n순서: ${ordered.map((t) => t.name).join(" → ")}`)) return;
-          admin.send({ type: "start_game", payload: { teamIds: ordered.map((t) => t.id), settings, seed: newSeed() } });
+          void askConfirm(`${teams.length}팀으로 게임을 시작할까요?\n순서: ${ordered.map((t) => t.name).join(" → ")}`, { okLabel: "시작" }).then(
+            (ok) => {
+              if (ok) void admin.send({ type: "start_game", payload: { teamIds: ordered.map((t) => t.id), settings, seed: newSeed() } });
+            },
+          );
         }}
       >
         🎲 게임 시작
@@ -563,7 +568,7 @@ function TeamsTab({ game, admin }: { game: GameData; admin: Admin }) {
                 .map((m) => (
                   <span key={m.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2">
                     {m.nickname}
-                    <button className="text-red-500" onClick={() => confirm(`${m.nickname} 님을 삭제할까요?`) && admin.deleteMember(m.id)}>
+                    <button className="text-red-500" onClick={() => void askConfirm(`${m.nickname} 님을 삭제할까요?`, { okLabel: "삭제", danger: true }).then((ok) => { if (ok) void (admin.deleteMember(m.id)); })}>
                       ×
                     </button>
                   </span>
@@ -573,7 +578,7 @@ function TeamsTab({ game, admin }: { game: GameData; admin: Admin }) {
               <button className="underline" onClick={() => setDraft(t)}>
                 수정
               </button>
-              <button className="underline text-red-600" onClick={() => confirm(`${t.name} 팀을 삭제할까요?`) && admin.deleteTeam(t.id)}>
+              <button className="underline text-red-600" onClick={() => void askConfirm(`${t.name} 팀을 삭제할까요?`, { okLabel: "삭제", danger: true }).then((ok) => { if (ok) void (admin.deleteTeam(t.id)); })}>
                 삭제
               </button>
             </span>
@@ -781,7 +786,7 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
         </select>
         {t && (
           <div className="text-sm text-slate-600">
-            위치 {t.pos === 0 ? "출발" : `${t.pos}절`} · ⭐{t.stars} · 🪙{t.talents} · {t.items.map((i) => ITEMS[i]?.name ?? i).join(", ") || "아이템 없음"}
+            위치 {t.pos === 0 ? "출발" : `${t.pos}절`} · ⭐{t.stars} · 🪙 {t.talents} · {t.items.map((i) => ITEMS[i]?.name ?? i).join(", ") || "아이템 없음"}
           </div>
         )}
         <Row label="달란트">
@@ -883,18 +888,18 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
               </option>
             ))}
           </select>
-          <button className={`${btn} bg-slate-200`} onClick={() => confirm("이 팀 차례로 이동할까요? (현재 턴 진행은 취소됨)") && send({ type: "override", payload: { action: "setCurrent", turn: cur.turn, teamIndex: cur.idx } })}>
+          <button className={`${btn} bg-slate-200`} onClick={() => void askConfirm("이 팀 차례로 이동할까요? (현재 턴 진행은 취소됨)").then((ok) => { if (ok) void (send({ type: "override", payload: { action: "setCurrent", turn: cur.turn, teamIndex: cur.idx } })); })}>
             이동
           </button>
         </Row>
         <div className="flex flex-wrap gap-2">
-          <button className={`${btn} bg-slate-200`} onClick={() => confirm("현재 팀을 건너뛸까요?") && send({ type: "override", payload: { action: "skipTurn" } })}>
+          <button className={`${btn} bg-slate-200`} onClick={() => void askConfirm("현재 팀을 건너뛸까요?").then((ok) => { if (ok) void (send({ type: "override", payload: { action: "skipTurn" } })); })}>
             ⏭ 현재 팀 건너뛰기
           </button>
           <button className={`${btn} bg-slate-200`} onClick={() => send({ type: "override", payload: { action: "forceRecite" } })}>
             🔁 현재 칸에서 다시 암송
           </button>
-          <button className={`${btn} bg-red-100 text-red-700`} onClick={() => confirm("게임을 지금 종료하고 시상식으로 갈까요?") && send({ type: "override", payload: { action: "endGame" } })}>
+          <button className={`${btn} bg-red-100 text-red-700`} onClick={() => void askConfirm("게임을 지금 종료하고 시상식으로 갈까요?", { okLabel: "종료", danger: true }).then((ok) => { if (ok) void (send({ type: "override", payload: { action: "endGame" } })); })}>
             🏁 게임 종료
           </button>
         </div>
@@ -944,7 +949,7 @@ function LogTab({ game }: { game: GameData }) {
               <div key={id} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
                 <TeamAvatar team={teamById[id]} size={28} />
                 <span className="flex-1">{teamName(teamById, id)}</span>
-                <span className="font-display text-xl">🪙{state.teams[id].talents}</span>
+                <span className="font-display text-xl">🪙 {state.teams[id].talents}</span>
                 <button className={`${btn} py-1 ${ok ? "bg-green-500 text-white" : "bg-white border"}`} onClick={() => mark(id)}>
                   {ok ? "✓ 실물 일치" : "실물 확인"}
                 </button>
@@ -1002,13 +1007,19 @@ function LogTab({ game }: { game: GameData }) {
 // 설정
 // ---------------------------------------------------------------------------
 const SETTINGS_KEY = "sbvp:settingsDraft";
+const SETTINGS_VER_KEY = "sbvp:settingsDraft:v2";
 
 function useSettingsDraft(): Settings {
   const [s, setS] = useState<Settings>(DEFAULT_SETTINGS);
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
-      if (raw) setS({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<Settings>;
+        // 환급 기본값이 1 → 3으로 바뀌기 전에 저장된 설정이면 새 기본값으로 올려 준다 (한 번만)
+        if (!localStorage.getItem(SETTINGS_VER_KEY) && saved.itemRefund === 1) saved.itemRefund = DEFAULT_SETTINGS.itemRefund;
+        setS({ ...DEFAULT_SETTINGS, ...saved });
+      }
     } catch {}
   }, []);
   return s;
@@ -1096,6 +1107,7 @@ function SettingsTab({ game, admin }: { game: GameData; admin: Admin }) {
             className={`${btn} bg-slate-900 text-white`}
             onClick={() => {
               localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+              localStorage.setItem(SETTINGS_VER_KEY, "1");
               setSaved(true);
             }}
           >

@@ -141,7 +141,7 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
             {f.amount !== undefined && (
               <span>
                 {f.amount > 0 ? "+" : ""}
-                {f.amount}🪙
+                {f.amount} 🪙
               </span>
             )}
           </div>
