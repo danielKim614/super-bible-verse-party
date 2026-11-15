@@ -165,7 +165,10 @@ assert.equal(s.ctx.payout, 6);
 s = ev(s, { type: "override", payload: { action: "endGame" } });
 assert.equal(s.phase, "ended");
 assert.equal(s.ceremony!.awards.length, 3);
-for (let i = 0; i < 4; i++) s = ev(s, { type: "ceremony_next", payload: {} });
+for (let i = 0; i < 5; i++) s = ev(s, { type: "ceremony_next", payload: {} });
+assert.equal(s.ceremony!.step, s.ceremony!.awards.length + 2);
+// 더 눌러도 그대로
+assert.equal(applyEvent(s, { id: 9999, seq: 9999, voided: false, type: "ceremony_next", payload: {} } as GameEvent).ceremony!.step, s.ceremony!.step);
 const rank = finalRanking(s);
 assert.equal(rank.length, 6);
 console.log("ranking", rank);

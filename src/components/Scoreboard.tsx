@@ -42,17 +42,17 @@ export function Scoreboard({
             }`}
           >
             <div
-              className={`relative flex items-center gap-3 px-3 ${compact ? "py-1.5" : "py-2.5"} ${members ? "cursor-pointer select-none" : ""}`}
+              className={`relative flex items-center ${compact ? "gap-3 py-1.5" : "gap-2.5 py-2"} px-3 ${members ? "cursor-pointer select-none" : ""}`}
               role={members ? "button" : undefined}
               aria-expanded={members ? open === r.id : undefined}
               onClick={members ? () => setOpen((o) => (o === r.id ? null : r.id)) : undefined}
             >
             <span className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: t?.color }} />
-            <span className={`font-display ${compact ? "text-lg w-6" : "text-2xl w-8"} text-center ${r.rank === 1 ? "text-yellow-300" : "text-white/40"}`}>{r.rank}</span>
+            <span className={`font-display ${compact ? "text-lg w-6" : "text-2xl w-6"} text-center ${r.rank === 1 ? "text-yellow-300" : "text-white/40"}`}>{r.rank}</span>
             <TeamAvatar team={t} size={compact ? 34 : 44} />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`font-display truncate ${compact ? "text-base" : "text-xl"}`}>{t?.name ?? "?"}</span>
+                <span className={`font-display truncate ${compact ? "text-base" : "text-xl leading-tight"}`}>{t?.name ?? "?"}</span>
                 {/* 폰(축약)에서는 이름 옆에 작은 아이콘으로 보유 아이템 표시 */}
                 {compact &&
                   ts.items.map((i, k) => (
@@ -61,16 +61,26 @@ export function Scoreboard({
                     </span>
                   ))}
               </div>
-              {!compact && ts.items.length > 0 && (
-                <div className="flex gap-1 mt-0.5">
-                  {ts.items.map((i, k) => (
-                    <span key={k} title={ITEMS[i]?.name ?? i} className="inline-flex w-7 h-7 rounded-lg bg-white/15 items-center justify-center">
-                      <ItemIcon id={i} size={18} />
+              {/* 메인 화면(좁은 카드): 이름 아래 줄에 스타·달란트·보유 아이템 */}
+              {!compact && (
+                <div className="flex items-center gap-2.5 mt-0.5 font-display whitespace-nowrap">
+                  <span className="text-xl text-yellow-300">★{stars}</span>
+                  <span className="text-xl text-amber-200">
+                    <span className="text-xs align-middle opacity-70">달란트</span> {ts.talents}
+                  </span>
+                  {ts.items.length > 0 && (
+                    <span className="flex gap-1 ml-auto shrink-0">
+                      {ts.items.map((i, k) => (
+                        <span key={k} title={ITEMS[i]?.name ?? i} className="inline-flex w-6 h-6 rounded-md bg-white/15 items-center justify-center">
+                          <ItemIcon id={i} size={16} />
+                        </span>
+                      ))}
                     </span>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
+            {compact && (
             <div className="flex items-center gap-3 shrink-0 font-display">
               <span className={`${compact ? "text-lg" : "text-2xl"} text-yellow-300`}>★{stars}</span>
               <span className={`${compact ? "text-lg" : "text-2xl"} text-amber-200`}>
@@ -82,6 +92,7 @@ export function Scoreboard({
                 </span>
               )}
             </div>
+            )}
             </div>
             {members && (
               <div className={`grid transition-[grid-template-rows] duration-300 ${open === r.id ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>

@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   rewards: { blue: 3, red: 5, event: 6, item: 3, happening: 3, bless: 3 },
   inventoryLimit: 3,
   shopMoveAfter: 3,
-  itemRefund: 1,
+  itemRefund: 3,
   bonusStars: { recite: true, talent: true, challenge: true },
 };
 
@@ -170,7 +170,7 @@ export interface Award {
 }
 
 export interface Ceremony {
-  step: number; // 0: 환급 공개, 1..n: 보너스 스타 공개, n+1: 최종 순위
+  step: number; // 0: 게임 종료(커튼), 1: 환급 공개, 2..n+1: 보너스 스타 공개, n+2: 최종 순위
   refunds: Record<string, number>;
   awards: Award[];
 }

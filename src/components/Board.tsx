@@ -333,7 +333,17 @@ export function Board({
   const forkFlash = useForkFlash(state);
   const dice = useDiceRoll(state);
   const { burst: starBurst, hidden: hiddenStar, spawn: starSpawn, pause: starPause } = useStarBurst(state);
-  const shown = useAnimatedPositions(state, compact ? 200 : 320, forkFlash ? 700 : dice ? DICE_MS : 0);
+  // 스타를 지나가다 산 경우: 획득 연출 → 새 스타 등장이 다 끝난 뒤에 남은 칸을 이동
+  const starSeen = useRef({ bought: !!state.ctx.starBought, start: state.ctx.startSeq });
+  const starJustBought = !!state.ctx.starBought && !(starSeen.current.bought && starSeen.current.start === state.ctx.startSeq);
+  useEffect(() => {
+    starSeen.current = { bought: !!state.ctx.starBought, start: state.ctx.startSeq };
+  }, [state.ctx.starBought, state.ctx.startSeq]);
+  const shown = useAnimatedPositions(
+    state,
+    compact ? 200 : 320,
+    starJustBought ? STAR_FX_MS + STAR_GAP_MS + STAR_SPAWN_MS : forkFlash ? 700 : dice ? DICE_MS : 0,
+  );
   const startMark = useStartMark(state, shown);
   const warp = useWarpFx(state);
   const shopMove = useShopMove(state.shopAt ?? SHOP_AT);
@@ -578,7 +588,8 @@ export function Board({
 
       {/* 갈림길 화살표: 선택 대기 중 + 선택 직후 연출 */}
       {cur &&
-        (state.phase === "choose_path" || forkFlash) &&
+        // 말이 갈림길 칸에 실제로 도착한 뒤에 보여 줌 (스타 연출·이동 애니메이션 중에는 숨김)
+        ((state.phase === "choose_path" && (shown[cur] ?? state.teams[cur].pos) === state.teams[cur].pos) || forkFlash) &&
         (() => {
           const pos = forkFlash ? forkFlash.pos : state.teams[cur].pos;
           const from = posXY(pos);

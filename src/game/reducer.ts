@@ -236,10 +236,11 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
 
   if (ev.type === "ceremony_next") {
     if (s.phase !== "ended" || !s.ceremony) return prev;
-    const max = s.ceremony.awards.length + 1;
+    // 0: 게임 종료(커튼) → 1: 환급 → 2..n+1: 보너스 스타 → n+2: 최종 순위
+    const max = s.ceremony.awards.length + 2;
     if (s.ceremony.step >= max) return prev;
     s.ceremony.step += 1;
-    const award = s.ceremony.awards[s.ceremony.step - 1];
+    const award = s.ceremony.awards[s.ceremony.step - 2];
     if (award) for (const w of award.winners) s.teams[w].bonusStars += 1;
     return s;
   }

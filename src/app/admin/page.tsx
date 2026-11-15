@@ -497,13 +497,27 @@ function PreStart({ game, admin, goSettings }: { game: GameData; admin: Admin; g
 function CeremonyControl({ game, admin }: { game: GameData; admin: Admin }) {
   const { state, teamById } = game;
   const c = state.ceremony!;
-  const total = c.awards.length + 1;
-  const label = c.step === 0 ? "환급 확인 후 → 첫 번째 보너스 스타 공개" : c.step < c.awards.length ? `다음 보너스 스타 공개 (${c.step + 1}/${c.awards.length})` : c.step === c.awards.length ? "최종 순위 공개" : "시상식 완료";
+  // 0: 게임 종료(커튼) → 1: 환급 → 2..n+1: 보너스 스타 → n+2: 최종 순위
+  const n = c.awards.length;
+  const total = n + 2;
+  const label =
+    c.step === 0
+      ? "커튼 열고 시상식 시작 (환급 안내)"
+      : c.step === 1
+        ? n > 0
+          ? "환급 확인 후 → 첫 번째 보너스 스타 공개"
+          : "최종 순위 공개 (두구두구 5초)"
+        : c.step < n + 1
+          ? `다음 보너스 스타 공개 (${c.step}/${n})`
+          : c.step === n + 1
+            ? "최종 순위 공개 (두구두구 5초)"
+            : "시상식 완료";
   const refunds = Object.entries(c.refunds).filter(([, v]) => v > 0);
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
       <h2 className="font-display text-3xl">🏆 시상식 진행</h2>
-      {c.step === 0 && (
+      {c.step === 0 && <div className="text-slate-600">메인 화면에 커튼이 쳐지고 “게임 종료” 화면이 나와 있어요. 준비되면 아래 버튼으로 시상식을 시작하세요.</div>}
+      {c.step <= 1 && (
         <div className="rounded-2xl bg-amber-50 border-2 border-amber-300 p-3">
           <div className="text-xs font-bold text-amber-800">💰 MC 실물 달란트 안내: 남은 아이템 환급</div>
           {refunds.length === 0 && <div>환급 없음</div>}
