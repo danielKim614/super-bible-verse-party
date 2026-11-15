@@ -3,7 +3,7 @@
 import { FORKS } from "@/game/board";
 import { ITEMS } from "@/game/items";
 import { ItemIcon } from "./ItemIcon";
-import { currentTeamId } from "@/game/reducer";
+import { BLESS_TALENTS, currentTeamId } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 import type { VerseMap } from "@/game/verses";
 import { phaseHeadline, verseCard } from "./describe";
@@ -43,7 +43,7 @@ export function ActionCard({
   const big = size === "lg";
   if (!state.started || state.phase === "ended") return null;
 
-  const verseSpace = state.phase === "recite" ? ctx.landed : state.phase === "star_recite" ? ctx.starAt : undefined;
+  const verseSpace = state.phase === "recite" ? ctx.landed : undefined;
   const card = verseSpace ? verseCard(state, verseSpace, verses) : null;
 
   return (
@@ -98,7 +98,7 @@ export function ActionCard({
       )}
       {state.phase === "recite" && ctx.blessTo && ctx.blessTo.length > 0 && !hideHappening && (
         <div className={`mt-3 rounded-2xl bg-pink-300/20 border border-pink-200/40 px-4 py-2 font-display animate-pop ${big ? "text-2xl" : "text-base"}`}>
-          💗 축복해요! {ctx.blessTo.map((id) => teamById[id]?.name).join(", ")} 팀에게 +5 달란트
+          💗 축복해요! {ctx.blessTo.map((id) => teamById[id]?.name).join(", ")} 팀에게 +{BLESS_TALENTS} 달란트
         </div>
       )}
 

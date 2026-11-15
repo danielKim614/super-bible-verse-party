@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { replay } from "@/game/reducer";
+import { replayIncremental, type ReplayCache } from "@/game/reducer";
 import type { GameEvent, GameEventBody, GameState, MemberInfo, TeamInfo } from "@/game/types";
 import { getBackend, type Backend, type Snapshot, type TeamInput } from "./backend";
 import type { VerseMap } from "@/game/verses";
@@ -80,7 +80,13 @@ export function useGame(): GameData {
     };
   }, [load]);
 
-  const state = useMemo(() => replay(events), [events]);
+  // 이벤트가 늘 때마다 처음부터 다시 계산하지 않고 새로 붙은 것만 적용 (되돌리기 등은 처음부터)
+  const replayCache = useRef<ReplayCache | null>(null);
+  const state = useMemo(() => {
+    const next = replayIncremental(replayCache.current, events);
+    replayCache.current = next;
+    return next.state;
+  }, [events]);
   const teamById = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t])), [teams]);
   const refresh = useCallback(() => {
     if (backend) load(backend);

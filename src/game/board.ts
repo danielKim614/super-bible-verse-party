@@ -196,10 +196,8 @@ export const ROUTE_D: Record<RouteId, string> = Object.fromEntries(
   (Object.keys(ROUTE_CURVES) as RouteId[]).map((k) => [k, toD(ROUTE_CURVES[k])]),
 ) as Record<RouteId, string>;
 
-export const JUNCTIONS = { F1, M1, F2, M2, F3, M4 };
 /** 상점 그림 위치: 합류 칸(28) 바로 위에 붙여서 */
 export const SHOP_POS = { x: M2.x - 18, y: M2.y - 40 };
-export const FORK_POINTS: Record<number, Pt> = { 2: F1, 15: F2, 30: F3 };
 
 function buildSpaces(): Space[] {
   const coords: Record<number, Pt> = {};
@@ -255,11 +253,6 @@ export function nextOptions(pos: number): number[] {
   if (fork) return fork.map((f) => f.to);
   const n = nextSpace(pos);
   return n === null ? [] : [n];
-}
-
-/** 이 칸에서 다음 칸으로 갈 때 상점을 지나는가 */
-export function passesShop(pos: number): boolean {
-  return nextOptions(pos).includes(SHOP_AT) && pos !== SHOP_AT;
 }
 
 /** pos에서 앞으로 BFS 거리 (갈림길은 양쪽 다 탐색) */

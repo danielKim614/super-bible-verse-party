@@ -8,10 +8,6 @@ export function teamName(teamById: Record<string, TeamInfo>, id?: string) {
   return teamById[id]?.name ?? "알 수 없는 팀";
 }
 
-export function teamColor(teamById: Record<string, TeamInfo>, id?: string) {
-  return (id && teamById[id]?.color) || "#888";
-}
-
 export interface VerseCardInfo {
   ref: string;
   space: number;
@@ -72,8 +68,6 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
       const price = starPriceFor(s, false);
       return `${name} 팀, 스타를 살까요? (${price}달란트${coupon ? `, 할인권 ${starPriceFor(s, true)}` : ""})`;
     }
-    case "star_recite":
-      return `${name} 팀, 스타를 사려면 8:${ctx.starAt}절을 암송하세요`;
     case "recite":
       return `${name} 팀, 8:${reciteLabel(s, ctx.landed ?? 0)} 암송!`;
     case "resolve":

@@ -1,8 +1,8 @@
 "use client";
 
-import { FORKS, RED_MODE_LABEL, SHOP_AT, SPACES, SPACE_LABEL } from "@/game/board";
+import { FORKS, RED_MODE_LABEL, SHOP_AT, SPACES } from "@/game/board";
 import { ITEMS, ITEM_IDS, RANDOM_ITEM_POOL } from "@/game/items";
-import { FULL_BAG_TALENTS } from "@/game/reducer";
+import { BLESS_TALENTS, FULL_BAG_TALENTS, RAIN_TALENTS } from "@/game/reducer";
 import type { Settings } from "@/game/types";
 import { ItemIcon } from "@/components/ItemIcon";
 
@@ -50,7 +50,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
             <Row k="이벤트 칸 🎲" v={`절이 아닌 칸. 도착하면 외울 절을 랜덤으로 뽑아요(아래). 성공 +${r.event}`} ids={[]} />
             <Row k="선물 칸" v={`성공하면 +${r.item} 달란트와 랜덤 아이템 1개(이미 가진 종류 제외)`} ids={byType("item")} />
             <Row k="해프닝 칸" v={`멈추는 즉시 해프닝 1개가 랜덤 발생(아래). 그 후 암송, 성공 +${r.happening}`} ids={byType("happening")} />
-            <Row k="축복 칸" v={`멈추는 즉시 꼴찌 팀(스타→달란트 최하위, 공동 꼴찌면 모두)에 +5 달란트. 그 후 암송, 성공 +${r.bless}`} ids={byType("bless")} />
+            <Row k="축복 칸" v={`멈추는 즉시 꼴찌 팀(스타→달란트 최하위, 공동 꼴찌면 모두)에 +${BLESS_TALENTS} 달란트. 그 후 암송, 성공 +${r.bless}`} ids={byType("bless")} />
           </tbody>
         </table>
         <p className="text-sm text-slate-600 mt-2">실패하면 달란트를 받지 못해요(차감은 없어요). 아이템을 쓴 경우에도 아이템은 돌려주지 않아요.</p>
@@ -79,7 +79,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
         <p className="text-sm text-slate-600 mb-1">해프닝 칸에 멈추면 아래 넷 중 하나가 같은 확률로 일어나요. 결과는 이벤트 순번으로 정해지므로 되돌리기(Undo) 후 다시 해도 같은 결과예요.</p>
         <ul className="list-disc pl-5">
           <li><b>스타 대이동</b>: 보드의 스타가 모두 다른 곳으로 옮겨져요.</li>
-          <li><b>달란트 비</b>: 모든 팀이 2달란트씩 받아요. MC 안내에 팀별 지급이 모두 나와요.</li>
+          <li><b>달란트 비</b>: 모든 팀이 {RAIN_TALENTS}달란트씩 받아요. MC 안내에 팀별 지급이 모두 나와요.</li>
           <li><b>황금 라운드</b>: 이번 턴(라운드) 동안 모든 팀의 암송 보상 2배.</li>
           <li><b>깜짝 선물</b>: 아직 없는 종류 중 랜덤 아이템 1개. 가방이 가득 찼거나 받을 새 아이템이 없으면 대신 +{FULL_BAG_TALENTS} 달란트.</li>
         </ul>
@@ -184,5 +184,3 @@ function Row({ k, v, ids }: { k: string; v: string; ids: number[] }) {
     </tr>
   );
 }
-// SPACE_LABEL은 칸 이름의 기준으로 유지 (참가자 화면과 동일한 이름을 쓰기 위함)
-void SPACE_LABEL;

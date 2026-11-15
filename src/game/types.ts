@@ -95,7 +95,6 @@ export type Phase =
   | "pipe_choose" // 황금 파이프에 들어가 나올 칸을 고르는 중
   | "shop_offer"
   | "star_offer"
-  | "star_recite"
   | "recite"
   | "resolve"
   | "ended";
@@ -143,7 +142,6 @@ export interface TurnCtx {
   gainedItem?: ItemId | "full";
   starBought?: boolean;
   starBoughtAt?: number; // 스타를 산 칸 (연출용)
-  starReciteResult?: boolean;
 }
 
 export interface LedgerEntry {

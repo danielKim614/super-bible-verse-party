@@ -43,12 +43,39 @@ function freshCtx(): TurnCtx {
   return { rollMode: "normal", remaining: 0, path: [] };
 }
 
+/** 무효화되지 않은 이벤트를 seq 순으로 */
+function activeEvents(events: GameEvent[]): GameEvent[] {
+  return events.filter((e) => !e.voided).sort((a, b) => a.seq - b.seq);
+}
+
 /** 무효화되지 않은 이벤트를 seq 순으로 적용 */
 export function replay(events: GameEvent[]): GameState {
-  const active = events.filter((e) => !e.voided).sort((a, b) => a.seq - b.seq);
+  let s = initialState();
+  for (const e of activeEvents(events)) s = applyEvent(s, e);
+  return s;
+}
+
+/** 직전 계산 결과: 적용한 이벤트 id 순서와 그때의 상태 */
+export interface ReplayCache {
+  ids: number[];
+  state: GameState;
+}
+
+/**
+ * 증분 재생: 새 이벤트가 끝에 붙기만 했으면 그것만 이어서 적용하고,
+ * 되돌리기(무효화)·순서 변경처럼 앞부분이 달라졌으면 처음부터 다시 계산한다. 결과는 replay()와 같다.
+ */
+export function replayIncremental(cache: ReplayCache | null, events: GameEvent[]): ReplayCache {
+  const active = activeEvents(events);
+  const ids = active.map((e) => e.id);
+  if (cache && cache.ids.length <= ids.length && cache.ids.every((id, i) => ids[i] === id)) {
+    let s = cache.state;
+    for (let i = cache.ids.length; i < active.length; i++) s = applyEvent(s, active[i]);
+    return { ids, state: s };
+  }
   let s = initialState();
   for (const e of active) s = applyEvent(s, e);
-  return s;
+  return { ids, state: s };
 }
 
 // ---------------------------------------------------------------------------
@@ -92,10 +119,6 @@ export function effectiveRedMode(s: GameState, space: number): RedMode | undefin
 
 export function starPriceFor(s: GameState, coupon: boolean): number {
   return coupon ? s.settings.couponStarPrice : s.settings.starPrice;
-}
-
-export function cheapestItemPrice(): number {
-  return Math.min(...Object.values(ITEMS).map((i) => i.price));
 }
 
 /** 같은 아이템은 팀당 하나만 가질 수 있어요. */
@@ -155,7 +178,7 @@ export function usableItems(s: GameState): ItemId[] {
       if (s.phase === "pre_roll" && !s.ctx.doubleTalentOn) out.add(item);
       continue;
     }
-    if (def.kind === "recite" && (s.phase === "recite" || s.phase === "star_recite") && !s.ctx.reciteItem) {
+    if (def.kind === "recite" && s.phase === "recite" && !s.ctx.reciteItem) {
       out.add(item);
     }
   }
@@ -175,6 +198,10 @@ export function payoutBreakdown(amount: number): { d10: number; d5: number; d1: 
 
 /** 가방이 가득 찼거나 받을 수 있는 새 아이템이 없을 때 아이템 대신 지급하는 달란트 */
 export const FULL_BAG_TALENTS = 3;
+/** 축복 칸: 꼴찌 팀(공동 꼴찌면 모두)에게 주는 달란트 */
+export const BLESS_TALENTS = 5;
+/** 해프닝 "달란트 비": 모든 팀이 받는 달란트 */
+export const RAIN_TALENTS = 2;
 
 export function payoutText(amount: number): string {
   const b = payoutBreakdown(amount);
@@ -356,24 +383,6 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
 
     case "recite_result": {
       const { success, seed } = ev.payload;
-      if (s.phase === "star_recite") {
-        const space = ctx.starAt!;
-        ctx.starReciteResult = success;
-        if (success) {
-          team.reciteSuccess += 1;
-          const t = effectiveType(s, space);
-          if (t === "red" || t === "event") team.challengeSuccess += 1;
-          if (!team.recited.includes(space)) team.recited.push(space);
-          buyStar(s, tid, seq, { seed });
-        } else {
-          feed(s, { seq, teamId: tid, kind: "fail", text: `${space}절 암송 실패, 스타 구매 불가` });
-          ctx.couponUsed = false;
-        }
-        ctx.starAt = undefined;
-        s.moveSeq = seq;
-        advance(s, tid, seq);
-        return s;
-      }
       if (s.phase !== "recite") return prev;
       const space = ctx.landed!;
       const label = reciteLabel(s, space);
@@ -527,12 +536,12 @@ function land(s: GameState, tid: string, space: number, seq: number) {
   s.phase = "recite";
   const t = SPACE_BY_ID[space]?.type;
   if (t === "bless") {
-    // 꼴찌 팀(공동 꼴찌면 모두)에게 +5
+    // 꼴찌 팀(공동 꼴찌면 모두)에게 +BLESS_TALENTS
     const last = lastPlaceTeams(s);
     s.ctx.blessTo = last;
     for (const id of last) {
-      credit(s, seq, id, 5, "축복 칸 (꼴찌 응원)");
-      feed(s, { seq, teamId: id, kind: "bless", text: "축복해요!", amount: 5 });
+      credit(s, seq, id, BLESS_TALENTS, "축복 칸 (꼴찌 응원)");
+      feed(s, { seq, teamId: id, kind: "bless", text: "축복해요!", amount: BLESS_TALENTS });
     }
   }
   if (t === "happening") applyHappening(s, tid, seq);
@@ -599,8 +608,8 @@ function applyHappening(s: GameState, tid: string, seq: number) {
       break;
     }
     case "rain":
-      for (const id of s.teamIds) credit(s, seq, id, 2, "해프닝: 달란트 비");
-      text = "달란트 비! 모든 팀이 2달란트씩 받아요";
+      for (const id of s.teamIds) credit(s, seq, id, RAIN_TALENTS, "해프닝: 달란트 비");
+      text = `달란트 비! 모든 팀이 ${RAIN_TALENTS}달란트씩 받아요`;
       break;
     case "golden":
       s.goldenRound = s.turn;

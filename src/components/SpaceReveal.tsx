@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useTimedReveal } from "@/lib/useFresh";
 import { BOARD_H, BOARD_W, SPACE_BY_ID, eventCountLabel } from "@/game/board";
-import { currentTeamId } from "@/game/reducer";
+import { BLESS_TALENTS, currentTeamId } from "@/game/reducer";
 import type { GameState, HappeningKind, TeamInfo } from "@/game/types";
 import { ITEMS, type ItemId } from "@/game/items";
 import { ItemIcon } from "./ItemIcon";
@@ -23,37 +24,22 @@ export function useSpaceReveal(state: GameState, shown: Record<string, number>, 
   const type = landed ? SPACE_BY_ID[landed]?.type : undefined;
   const key =
     landed && (type === "event" || type === "happening" || type === "bless") ? `${state.ctx.startSeq ?? 0}:${landed}:${state.moveSeq}` : null;
+  // 말이 그 칸에 도착하고 주사위·파이프 연출이 끝난 뒤에 공개
   const arrived = !!cur && landed !== undefined && shown[cur] === landed;
-  // 화면을 새로 열었을 때 이미 도착해 있던 칸은 다시 보여 주지 않는다
-  const seen = useRef<string | null>(key);
-  const [active, setActive] = useState<RevealInfo | null>(null);
-  const happening = state.ctx.happening;
-  const blessTo = state.ctx.blessTo;
-  const eventVerses = state.ctx.eventVerses;
-  const eventReward = state.settings.rewards.event;
-
-  useEffect(() => {
-    if (!key || !arrived || busy || seen.current === key || !landed) return;
-    seen.current = key;
-    const info: RevealInfo =
-      type === "happening" && happening
-        ? { key, type: "happening", space: landed, kind: happening.kind, text: happening.text, item: happening.item }
-        : type === "bless"
-          ? { key, type: "bless", space: landed, teams: blessTo ?? [] }
-          : { key, type: "event", space: landed, verses: eventVerses ?? [], reward: eventReward };
-    setActive(info);
-    const ms = info.type === "happening" ? HAPPENING_MS : info.type === "bless" ? BLESS_MS : EVENT_MS;
-    const t = setTimeout(() => setActive((a) => (a?.key === key ? null : a)), ms);
-    return () => clearTimeout(t);
-  }, [key, arrived, busy, landed, type, happening, blessTo, eventVerses, eventReward]);
-
-  // 되돌리기 등으로 그 칸에서 벗어나면 바로 닫기
-  useEffect(() => {
-    if (active && active.key !== key) setActive(null);
-  }, [active, key]);
-
-  // 해프닝 칸에 도착했지만 아직 공개 전(이동·주사위 연출 중)인 동안
-  if (!active && key && seen.current !== key) return { pending: true, key, type: "pending" };
+  const { active, pending } = useTimedReveal<RevealInfo>(
+    key,
+    arrived && !busy,
+    (k) => {
+      const at = landed ?? 0;
+      const h = state.ctx.happening;
+      if (type === "happening" && h) return { key: k, type: "happening", space: at, kind: h.kind, text: h.text, item: h.item };
+      if (type === "bless") return { key: k, type: "bless", space: at, teams: state.ctx.blessTo ?? [] };
+      return { key: k, type: "event", space: at, verses: state.ctx.eventVerses ?? [], reward: state.settings.rewards.event };
+    },
+    (info) => (info.type === "happening" ? HAPPENING_MS : info.type === "bless" ? BLESS_MS : EVENT_MS),
+  );
+  // 도착했지만 아직 공개 전(이동·주사위 연출 중)인 동안
+  if (pending && key) return { pending: true, key, type: "pending" };
   return active;
 }
 
@@ -311,7 +297,7 @@ function EventCard({ verses, reward }: { verses: number[]; reward: number }) {
   );
 }
 
-/** 축복 칸: 하트가 퍼지며 꼴찌 팀(공동이면 모두)에게 +5 */
+/** 축복 칸: 하트가 퍼지며 꼴찌 팀(공동이면 모두)에게 +BLESS_TALENTS */
 function BlessCard({ teams, teamById }: { teams: string[]; teamById: Record<string, TeamInfo> }) {
   const n = Math.max(1, teams.length);
   const chipW = n > 2 ? 140 : 170;
@@ -348,7 +334,7 @@ function BlessCard({ teams, teamById }: { teams: string[]; teamById: Record<stri
                     {name.length > 5 ? `${name.slice(0, 5)}…` : name}
                   </text>
                   <text x={-chipW / 2 + 68} y={22} fontSize={19} className="font-display" fill="#db2777">
-                    +5 달란트
+                    +{BLESS_TALENTS} 달란트
                   </text>
                 </g>
               </g>
@@ -370,21 +356,13 @@ const GIFT_MS = 3600;
 export function useGiftReveal(state: GameState, fullTalents: number): { gift: GiftInfo | null; pending: boolean } {
   const gained = state.ctx.gainedItem;
   const key = gained ? `${state.ctx.startSeq ?? 0}:${state.ctx.landed ?? 0}:${gained}` : null;
-  // 화면을 새로 열었을 때 이미 받은 선물은 다시 보여 주지 않는다
-  const seen = useRef<string | null>(key);
-  const [active, setActive] = useState<GiftInfo | null>(null);
-  useEffect(() => {
-    if (!key || !gained || seen.current === key) return;
-    seen.current = key;
-    setActive({ key, item: gained, full: fullTalents });
-    const t = setTimeout(() => setActive((a) => (a?.key === key ? null : a)), GIFT_MS);
-    return () => clearTimeout(t);
-  }, [key, gained, fullTalents]);
-  useEffect(() => {
-    if (active && active.key !== key) setActive(null);
-  }, [active, key]);
-  // 받았지만 아직 연출이 시작되기 전(같은 렌더)도 "공개 중"으로 본다
-  return { gift: active, pending: !active && !!key && seen.current !== key };
+  const { active, pending } = useTimedReveal<GiftInfo>(
+    key,
+    true,
+    (k) => ({ key: k, item: gained ?? "full", full: fullTalents }),
+    () => GIFT_MS,
+  );
+  return { gift: active, pending };
 }
 
 export function GiftRevealFx({ info }: { info: GiftInfo }) {

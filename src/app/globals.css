@@ -247,14 +247,7 @@ body {
 }
 .animate-ping-slow { animation: ping-slow 1s ease-in-out infinite alternate; }
 
-@keyframes spin-slow { to { rotate: 360deg; } }
-.animate-spin-slow { animation: spin-slow 6s linear infinite; transform-box: fill-box; transform-origin: center; }
 
-@keyframes star-pulse {
-  0%, 100% { scale: 1; rotate: 0deg; }
-  50% { scale: 1.12; rotate: 8deg; }
-}
-.animate-star { animation: star-pulse 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 
 @keyframes star-spin {
   0% { transform: rotateY(0deg) translateY(0); }
@@ -268,7 +261,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pop, .animate-bob, .animate-ufo, .animate-ufo-fly, .animate-ufo-shake, .animate-shop-alert, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-drum-shake, .animate-drum-bounce, .animate-spot-left, .animate-spot-right, .animate-confetti, .animate-winner-glow, .animate-gameover-in, .animate-podium-rise, .animate-slot-tick, .animate-gift-shake, .animate-heart-float, .animate-card-shine, .animate-start-ring, .animate-start-spark, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
+  .animate-pop, .animate-bob, .animate-ufo, .animate-ufo-fly, .animate-ufo-shake, .animate-shop-alert, .animate-ping-slow, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-drum-shake, .animate-drum-bounce, .animate-spot-left, .animate-spot-right, .animate-confetti, .animate-winner-glow, .animate-gameover-in, .animate-podium-rise, .animate-slot-tick, .animate-gift-shake, .animate-heart-float, .animate-card-shine, .animate-start-ring, .animate-start-spark, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
 }
 
 /* 출발 표시 사라짐: 살짝 부풀었다가 작아지며 사라지고, 링과 반짝이가 퍼짐 */
