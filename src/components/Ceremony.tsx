@@ -371,7 +371,8 @@ function useCurtainOpening(started: boolean) {
       setOpening(false);
     };
   }, [started]);
-  return opening;
+  // 넘어온 첫 렌더에서도 커튼이 덮여 있게
+  return opening || (started && !prev.current);
 }
 
 const SUSPENSE_MS = 5000;
@@ -402,6 +403,8 @@ function useFinalReveal(showFinal: boolean, withSound: boolean) {
       stopSound?.();
     };
   }, [showFinal, withSound]);
+  // 방금 최종 순위 단계로 넘어온 첫 렌더에서도 순위가 잠깐 비치지 않도록 바로 두구두구로
+  if (showFinal && !prev.current) return "suspense";
   return phase;
 }
 
