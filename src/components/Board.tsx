@@ -3,7 +3,7 @@
 import { splitSum } from "./DieBadge";
 import { GiftRevealFx, SpaceRevealFx, useGiftReveal, useSpaceReveal } from "./SpaceReveal";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
-import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_AT, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId, type SpaceType } from "@/game/board";
+import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_AT, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, nextSpace, type RouteId, type SpaceType } from "@/game/board";
 import { FULL_BAG_TALENTS, currentTeamId, diceCount } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 
@@ -18,7 +18,8 @@ const TYPE_FILL: Record<string, [string, string]> = {
 };
 
 const ROUTE_IDS: RouteId[] = ["a1", "a2", "c1", "b1", "b2", "c2", "d1", "d2", "c3"];
-const HARD_ROUTES: RouteId[] = ["a2", "b2"];
+// 샛길(갈림길의 안쪽 길)은 주황빛 은하수
+const HARD_ROUTES: RouteId[] = ["a2", "b2", "d2"];
 
 /** 칸 위 아이콘 (자체 SVG). 원점이 아이콘 중심 */
 function GiftIcon() {
@@ -346,10 +347,17 @@ export function Board({
   useEffect(() => {
     starSeen.current = { bought: !!state.ctx.starBought, start: state.ctx.startSeq };
   }, [state.ctx.starBought, state.ctx.startSeq]);
+  // 주사위를 막 굴린 렌더에서도 바로 알아채서, 주사위 연출(굴림 → 멈춤 → 사라짐)이 다 끝난 뒤에 말이 움직이게
+  const rollSeen = useRef({ roll: state.ctx.roll, start: state.ctx.startSeq });
+  const rollJust =
+    state.ctx.roll !== undefined && !state.ctx.teleport && !(rollSeen.current.roll !== undefined && rollSeen.current.start === state.ctx.startSeq);
+  useEffect(() => {
+    rollSeen.current = { roll: state.ctx.roll, start: state.ctx.startSeq };
+  }, [state.ctx.roll, state.ctx.startSeq]);
   const shown = useAnimatedPositions(
     state,
     compact ? 260 : 480,
-    starJustBought ? STAR_FX_MS + STAR_GAP_MS + STAR_SPAWN_MS : forkFlash ? 700 : dice ? DICE_MS : 0,
+    starJustBought ? STAR_FX_MS + STAR_GAP_MS + STAR_SPAWN_MS : forkFlash ? 700 : rollJust || dice ? DICE_MS + 600 : 0,
   );
   const startMark = useStartMark(state, shown);
   const warp = useWarpFx(state);
@@ -357,7 +365,7 @@ export function Board({
   const spaceReveal = useSpaceReveal(state, shown, !!warp || !!dice);
   const { gift, pending: giftPending } = useGiftReveal(state, FULL_BAG_TALENTS);
   const revealing =
-    spaceReveal?.type === "happening" || spaceReveal?.type === "bless" || spaceReveal?.type === "pending" || !!gift || giftPending;
+    !!spaceReveal || !!gift || giftPending;
   // 렌더 시점에 계산: 말이 아직 새 위치에 안 갔으면(이동 애니메이션 전·중) 움직이는 중
   const moving = state.teamIds.some((id) => shown[id] !== undefined && shown[id] !== state.teams[id].pos);
   const presented = !dice && !warp && !moving && !starBurst && !starPause && !starSpawn && !revealing;
@@ -548,9 +556,16 @@ export function Board({
           <g key={sp.id} transform={`translate(${sp.x},${sp.y})`}>
             {isFocus && <circle r={34} fill="none" stroke="#fff" strokeWidth={5} className="animate-ping-slow" />}
             <Planet id={sp.id} type={sp.type} light={light} dark={dark} />
-            <text textAnchor="middle" dy={6} fontSize={16} fontWeight={800} fill="#fff" stroke={dark} strokeWidth={3.5} strokeLinejoin="round" paintOrder="stroke">
-              {sp.id}
-            </text>
+            {sp.verse ? (
+              <text textAnchor="middle" dy={6} fontSize={16} fontWeight={800} fill="#fff" stroke={dark} strokeWidth={3.5} strokeLinejoin="round" paintOrder="stroke">
+                {sp.verse}
+              </text>
+            ) : (
+              // 이벤트 칸: 절이 아니라 도착하면 뽑음
+              <text textAnchor="middle" dy={7} fontSize={20}>
+                🎲
+              </text>
+            )}
             {SPACE_ICON[sp.type] && (
               <g transform="translate(0,-34)" filter="url(#soft)" className="animate-bob">
                 {SPACE_ICON[sp.type]()}
@@ -615,7 +630,7 @@ export function Board({
           const opts = FORKS[pos] ?? [];
           return opts.map((o, i) => {
             // 방향은 그 길의 두 번째 칸 쪽으로, 길이는 고정
-            const aim = posXY(SPACE_BY_ID[o.to + 1] ? o.to + 1 : o.to);
+            const aim = posXY(nextSpace(o.to) ?? o.to);
             const dx = aim.x - from.x;
             const dy = aim.y - from.y;
             const len = Math.hypot(dx, dy) || 1;
@@ -648,37 +663,48 @@ export function Board({
         })()}
 
       {/* 말 */}
-      {Object.entries(byPos).flatMap(([posStr, ids]) => {
-        const base = posXY(Number(posStr));
-        const n = ids.length;
-        const atStart = Number(posStr) === 0;
-        // 말은 칸 아래쪽에 매달리듯 배치해 칸 번호·색이 항상 보이게 한다
-        const r = n === 1 ? 21 : n === 2 ? 18 : 15;
-        const gap = r * 2 + 5;
-        return ids.map((id, i) => {
-          let x = base.x + (i - (n - 1) / 2) * (n === 1 ? 0 : gap);
-          // 칸 아래에 꼬리 길이만큼 띄워서 매단다
-          let y = base.y + 22 + TOKEN_TAIL + r;
-          if (atStart) {
-            // START 둘레(길 반대편인 왼쪽 위)를 따라 둥글게 세워 1번 칸·길과 겹치지 않게
-            const ring = 34 + TOKEN_TAIL + r + 3;
-            const step = n === 1 ? 0 : Math.min(((gap + 2) / ring) * (180 / Math.PI), 250 / (n - 1));
-            const ang = ((-135 + (i - (n - 1) / 2) * step) * Math.PI) / 180;
-            x = base.x + Math.cos(ang) * ring;
-            y = base.y + Math.sin(ang) * ring;
-          }
-          const t = teamById[id];
+      {(() => {
+        // 칸별로 자리(나란히·START 둘레)를 먼저 계산하고,
+        // 그리는 순서는 팀 순서로 고정한다. 순서가 바뀌면 DOM이 옮겨지며 이동 애니메이션이 끊겨 순간이동처럼 보이기 때문
+        const place: Record<string, { x: number; y: number; r: number; point: number }> = {};
+        for (const [posStr, ids] of Object.entries(byPos)) {
+          const base = posXY(Number(posStr));
+          const n = ids.length;
+          const atStart = Number(posStr) === 0;
+          // 말은 칸 아래쪽에 매달리듯 배치해 칸 번호·색이 항상 보이게 한다
+          const r = n === 1 ? 21 : n === 2 ? 18 : 15;
+          const gap = r * 2 + 5;
+          ids.forEach((id, i) => {
+            let x = base.x + (i - (n - 1) / 2) * (n === 1 ? 0 : gap);
+            // 칸 아래에 꼬리 길이만큼 띄워서 매단다
+            let y = base.y + 22 + TOKEN_TAIL + r;
+            if (atStart) {
+              // START 둘레(길 반대편인 왼쪽 위)를 따라 둥글게 세워 1번 칸·길과 겹치지 않게
+              const ring = 34 + TOKEN_TAIL + r + 3;
+              const step = n === 1 ? 0 : Math.min(((gap + 2) / ring) * (180 / Math.PI), 250 / (n - 1));
+              const ang = ((-135 + (i - (n - 1) / 2) * step) * Math.PI) / 180;
+              x = base.x + Math.cos(ang) * ring;
+              y = base.y + Math.sin(ang) * ring;
+            }
+            // 꼬리가 말이 서 있는 칸(또는 START)을 가리킨다
+            const point = (Math.atan2(base.y - y, base.x - x) * 180) / Math.PI + 90;
+            place[id] = { x, y, r, point };
+          });
+        }
+        // 지금 차례인 말은 맨 위에 보이도록 마지막에 (턴 중에는 순서가 바뀌지 않음)
+        const order = [...state.teamIds.filter((id) => id !== cur), ...(cur ? [cur] : [])];
+        return order.map((id) => {
+          const pl = place[id];
+          if (!pl) return null;
           const isCur = id === cur && state.phase !== "ended";
           const isMine = highlightTeam === id;
-          // 꼬리가 말이 서 있는 칸(또는 START)을 가리킨다
-          const point = (Math.atan2(base.y - y, base.x - x) * 180) / Math.PI + 90;
           return (
-            <g key={id} style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform 0.28s ease-out" }}>
-              <TokenPiece team={t} r={r} point={point} current={isCur} mine={isMine} />
+            <g key={id} style={{ transform: `translate(${pl.x}px, ${pl.y}px)`, transition: "transform 0.38s ease-in-out" }}>
+              <TokenPiece team={teamById[id]} r={pl.r} point={pl.point} current={isCur} mine={isMine} />
             </g>
           );
         });
-      })}
+      })()}
       {/* 워프·황금 파이프 연출 */}
       {warp && <WarpFx key={warp.key} fx={warp} team={teamById[warp.team]} />}
 

@@ -1,5 +1,5 @@
 // 리듀서 시나리오 테스트: npm run test:reducer
-// 보드: 1~2 → 갈림(2) → 3~6 / 7~10 → 11~15 → 갈림(15) → 16~22 / 23~27 → 🏪 → 28~30 → 갈림(30) → 31~34 / 35~38 → 39 → 출발 (출발점은 칸이 아님)
+// 보드: 1~2 → 갈림(2) → 3~6 / 7~10 → 11~12·🎲·13~15 → 갈림(15) → 16~21·🎲 / 22~27 → 🏪 → 28~30 → 갈림(30) → 31·🎲·32~34 / 35~38 → 39 → 출발 (출발점은 칸이 아님)
 import assert from "node:assert/strict";
 import { SPACE_BY_ID, nextSpace } from "../src/game/board";
 import { applyEvent, effectiveRedMode, placeStar, finalRanking, initialState, isBoost, replay, usableItems } from "../src/game/reducer";
@@ -25,7 +25,7 @@ assert.equal(s.stars.length, 2);
 for (const t of teams) assert.equal(s.teams[t].talents, 10);
 
 // 스타를 경로 밖에 고정
-s = ev(s, { type: "override", payload: { action: "starPositions", stars: [22, 38] } });
+s = ev(s, { type: "override", payload: { action: "starPositions", stars: [21, 38] } });
 
 // A팀: 출발에서 2칸 → 1, 2절(갈림길 칸에 정확히 도착하면 그냥 암송) → 성공
 s = ev(s, { type: "roll", payload: { value: 2 } });
@@ -36,9 +36,9 @@ assert.equal(s.teams.A.talents, 10 + s.settings.rewards.blue);
 assert.equal(s.teams.A.challengeSuccess, 0);
 s = ev(s, { type: "end_turn", payload: {} });
 
-// B팀: 14에서 4칸 → 15(갈림) → 지름길 → 23, 24, 25 도착(아이템 칸) → 실패
+// B팀: 14에서 5칸 → 15(갈림) → 지름길 → 22, 23, 24, 25 도착(아이템 칸) → 실패
 s = ev(s, { type: "override", payload: { action: "position", teamId: "B", pos: 14 } });
-s = ev(s, { type: "roll", payload: { value: 4 } });
+s = ev(s, { type: "roll", payload: { value: 5 } });
 assert.equal(s.phase, "choose_path");
 assert.equal(s.teams.B.pos, 15);
 s = ev(s, { type: "choose_path", payload: { option: 1 } });
@@ -52,16 +52,16 @@ s = ev(s, { type: "end_turn", payload: {} });
 // C팀: 스타 지나가기 → 구매(암송 없이 바로) → 상점 통과 → 계속 이동
 s = ev(s, { type: "override", payload: { action: "talents", teamId: "C", delta: 20 } });
 s = ev(s, { type: "override", payload: { action: "position", teamId: "C", pos: 20 } });
-s = ev(s, { type: "roll", payload: { value: 5 } }); // 21, 22(★), 🏪, 28, 29, 30
+s = ev(s, { type: "roll", payload: { value: 5 } }); // 21(★), 🎲, 🏪, 28, 29, 30
 assert.equal(s.phase, "star_offer");
-assert.equal(s.ctx.starAt, 22);
+assert.equal(s.ctx.starAt, 21);
 s = ev(s, { type: "star_decision", payload: { buy: true, seed: 3 } });
 assert.equal(s.teams.C.stars, 1);
 assert.equal(s.teams.C.talents, 10);
-assert.ok(!s.stars.includes(22));
+assert.ok(!s.stars.includes(21));
 assert.equal(s.stars.length, 2);
-assert.equal(s.phase, "shop_offer"); // 22 다음 상점
-assert.equal(s.teams.C.pos, 22);
+assert.equal(s.phase, "shop_offer"); // 🎲(102) 다음 상점
+assert.equal(s.teams.C.pos, 102);
 s = ev(s, { type: "shop_leave", payload: {} });
 assert.equal(s.teams.C.pos, 30); // 28, 29, 30 → 30 도착
 assert.equal(s.phase, "recite");
@@ -356,7 +356,7 @@ console.log("✅ 39 merge ok");
   if ((t.phase as string) === "star_offer") e("star_decision", { buy: false });
   if ((t.phase as string) === "recite") e("recite_result", { success: true, seed: 1 });
   e("end_turn", {});
-  // 황금 파이프만 빼고 다 가진 상태로 선물 칸(37) 도착 → 무조건 황금 파이프
+  // 황금 파이프만 빼고 다 가진 상태로 선물 칸(37) 도착(36에서 1칸) → 무조건 황금 파이프
   for (const it of Object.keys(ITEMS)) if (it !== "goldenPipe") e("override", { action: "addItem", teamId: "B", item: it });
   assert.equal(new Set(t.teams.B.items).size, t.teams.B.items.length);
   for (let k = 0; k < 5; k++) {
@@ -395,7 +395,7 @@ console.log("✅ 39 merge ok");
     e("override", { action: "addItem", teamId: "A", item: "warpPipe" });
     e("use_item", { item: "warpPipe", seed: 1000 + k });
     assert.notEqual(t.teams.A.pos, 12);
-    assert.ok(t.teams.A.pos >= 1 && t.teams.A.pos <= 39);
+    assert.ok(SPACE_BY_ID[t.teams.A.pos]);
     assert.ok(!t.teams.A.items.includes("warpPipe"));
     dests.add(t.teams.A.pos);
   }
@@ -410,4 +410,54 @@ console.log("✅ 39 merge ok");
   const v2 = replay([{ id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS, itemRefund: 1 }, seed: 1, v: 2 } }] as GameEvent[]);
   assert.equal(v2.settings.itemRefund, 1);
   console.log("✅ old games refund 3");
+}
+
+// 이벤트 칸(🎲): 도착하면 1~3개 연속 절을 뽑고, 성공하면 +event, 뽑힌 절이 외운 절로 기록
+{
+  const counts = new Set<number>();
+  for (let k = 0; k < 30; k++) {
+    let t = replay([
+      { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS, diceCount: 1 }, seed: 3, v: 2 } },
+    ] as GameEvent[]);
+    let sq = 2 + k * 10;
+    const e = (type: string, payload: object) => (t = applyEvent(t, { id: sq, seq: sq++, voided: false, type, payload } as GameEvent));
+    e("override", { action: "starPositions", stars: [5, 30] });
+    e("override", { action: "position", teamId: "A", pos: 12 });
+    e("roll", { value: 1, faces: [1] });
+    assert.equal(t.teams.A.pos, 101);
+    assert.equal(t.phase, "recite");
+    const vs = t.ctx.eventVerses!;
+    assert.ok(vs.length >= 1 && vs.length <= 3);
+    vs.forEach((v, i) => assert.equal(v, vs[0] + i));
+    assert.ok(vs[0] >= 1 && vs[vs.length - 1] <= 39);
+    counts.add(vs.length);
+    const before = t.teams.A.talents;
+    e("recite_result", { success: true, seed: 1 });
+    assert.equal(t.teams.A.talents, before + t.settings.rewards.event * (isBoost(t) ? 2 : 1));
+    for (const v of vs) assert.ok(t.teams.A.recited.includes(v));
+  }
+  assert.equal(counts.size, 3);
+  console.log("✅ event space draws 1~3 consecutive verses");
+}
+
+// 이벤트 칸: 아직 아무도 안 외운 절이 더 잘 나온다
+{
+  let hit = 0;
+  const N = 200;
+  for (let k = 0; k < N; k++) {
+    let t = replay([
+      { id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS, diceCount: 1 }, seed: 3, v: 2 } },
+    ] as GameEvent[]);
+    // 1~29절은 이미 외움, 30~39절은 아직
+    t.teams.B.recited = Array.from({ length: 29 }, (_, i) => i + 1);
+    let sq = 2 + k * 10;
+    const e = (type: string, payload: object) => (t = applyEvent(t, { id: sq, seq: sq++, voided: false, type, payload } as GameEvent));
+    e("override", { action: "starPositions", stars: [5, 30] });
+    e("override", { action: "position", teamId: "A", pos: 12 });
+    e("roll", { value: 1, faces: [1] });
+    if (t.ctx.eventVerses!.some((v) => v >= 30)) hit++;
+  }
+  // 균등하면 약 30%, 가중치 덕분에 훨씬 자주
+  assert.ok(hit / N > 0.5, `unrecited verses not favored enough: ${hit}/${N}`);
+  console.log("✅ event draw favors unrecited verses:", hit, "/", N);
 }

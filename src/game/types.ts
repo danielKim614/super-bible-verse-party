@@ -134,7 +134,9 @@ export interface TurnCtx {
   doubleTalentOn?: boolean;
   hintUsed?: boolean;
   landed?: number;
-  happening?: { kind: HappeningKind; text: string };
+  happening?: { kind: HappeningKind; text: string; item?: ItemId };
+  /** 이벤트 칸(🎲)에서 뽑힌 절들 (1~3개, 연속) */
+  eventVerses?: number[];
   blessTo?: string[]; // 축복 받은 팀들 (공동 꼴찌면 여럿)
   reciteResult?: boolean;
   payout?: number;

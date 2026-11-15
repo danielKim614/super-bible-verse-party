@@ -1,6 +1,6 @@
 "use client";
 
-import { EVENT_MODE_LABEL, FORKS, RED_MODE_LABEL, SHOP_AT, SPACES, SPACE_LABEL } from "@/game/board";
+import { FORKS, RED_MODE_LABEL, SHOP_AT, SPACES, SPACE_LABEL } from "@/game/board";
 import { ITEMS, ITEM_IDS, RANDOM_ITEM_POOL } from "@/game/items";
 import { FULL_BAG_TALENTS } from "@/game/reducer";
 import type { Settings } from "@/game/types";
@@ -15,7 +15,6 @@ export function ManualTab({ settings }: { settings: Settings }) {
   const r = settings.rewards;
   const byType = (t: keyof typeof r) => SPACES.filter((s) => s.type === t).map((s) => s.id);
   const reds = SPACES.filter((s) => s.type === "red");
-  const events = SPACES.filter((s) => s.type === "event");
   const poolCount = RANDOM_ITEM_POOL.reduce<Record<string, number>>((m, id) => ({ ...m, [id]: (m[id] ?? 0) + 1 }), {});
 
   return (
@@ -48,7 +47,7 @@ export function ManualTab({ settings }: { settings: Settings }) {
           <tbody>
             <Row k="일반 칸" v={`장절만 보고 외워서 암송. 성공 +${r.blue}`} ids={byType("blue")} />
             <Row k="어려운 칸" v={`긴 구절. 칸마다 난이도 방식이 정해져 있어요(아래 표). 성공 +${r.red}`} ids={byType("red")} />
-            <Row k="이벤트 칸" v={`특별한 방식으로 암송(아래 표). 성공 +${r.event}`} ids={byType("event")} />
+            <Row k="이벤트 칸 🎲" v={`절이 아닌 칸. 도착하면 외울 절을 랜덤으로 뽑아요(아래). 성공 +${r.event}`} ids={[]} />
             <Row k="선물 칸" v={`성공하면 +${r.item} 달란트와 랜덤 아이템 1개(이미 가진 종류 제외)`} ids={byType("item")} />
             <Row k="해프닝 칸" v={`멈추는 즉시 해프닝 1개가 랜덤 발생(아래). 그 후 암송, 성공 +${r.happening}`} ids={byType("happening")} />
             <Row k="축복 칸" v={`멈추는 즉시 꼴찌 팀(스타→달란트 최하위, 공동 꼴찌면 모두)에 +5 달란트. 그 후 암송, 성공 +${r.bless}`} ids={byType("bless")} />
@@ -66,15 +65,14 @@ export function ManualTab({ settings }: { settings: Settings }) {
         </ul>
         <p className="text-sm text-slate-600 mt-1">빈칸 채우기: 화면에 일부 단어가 가려진 본문이 떠요. 첫 단어만 보고: 첫 단어만 보여줘요. 힌트 없음: 장절만 보여요(일반 칸과 같지만 구절이 길어요).</p>
 
-        <h4 className="font-bold mt-4 mb-1">이벤트 칸 방식 (칸마다 고정)</h4>
-        <ul className="text-sm">
-          {events.map((s) => (
-            <li key={s.id}>
-              <b>{s.id}절</b> · {s.eventMode ? EVENT_MODE_LABEL[s.eventMode] : ""}
-            </li>
-          ))}
+        <h4 className="font-bold mt-4 mb-1">이벤트 칸 🎲 (보드에 {SPACES.filter((s) => s.type === "event").length}곳, 번호 없음)</h4>
+        <ul className="list-disc pl-5 text-sm">
+          <li>도착하면 메인 화면에서 슬롯이 돌며 <b>몇 절(1절 / 2절 연속 / 3절 연속)</b>과 <b>어디부터</b>를 차례로 뽑아요. 예: “17절부터 2절 연속” → 17·18절.</li>
+          <li>아직 <b>아무 팀도 외우지 않은 절</b>이 들어간 구간일수록 더 잘 뽑혀요. 장 전체가 고르게 나오게 하려는 장치예요.</li>
+          <li>절 수와 상관없이 성공하면 +{r.event}. 성공하면 뽑힌 절이 모두 그 팀의 “외운 절”로 기록돼요.</li>
+          <li>뽑기 결과는 되돌리기를 해도 똑같이 다시 나와요.</li>
         </ul>
-        <p className="text-sm text-slate-600 mt-1">2절 연속은 그 절과 다음 절(예: 6·7절), 3절 연속은 앞뒤 절을 포함해 3절(예: 20·21·22절)을 이어서 암송해요. 어려운 칸·이벤트 칸 성공은 “도전 스타” 집계에 들어가요.</p>
+        <p className="text-sm text-slate-600 mt-1">어려운 칸·이벤트 칸 성공은 “도전 스타” 집계에 들어가요.</p>
       </Section>
 
       <Section title="해프닝 (참가자에게는 비공개)">
@@ -161,8 +159,8 @@ export function ManualTab({ settings }: { settings: Settings }) {
 const ITEM_DETAIL: Record<string, string> = {
   tripleDice: "굴리기 전에 사용. 주사위 3개를 굴려 합(3~18)만큼 이동해요.",
   selectDice: "굴리기 전에 사용. 주사위 하나의 눈(1~6)을 팀이 직접 고르고, 나머지 주사위만 굴려 합산해요. 운영자는 고른 눈을 누른 뒤 나머지 주사위 눈만 입력하면 돼요.",
-  warpPipe: "굴리기 전에 사용. 지금 칸을 뺀 1~39절 중 아무 칸으로 랜덤 이동하고(앞으로 크게 갈 수도, 뒤로 갈 수도 있음), 그 칸에 도착한 것으로 처리해요(스타·칸 효과·암송 적용). 이 턴엔 주사위를 굴리지 않아요.",
-  goldenPipe: "굴리기 전에 사용. 파이프에 들어간 뒤 팀이 원하는 칸(1~39절)을 말하면 운영자가 그 칸을 눌러요. 말이 그 칸 파이프로 나와 도착 처리돼요(스타가 있으면 구매까지). 이 턴엔 주사위를 굴리지 않아요.",
+  warpPipe: "굴리기 전에 사용. 지금 칸을 뺀 보드의 아무 칸(🎲 이벤트 칸 포함)으로 랜덤 이동하고(앞으로 크게 갈 수도, 뒤로 갈 수도 있음), 그 칸에 도착한 것으로 처리해요(스타·칸 효과·암송 적용). 이 턴엔 주사위를 굴리지 않아요.",
+  goldenPipe: "굴리기 전에 사용. 파이프에 들어간 뒤 팀이 원하는 칸(1~39절 또는 🎲 이벤트 칸)을 말하면 운영자가 그 칸을 눌러요. 말이 그 칸 파이프로 나와 도착 처리돼요(스타가 있으면 구매까지). 이 턴엔 주사위를 굴리지 않아요.",
   doubleTalent: "굴리기 전에 사용. 이번 턴에 도착한 칸의 암송을 성공하면 보상이 2배(마지막 턴 보너스·황금 라운드와 중첩). 실패하면 그냥 사라져요. 이동 아이템과 같은 턴에 함께 쓸 수 있어요.",
   hint: "암송 중 막혔을 때 사용. 사회자가 다음 단어 하나를 알려줘요(1회).",
   starCoupon: "스타를 살 때 자동 적용. 스타 가격이 할인돼요. 1회용.",
@@ -182,7 +180,7 @@ function Row({ k, v, ids }: { k: string; v: string; ids: number[] }) {
     <tr className="border-b border-slate-100 align-top">
       <td className="py-1.5 pr-3 font-bold whitespace-nowrap">{k}</td>
       <td className="py-1.5 pr-3">{v}</td>
-      <td className="py-1.5 text-slate-500 whitespace-nowrap">{ids.length ? `${ids.join("·")}절` : ""}</td>
+      <td className="py-1.5 text-slate-500 whitespace-nowrap">{ids.length ? `${ids.join("·")}절` : "번호 없음"}</td>
     </tr>
   );
 }

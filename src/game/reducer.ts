@@ -1,4 +1,4 @@
-import { FORKS, SHOP_AT, SPACE_BY_ID, SPACES, T, forwardDistances, nextSpace, type RedMode, type SpaceType } from "./board";
+import { FORKS, SHOP_AT, SPACE_BY_ID, SPACES, T, forwardDistances, isVerseSpace, nextSpace, spaceName, type RedMode, type SpaceType } from "./board";
 import { ITEMS, RANDOM_ITEM_POOL, type ItemId } from "./items";
 import { pick, rng } from "./rng";
 import {
@@ -376,22 +376,23 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
       }
       if (s.phase !== "recite") return prev;
       const space = ctx.landed!;
+      const label = reciteLabel(s, space);
       ctx.reciteResult = success;
       if (!success) {
-        feed(s, { seq, teamId: tid, kind: "fail", text: `${space}절 암송 실패` });
+        feed(s, { seq, teamId: tid, kind: "fail", text: `${label} 암송 실패` });
         s.phase = "resolve";
         return s;
       }
       const t = effectiveType(s, space);
       team.reciteSuccess += 1;
       if (t === "red" || t === "event") team.challengeSuccess += 1;
-      if (!team.recited.includes(space)) team.recited.push(space);
+      for (const v of recitedVerses(s, space)) if (!team.recited.includes(v)) team.recited.push(v);
       let amount = s.settings.rewards[t];
       const mult = (isBoost(s) ? 2 : 1) * (ctx.doubleTalentOn ? 2 : 1);
       amount *= mult;
       ctx.payout = amount;
-      credit(s, seq, tid, amount, `${space}절 암송 성공${mult > 1 ? ` (×${mult})` : ""}`);
-      feed(s, { seq, teamId: tid, kind: "payout", text: `${space}절 암송 성공`, amount });
+      credit(s, seq, tid, amount, `${label} 암송 성공${mult > 1 ? ` (×${mult})` : ""}`);
+      feed(s, { seq, teamId: tid, kind: "payout", text: `${label} 암송 성공`, amount });
       if (SPACE_BY_ID[space].type === "item") {
         const r = rng(seed);
         const item = randomNewItem(s, team, r);
@@ -484,7 +485,7 @@ function maybeMoveShop(s: GameState, seq: number) {
   if (!cands.length) return;
   s.shopAt = pick(rng(seq * 31337 + 11), cands);
   s.shopVisits = 0;
-  feed(s, { seq, kind: "info", text: `상점이 ${s.shopAt}절로 날아갔어요!` });
+  feed(s, { seq, kind: "info", text: `상점이 ${spaceName(s.shopAt)}(으)로 날아갔어요!` });
 }
 
 function advance(s: GameState, tid: string, seq: number) {
@@ -535,6 +536,7 @@ function land(s: GameState, tid: string, space: number, seq: number) {
     }
   }
   if (t === "happening") applyHappening(s, tid, seq);
+  if (t === "event") s.ctx.eventVerses = drawEventVerses(s, seq);
   // 도착 칸에 스타가 있으면 암송보다 먼저 구매 의사를 묻는다
   const team = s.teams[tid];
   if (s.stars.includes(space) && canAffordStar(s, team)) {
@@ -544,12 +546,50 @@ function land(s: GameState, tid: string, space: number, seq: number) {
   }
 }
 
+/**
+ * 이벤트 칸(🎲): 1절 / 2절 연속 / 3절 연속 중 하나와 시작 절을 랜덤으로 뽑는다.
+ * 아직 아무 팀도 외우지 않은 절이 들어간 구간일수록 잘 나온다.
+ */
+export function drawEventVerses(s: GameState, seq: number): number[] {
+  const r = rng(seq * 7919 + 13);
+  const count = pick(r, [1, 2, 3]);
+  const done = new Set(s.teamIds.flatMap((id) => s.teams[id].recited));
+  const starts = Array.from({ length: 39 - count + 1 }, (_, i) => i + 1);
+  // 가중치: 기본 1 + 안 외운 절 하나당 3
+  const weights = starts.map((a) => 1 + 3 * Array.from({ length: count }, (_, k) => a + k).filter((v) => !done.has(v)).length);
+  const total = weights.reduce((x, y) => x + y, 0);
+  let roll = r() * total;
+  let start = starts[starts.length - 1];
+  for (let i = 0; i < starts.length; i++) {
+    roll -= weights[i];
+    if (roll < 0) {
+      start = starts[i];
+      break;
+    }
+  }
+  return Array.from({ length: count }, (_, k) => start + k);
+}
+
+/** 이 칸에서 암송한(할) 절들: 보통 칸은 그 절, 이벤트 칸은 뽑힌 절들 */
+export function recitedVerses(s: GameState, space: number): number[] {
+  if (isVerseSpace(space)) return [space];
+  return s.ctx.eventVerses ?? [];
+}
+
+/** "12절", 이벤트 칸이면 "17~18절" */
+export function reciteLabel(s: GameState, space: number): string {
+  const vs = recitedVerses(s, space);
+  if (vs.length === 0) return "이벤트 칸";
+  return vs.length === 1 ? `${vs[0]}절` : `${vs[0]}~${vs[vs.length - 1]}절`;
+}
+
 const HAPPENINGS: HappeningKind[] = ["stars", "rain", "golden", "gift"];
 
 function applyHappening(s: GameState, tid: string, seq: number) {
   const r = rng(seq * 104729 + 7);
   const kind = pick(r, HAPPENINGS);
   let text = "";
+  let gotItem: ItemId | undefined;
   switch (kind) {
     case "stars": {
       const n = s.stars.length;
@@ -571,6 +611,7 @@ function applyHappening(s: GameState, tid: string, seq: number) {
       const item = randomNewItem(s, team, r);
       if (item) {
         team.items.push(item);
+        gotItem = item;
         text = `깜짝 선물! ${ITEMS[item].name}`;
       } else {
         credit(s, seq, tid, FULL_BAG_TALENTS, "해프닝: 깜짝 선물(받을 아이템 없음 → 달란트)");
@@ -579,7 +620,7 @@ function applyHappening(s: GameState, tid: string, seq: number) {
       break;
     }
   }
-  s.ctx.happening = { kind, text };
+  s.ctx.happening = { kind, text, item: gotItem };
   feed(s, { seq, teamId: tid, kind: "happening", text });
 }
 

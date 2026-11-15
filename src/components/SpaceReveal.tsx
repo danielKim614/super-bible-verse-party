@@ -1,20 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BOARD_H, BOARD_W, EVENT_MODE_LABEL, SPACE_BY_ID } from "@/game/board";
+import { BOARD_H, BOARD_W, SPACE_BY_ID, eventCountLabel } from "@/game/board";
 import { currentTeamId } from "@/game/reducer";
 import type { GameState, HappeningKind, TeamInfo } from "@/game/types";
 import { ITEMS, type ItemId } from "@/game/items";
 import { ItemIcon } from "./ItemIcon";
-import { eventRange } from "./describe";
 
 /** 이벤트·해프닝 칸에 도착하면 보드 가운데에 무슨 이벤트/해프닝인지 보여 주는 연출 */
 export type RevealInfo =
-  | { key: string; type: "event"; space: number }
-  | { key: string; type: "happening"; space: number; kind: HappeningKind; text: string }
+  | { key: string; type: "event"; space: number; verses: number[]; reward: number }
+  | { key: string; type: "happening"; space: number; kind: HappeningKind; text: string; item?: ItemId }
   | { key: string; type: "bless"; space: number; teams: string[] };
 
-const EVENT_MS = 3400;
+const EVENT_MS = 5600;
 const HAPPENING_MS = 5600;
 const BLESS_MS = 4000;
 
@@ -30,21 +29,23 @@ export function useSpaceReveal(state: GameState, shown: Record<string, number>, 
   const [active, setActive] = useState<RevealInfo | null>(null);
   const happening = state.ctx.happening;
   const blessTo = state.ctx.blessTo;
+  const eventVerses = state.ctx.eventVerses;
+  const eventReward = state.settings.rewards.event;
 
   useEffect(() => {
     if (!key || !arrived || busy || seen.current === key || !landed) return;
     seen.current = key;
     const info: RevealInfo =
       type === "happening" && happening
-        ? { key, type: "happening", space: landed, kind: happening.kind, text: happening.text }
+        ? { key, type: "happening", space: landed, kind: happening.kind, text: happening.text, item: happening.item }
         : type === "bless"
           ? { key, type: "bless", space: landed, teams: blessTo ?? [] }
-          : { key, type: "event", space: landed };
+          : { key, type: "event", space: landed, verses: eventVerses ?? [], reward: eventReward };
     setActive(info);
     const ms = info.type === "happening" ? HAPPENING_MS : info.type === "bless" ? BLESS_MS : EVENT_MS;
     const t = setTimeout(() => setActive((a) => (a?.key === key ? null : a)), ms);
     return () => clearTimeout(t);
-  }, [key, arrived, busy, landed, type, happening, blessTo]);
+  }, [key, arrived, busy, landed, type, happening, blessTo, eventVerses, eventReward]);
 
   // 되돌리기 등으로 그 칸에서 벗어나면 바로 닫기
   useEffect(() => {
@@ -52,7 +53,7 @@ export function useSpaceReveal(state: GameState, shown: Record<string, number>, 
   }, [active, key]);
 
   // 해프닝 칸에 도착했지만 아직 공개 전(이동·주사위 연출 중)인 동안
-  if (!active && key && (type === "happening" || type === "bless") && seen.current !== key) return { pending: true, key, type: "pending" };
+  if (!active && key && seen.current !== key) return { pending: true, key, type: "pending" };
   return active;
 }
 
@@ -163,7 +164,7 @@ function Overlay({ children }: { children: React.ReactNode }) {
 export function SpaceRevealFx({ info, teamById }: { info: RevealInfo; teamById: Record<string, TeamInfo> }) {
   return (
     <Overlay>
-      {info.type === "happening" ? <HappeningCard info={info} /> : info.type === "bless" ? <BlessCard teams={info.teams} teamById={teamById} /> : <EventCard space={info.space} />}
+      {info.type === "happening" ? <HappeningCard info={info} /> : info.type === "bless" ? <BlessCard teams={info.teams} teamById={teamById} /> : <EventCard verses={info.verses} reward={info.reward} />}
     </Overlay>
   );
 }
@@ -186,47 +187,127 @@ function HappeningCard({ info }: { info: Extract<RevealInfo, { type: "happening"
             {face.emoji} {face.name}
           </text>
         </g>
-        {done && <Note y={100}>{detail}</Note>}
+        {done && info.item && ITEMS[info.item] ? (
+          // 깜짝 선물: 받은 아이템 그림과 이름
+          <g transform="translate(0,96)">
+            <g className="animate-pop" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+              <rect x={-150} y={-28} width={56} height={56} rx={16} fill="#ffffff" />
+              <g transform="translate(-142,-20)">
+                <ItemIcon id={info.item} size={40} />
+              </g>
+              <text x={-80} y={-2} fontSize={24} className="font-display" fill="#fde047">
+                {ITEMS[info.item].name} 획득!
+              </text>
+              <text x={-80} y={22} fontSize={16} className="font-display" fill="#fff" opacity={0.8}>
+                {ITEMS[info.item].desc}
+              </text>
+            </g>
+          </g>
+        ) : (
+          done && <Note y={100}>{detail}</Note>
+        )}
       </RevealFrame>
     </g>
   );
 }
 
-function EventCard({ space }: { space: number }) {
-  const sp = SPACE_BY_ID[space];
-  const mode = sp?.eventMode ?? "twoVerses";
-  const [a, b] = eventRange(mode, space);
-  const verses = Array.from({ length: b - a + 1 }, (_, i) => a + i);
-  const chipW = 96;
-  const gap = 44;
+/** 숫자 슬롯: 점점 느려지며 target에서 멈춤 (values 중에서 돌아감) */
+function useNumberSlot<T>(values: T[], target: T, startAfter: number) {
+  const [cur, setCur] = useState<T>(values[0]);
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    const delays = [60, 60, 60, 65, 70, 80, 90, 105, 125, 150, 180, 220, 270];
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let t = startAfter;
+    const ti = Math.max(0, values.indexOf(target));
+    const n = values.length;
+    const start = (((ti - delays.length) % n) + n) % n;
+    delays.forEach((d, k) => {
+      t += d;
+      timers.push(setTimeout(() => setCur(values[(start + k + 1) % n]), t));
+    });
+    timers.push(setTimeout(() => setDone(true), t + 100));
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return { cur, done };
+}
+
+const COUNTS = [1, 2, 3];
+const VERSE_NUMS = Array.from({ length: 39 }, (_, i) => i + 1);
+
+/** 이벤트 칸(🎲): 몇 절 → 어디부터를 차례로 뽑고, 외울 절을 보여 줌 */
+function EventCard({ verses, reward }: { verses: number[]; reward: number }) {
+  const count = Math.max(1, verses.length);
+  const startV = verses[0] ?? 1;
+  const c = useNumberSlot(COUNTS, count, 250);
+  // 절 수가 정해진 뒤 시작 절을 뽑는다
+  const v = useNumberSlot(VERSE_NUMS, startV, 250 + 1600);
+  const chipW = 92;
+  const gap = 40;
   const totalW = verses.length * chipW + (verses.length - 1) * gap;
   return (
-    <RevealFrame accent="event" chip="이벤트 칸">
-      <Title y={-72}>{EVENT_MODE_LABEL[mode]}</Title>
-      {verses.map((v, i) => {
-        const x = -totalW / 2 + i * (chipW + gap);
-        return (
-          <g key={v}>
-            {i > 0 && (
-              <g transform={`translate(${x - gap / 2},10)`}>
-                <text textAnchor="middle" y={10} fontSize={30} className="font-display" fill={ACCENT.event.line}>
-                  →
+    <g>
+      {v.done && <Rays color="#a7f3d0" />}
+      <RevealFrame accent="event" chip="이벤트 칸">
+        <Title y={-84}>{v.done ? (count > 1 ? `${eventCountLabel(count)}으로 외워 주세요` : "1절을 외워 주세요") : "무엇을 외울까…?"}</Title>
+        {!v.done ? (
+          <g>
+            {/* 두 개의 슬롯 창: 몇 절 / 몇 절부터 */}
+            <g transform="translate(-115,0)">
+              <rect x={-95} y={-50} width={190} height={92} rx={22} fill={c.done ? "#fde047" : "#ffffff"} />
+              <g key={`c${String(c.cur)}`} className={c.done ? "" : "animate-slot-tick"}>
+                <text textAnchor="middle" y={12} fontSize={36} className="font-display" fill="#0b1033">
+                  {eventCountLabel(c.cur)}
                 </text>
               </g>
-            )}
-            <g transform={`translate(${x + chipW / 2},10)`}>
-              <g className="animate-pop" style={{ animationDelay: `${300 + i * 350}ms`, transformBox: "fill-box", transformOrigin: "center" }}>
-                <rect x={-chipW / 2} y={-38} width={chipW} height={76} rx={20} fill={v === space ? "#fde047" : "#ffffff"} />
-                <text textAnchor="middle" y={13} fontSize={36} className="font-display" fill="#0b1033">
-                  {v}절
-                </text>
-              </g>
+              <text textAnchor="middle" y={70} fontSize={18} className="font-display" fill="#fff" opacity={0.7}>
+                몇 절?
+              </text>
+            </g>
+            <g transform="translate(115,0)">
+              <rect x={-95} y={-50} width={190} height={92} rx={22} fill={c.done ? "#ffffff" : "#ffffff"} opacity={c.done ? 1 : 0.35} />
+              {c.done && (
+                <g key={`v${v.cur}`} className="animate-slot-tick">
+                  <text textAnchor="middle" y={12} fontSize={36} className="font-display" fill="#0b1033">
+                    {v.cur}절부터
+                  </text>
+                </g>
+              )}
+              <text textAnchor="middle" y={70} fontSize={18} className="font-display" fill="#fff" opacity={0.7}>
+                어디부터?
+              </text>
             </g>
           </g>
-        );
-      })}
-      <Note y={100}>{verses.length}절을 연속으로 외워 주세요</Note>
-    </RevealFrame>
+        ) : (
+          <g>
+            {verses.map((vv, i) => {
+              const x = -totalW / 2 + i * (chipW + gap);
+              return (
+                <g key={vv}>
+                  {i > 0 && (
+                    <g transform={`translate(${x - gap / 2},0)`}>
+                      <text textAnchor="middle" y={10} fontSize={30} className="font-display" fill={ACCENT.event.line}>
+                        →
+                      </text>
+                    </g>
+                  )}
+                  <g transform={`translate(${x + chipW / 2},0)`}>
+                    <g className="animate-pop" style={{ animationDelay: `${i * 220}ms`, transformBox: "fill-box", transformOrigin: "center" }}>
+                      <rect x={-chipW / 2} y={-38} width={chipW} height={76} rx={20} fill="#fde047" />
+                      <text textAnchor="middle" y={13} fontSize={36} className="font-display" fill="#0b1033">
+                        {vv}절
+                      </text>
+                    </g>
+                  </g>
+                </g>
+              );
+            })}
+            <Note y={96}>성공하면 +{reward} 달란트</Note>
+          </g>
+        )}
+      </RevealFrame>
+    </g>
   );
 }
 

@@ -1,3 +1,4 @@
+import { spaceName } from "@/game/board";
 import { ITEMS } from "@/game/items";
 import type { GameEvent, TeamInfo } from "@/game/types";
 
@@ -11,7 +12,7 @@ export function describeEvent(e: GameEvent, teamById: Record<string, TeamInfo>):
     case "roll":
       return `주사위 ${e.payload.value}`;
     case "pipe_exit":
-      return `황금 파이프 → ${e.payload.to}절`;
+      return `황금 파이프 → ${spaceName(e.payload.to)}`;
     case "choose_path":
       return `갈림길: ${e.payload.label ?? `${e.payload.option + 1}번 길`}`;
     case "star_decision":
@@ -40,11 +41,11 @@ export function describeEvent(e: GameEvent, teamById: Record<string, TeamInfo>):
         case "removeItem":
           return `[수동] ${tn(p.teamId)} 아이템 삭제: ${ITEMS[p.item]?.name}`;
         case "position":
-          return `[수동] ${tn(p.teamId)} 위치 → ${p.pos === 0 ? "출발" : `${p.pos}절`}`;
+          return `[수동] ${tn(p.teamId)} 위치 → ${spaceName(p.pos)}`;
         case "starPositions":
           return `[수동] 스타 위치 → ${p.stars.join(", ")}`;
         case "shopPosition":
-          return `[수동] 상점 위치 → ${p.pos}절`;
+          return `[수동] 상점 위치 → ${spaceName(p.pos)}`;
         case "totalTurns":
           return `[수동] 총 턴 수 → ${p.value}`;
         case "boost":

@@ -8,7 +8,7 @@ import { ItemIcon } from "@/components/ItemIcon";
 import { describeEvent } from "@/components/describeEvent";
 import { phaseHeadline, teamName, verseCard } from "@/components/describe";
 import { ManualTab } from "./ManualTab";
-import { FORKS, SPACES, SPACE_LABEL } from "@/game/board";
+import { FORKS, SPACES, SPACE_LABEL, spaceName } from "@/game/board";
 import { ITEMS, ITEM_IDS, type ItemId } from "@/game/items";
 import {
   canAffordStar,
@@ -204,7 +204,7 @@ function ControlTab({ game, admin, goSettings }: { game: GameData; admin: Admin;
               {info?.name}
             </div>
             <div className="text-sm text-slate-500">
-              위치 {team.pos === 0 ? "출발" : `${team.pos}절`} · ⭐{team.stars} · 달란트 {team.talents} · 아이템{" "}
+              위치 {spaceName(team.pos)} · ⭐{team.stars} · 달란트 {team.talents} · 아이템{" "}
               {team.items.length ? team.items.map((i) => ITEMS[i]?.name ?? i).join(", ") : "없음"}
             </div>
           </div>
@@ -307,10 +307,10 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
                 key={sp.id}
                 className={`${btn} px-0 py-2 font-display text-lg ${state.stars.includes(sp.id) ? "bg-amber-300" : "bg-slate-100"}`}
                 disabled={busy || sp.id === team.pos}
-                onClick={() => void askConfirm(`${sp.id}절 칸으로 나갈까요?`).then((ok) => { if (ok) void (send({ type: "pipe_exit", payload: { to: sp.id } })); })}
+                onClick={() => void askConfirm(`${spaceName(sp.id)}으로 나갈까요?`).then((ok) => { if (ok) void (send({ type: "pipe_exit", payload: { to: sp.id } })); })}
               >
                 {state.stars.includes(sp.id) ? "★" : ""}
-                {sp.id}
+                {sp.label}
               </button>
             ))}
           </div>
@@ -342,7 +342,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       return (
         <div className="flex flex-col gap-3">
           <div className="text-slate-600">
-            {ctx.starLanding ? `도착 칸(${ctx.starAt}절)에 스타가 있어요. 사면 바로 스타를 얻고, 사든 안 사든 이어서 이 칸 암송을 해요.` : `${ctx.starAt}절의 스타를 지나갑니다. 사면 바로 스타를 얻고 남은 칸을 계속 가요.`}
+            {ctx.starLanding ? `도착 칸(${spaceName(ctx.starAt ?? 0)})에 스타가 있어요. 사면 바로 스타를 얻고, 사든 안 사든 이어서 이 칸 암송을 해요.` : `${spaceName(ctx.starAt ?? 0)}의 스타를 지나갑니다. 사면 바로 스타를 얻고 남은 칸을 계속 가요.`}
           </div>
           <div className="flex flex-wrap gap-2">
             <button className={`${btn} bg-yellow-400 font-display text-2xl py-4`} disabled={busy || team.talents < normal} onClick={() => send({ type: "star_decision", payload: { buy: true, seed: newSeed() } })}>
@@ -786,7 +786,7 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
         </select>
         {t && (
           <div className="text-sm text-slate-600">
-            위치 {t.pos === 0 ? "출발" : `${t.pos}절`} · ⭐{t.stars} · 달란트 {t.talents} · {t.items.map((i) => ITEMS[i]?.name ?? i).join(", ") || "아이템 없음"}
+            위치 {spaceName(t.pos)} · ⭐{t.stars} · 달란트 {t.talents} · {t.items.map((i) => ITEMS[i]?.name ?? i).join(", ") || "아이템 없음"}
           </div>
         )}
         <Row label="달란트">
@@ -823,7 +823,7 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
             <option value={0}>출발</option>
             {SPACES.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.id}절 ({SPACE_LABEL[s.type]})
+                {spaceName(s.id)} ({SPACE_LABEL[s.type]})
               </option>
             ))}
           </select>
@@ -848,12 +848,12 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
           <select value={shopPos || state.shopAt} onChange={(e) => setShopPos(Number(e.target.value))} className="rounded-lg border px-2 py-1">
             {SPACES.map((sp) => (
               <option key={sp.id} value={sp.id}>
-                {sp.id}절 ({SPACE_LABEL[sp.type]})
+                {spaceName(sp.id)} ({SPACE_LABEL[sp.type]})
               </option>
             ))}
           </select>
           <span className="text-sm text-slate-500">
-            지금 {state.shopAt}절 · {state.shopVisits}/{state.settings.shopMoveAfter}팀 방문
+            지금 {spaceName(state.shopAt)} · {state.shopVisits}/{state.settings.shopMoveAfter}팀 방문
           </span>
           <button
             className={`${btn} bg-violet-200`}

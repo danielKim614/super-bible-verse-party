@@ -1,28 +1,34 @@
 // 로마서 8장 보드 — 마리오 파티식 그래프 맵 (갈림길 3개)
-// 칸 id = 절 번호(1~39). 0 = T(출발점·상점, 암송 없음).
+// 칸 id = 절 번호(1~39). 0 = T(출발점). 101~103 = 이벤트 칸(🎲, 절이 아니라 도착하면 랜덤으로 뽑음)
 //
-//   T ─ 1~2 ─┬─ 3~6 (윗길) ──┬─ 11~15 ─┬─ 16~22 (바깥길) ─┬─ 🏪 ─ 28~30 ─┬─ 31~34 ─┬─ 39 ─ T
-//            └─ 7~10 (아랫길)┘          └─ 23~27 (지름길) ─┘              └─ 35~38 ─┘
-//
-// 칸 유형은 본문 길이를 받기 전의 임시 배치입니다. 확정 시 SPACE_TYPES만 고치면 됩니다.
+//   T ─ 1~2 ─┬─ 3~6 (윗길) ──┬─ 11~12·🎲·13~15 ─┬─ 16~21·🎲 (바깥길) ─┬─ 🏪 ─ 28~30 ─┬─ 31·🎲·32~34 (왼쪽길) ─┬─ 39 ─ T
+//            └─ 7~10 (아랫길)┘                    └─ 22~27 (지름길) ────┘              └─ 35~38 (안쪽길) ───────┘
 
 export type SpaceType = "blue" | "red" | "event" | "item" | "happening" | "bless";
 export type RedMode = "blank" | "firstWord" | "noHint";
-export type EventMode = "twoVerses" | "threeVerses";
 export type RouteId = "c0" | "a1" | "a2" | "c1" | "b1" | "b2" | "c2" | "d1" | "d2" | "c3";
 
 export interface Space {
-  id: number; // 절 번호
+  id: number; // 절 번호(1~39) 또는 이벤트 칸(101~)
+  /** 이 칸의 절. 이벤트 칸은 없음(도착하면 랜덤으로 뽑음) */
+  verse?: number;
+  /** 보드에 쓰는 이름: 절 번호, 이벤트 칸은 🎲 */
+  label: string;
   route: RouteId;
   type: SpaceType;
   redMode?: RedMode;
-  eventMode?: EventMode;
   x: number;
   y: number;
 }
 
+/** 이벤트 칸 id (절이 아님) */
+export const EVENT_SPACES = [101, 102, 103] as const;
+export function isVerseSpace(id: number): boolean {
+  return id >= 1 && id <= 39;
+}
+
 export const T = 0; // 출발점
-export const SHOP_AT = 28; // 이 칸으로 들어가기 직전(합류점, 22절→28절·27절→28절 사이)에 상점
+export const SHOP_AT = 28; // 처음 상점 위치: 바깥길·지름길이 만나는 28절
 
 export interface ForkOption {
   to: number;
@@ -36,50 +42,53 @@ export const FORKS: Record<number, ForkOption[]> = {
     { to: 7, label: "아랫길", desc: "4칸 · 어려움" },
   ],
   15: [
-    { to: 16, label: "바깥길", desc: "7칸 · 넉넉함" },
-    { to: 23, label: "지름길", desc: "5칸 · 어려움" },
+    { to: 16, label: "바깥길", desc: "7칸 · 넉넉함·이벤트" },
+    { to: 22, label: "지름길", desc: "6칸 · 어려움" },
   ],
   30: [
-    { to: 31, label: "왼쪽길", desc: "4칸 · 축복" },
-    { to: 35, label: "안쪽길", desc: "4칸 · 아이템" },
+    { to: 31, label: "왼쪽길", desc: "5칸 · 축복·이벤트" },
+    { to: 35, label: "안쪽길", desc: "4칸 · 선물" },
   ],
 };
 
-/** 각 길: 절 범위, 끝나면 어디로 가는지(0 = T를 지나 1절로) */
+/** 각 길: 칸 순서, 끝나면 어디로 가는지(-1 = 마지막 칸이 갈림길, 0 = T를 지나 1절로) */
 interface Route {
   id: RouteId;
-  verses: [number, number];
+  spaces: number[];
   next: number;
 }
+const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 export const ROUTES: Route[] = [
-  { id: "c0", verses: [1, 2], next: -1 }, // 2는 갈림길
-  { id: "a1", verses: [3, 6], next: 11 },
-  { id: "a2", verses: [7, 10], next: 11 },
-  { id: "c1", verses: [11, 15], next: -1 }, // 15는 갈림길
-  { id: "b1", verses: [16, 22], next: 28 },
-  { id: "b2", verses: [23, 27], next: 28 },
-  { id: "c2", verses: [28, 30], next: -1 }, // 30은 갈림길
-  { id: "d1", verses: [31, 34], next: 39 },
-  { id: "d2", verses: [35, 38], next: 39 },
-  { id: "c3", verses: [39, 39], next: 0 }, // 두 갈래가 만나는 칸
+  { id: "c0", spaces: [1, 2], next: -1 }, // 2는 갈림길
+  { id: "a1", spaces: range(3, 6), next: 11 },
+  { id: "a2", spaces: range(7, 10), next: 11 },
+  // 이벤트 칸(🎲)은 칸 사이가 넉넉한 길에 나눠 둔다
+  { id: "c1", spaces: [11, 12, 101, 13, 14, 15], next: -1 }, // 15는 갈림길
+  { id: "b1", spaces: [16, 17, 18, 19, 20, 21, 102], next: 28 },
+  { id: "b2", spaces: range(22, 27), next: 28 },
+  { id: "c2", spaces: range(28, 30), next: -1 }, // 30은 갈림길
+  { id: "d1", spaces: [31, 103, 32, 33, 34], next: 39 },
+  { id: "d2", spaces: range(35, 38), next: 39 },
+  { id: "c3", spaces: [39], next: 0 }, // 두 갈래가 만나는 칸
 ];
+const ROUTE_OF: Record<number, Route> = Object.fromEntries(ROUTES.flatMap((r) => r.spaces.map((id) => [id, r])));
 
 // 본문 길이 기준 배치 (긴 절 → 빨간 칸). 길이 순: 3,11,26,29,15,17,9,27,35,23,12,34,20,30 …
-// 어려운 길(10~12, 26~30)은 빨간 칸 비중을 높게.
+// 어려운 길(10~12, 26~30)은 빨간 칸 비중을 높게. 이벤트 칸(🎲)은 절과 따로 101~103.
 const SPACE_TYPES: Record<number, SpaceType> = {
   1: "blue", 2: "blue", 3: "red",
-  4: "blue", 5: "blue", 6: "event", 7: "item",
+  4: "blue", 5: "blue", 6: "happening", 7: "item",
   8: "blue", 9: "red", 10: "red", 11: "red",
   12: "blue", 13: "blue", 14: "bless", 15: "red", 16: "blue",
-  17: "red", 18: "blue", 19: "happening", 20: "blue", 21: "event", 22: "blue", 23: "red",
-  24: "happening", 25: "item", 26: "red", 27: "red", 28: "blue",
+  17: "red", 18: "blue", 19: "happening", 20: "blue", 21: "blue", 22: "blue", 23: "red",
+  24: "blue", 25: "item", 26: "red", 27: "red", 28: "blue",
   29: "red", 30: "blue",
-  31: "blue", 32: "blue", 33: "bless", 34: "red", 35: "event",
-  36: "blue", 37: "item", 38: "event", 39: "blue",
+  31: "blue", 32: "blue", 33: "bless", 34: "red", 35: "red",
+  36: "blue", 37: "item", 38: "blue", 39: "blue",
+  101: "event", 102: "event", 103: "event",
 };
 
 const RED_MODES: RedMode[] = ["blank", "firstWord", "noHint"];
-const EVENT_MODES: EventMode[] = ["twoVerses", "threeVerses"];
 
 // ---- 좌표 (viewBox 1000 x 640) ----
 export const BOARD_W = 1000;
@@ -158,7 +167,7 @@ const M4 = { x: 178, y: 208 }; // 39 앞 (왼쪽길·안쪽길 합류)
 const ROUTE_CURVES: Record<RouteId, Cubic[]> = {
   c0: [], // 39~1~2는 c3 곡선 하나에 함께 배치 (아래 LOOP_CURVE)
   a1: [[F1, { x: 400, y: 20 }, { x: 560, y: 30 }, M1]], // 윗길: 위로 활
-  a2: [[F1, { x: 420, y: 215 }, { x: 560, y: 225 }, M1]], // 아랫길: 아래로 처진 활
+  a2: [[F1, { x: 420, y: 262 }, { x: 570, y: 272 }, M1]], // 아랫길: 아래로 처진 활 (칸 사이가 답답하지 않게 조금 더 깊게)
   c1: [[M1, { x: 790, y: 100 }, { x: 930, y: 180 }, F2]],
   b1: [[F2, { x: 960, y: 560 }, { x: 700, y: 650 }, M2]], // 바깥길: 오른쪽 아래를 크게 돎
   b2: [[F2, { x: 780, y: 400 }, { x: 560, y: 380 }, M2]], // 지름길: 안쪽으로 질러감
@@ -195,15 +204,14 @@ export const FORK_POINTS: Record<number, Pt> = { 2: F1, 15: F2, 30: F3 };
 function buildSpaces(): Space[] {
   const coords: Record<number, Pt> = {};
   for (const r of ROUTES) {
-    const [a, b] = r.verses;
-    const n = b - a + 1;
+    const n = r.spaces.length;
     if (r.id === "c0" || r.id === "c3") continue;
     // 갈림길 칸(다음이 -1)은 갈라지는 지점에, 합류 칸은 만나는 지점에 정확히 놓는다
     // 왼쪽길(d1)은 길이가 길어 첫 칸(31)을 30에서 조금 더 띄운다
     const startPad = MERGE_ROUTES.includes(r.id) ? 0 : r.id === "d1" ? 100 : PAD_FORK_OUT;
     const endPad = r.next === -1 ? 0 : MERGE_TARGETS.has(r.next) ? PAD_MERGE : PAD_J;
     const pts = along(ROUTE_CURVES[r.id], n, startPad, endPad);
-    for (let v = a; v <= b; v++) coords[v] = pts[v - a];
+    r.spaces.forEach((id, k) => (coords[id] = pts[k]));
   }
   // 39(합류) → 1 → 2(갈림길): 한 곡선 위에 균등 배치
   const loop = along(ROUTE_CURVES.c3, 3, 0, 0);
@@ -211,14 +219,13 @@ function buildSpaces(): Space[] {
   coords[1] = loop[1];
   coords[2] = loop[2];
   let red = 0;
-  let ev = 0;
   const spaces: Space[] = [];
-  for (let v = 1; v <= 39; v++) {
-    const route = ROUTES.find((r) => v >= r.verses[0] && v <= r.verses[1])!.id;
-    const type = SPACE_TYPES[v];
-    const s: Space = { id: v, route, type, ...coords[v] };
+  for (const id of [...range(1, 39), ...EVENT_SPACES]) {
+    const route = ROUTE_OF[id].id;
+    const type = SPACE_TYPES[id];
+    const verse = isVerseSpace(id) ? id : undefined;
+    const s: Space = { id, verse, label: verse ? String(verse) : "🎲", route, type, ...coords[id] };
     if (type === "red") s.redMode = RED_MODES[red++ % RED_MODES.length];
-    if (type === "event") s.eventMode = EVENT_MODES[ev++ % EVENT_MODES.length];
     spaces.push(s);
   }
   return spaces;
@@ -235,8 +242,10 @@ export function nextSpace(pos: number, choice?: number): number | null {
     if (choice === undefined || !fork[choice]) return null;
     return fork[choice].to;
   }
-  const r = ROUTES.find((x) => pos >= x.verses[0] && pos <= x.verses[1])!;
-  if (pos < r.verses[1]) return pos + 1;
+  const r = ROUTE_OF[pos];
+  if (!r) return null;
+  const k = r.spaces.indexOf(pos);
+  if (k < r.spaces.length - 1) return r.spaces[k + 1];
   return r.next === 0 ? 1 : r.next;
 }
 
@@ -290,7 +299,15 @@ export const RED_MODE_LABEL: Record<RedMode, string> = {
   noHint: "힌트 없음",
 };
 
-export const EVENT_MODE_LABEL: Record<EventMode, string> = {
-  twoVerses: "다음 절까지 2절 연속",
-  threeVerses: "앞뒤 절 포함 3절 연속",
-};
+/** 칸 이름: "12절", 이벤트 칸은 "🎲 이벤트 칸 1", 출발은 "출발" */
+export function spaceName(id: number): string {
+  if (id === 0) return "출발";
+  if (isVerseSpace(id)) return `${id}절`;
+  const k = (EVENT_SPACES as readonly number[]).indexOf(id);
+  return k >= 0 ? `🎲 이벤트 칸 ${k + 1}` : `${id}번 칸`;
+}
+
+/** 이벤트 칸에서 뽑힌 절 수 → 이름 */
+export function eventCountLabel(n: number): string {
+  return n <= 1 ? "1절" : `${n}절 연속`;
+}

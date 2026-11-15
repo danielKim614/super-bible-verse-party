@@ -1,5 +1,5 @@
-import { EVENT_MODE_LABEL, RED_MODE_LABEL, SPACE_BY_ID, SPACE_LABEL } from "@/game/board";
-import { currentTeamId, effectiveRedMode, effectiveType, starPriceFor } from "@/game/reducer";
+import { RED_MODE_LABEL, SPACE_BY_ID, SPACE_LABEL, eventCountLabel } from "@/game/board";
+import { currentTeamId, effectiveRedMode, effectiveType, reciteLabel, recitedVerses, starPriceFor } from "@/game/reducer";
 import type { GameState, TeamInfo } from "@/game/types";
 import { blanked, firstWord, verseText, type VerseMap } from "@/game/verses";
 
@@ -34,18 +34,15 @@ export function verseCard(s: GameState, space: number, verses: VerseMap): VerseC
     if (redMode === "blank") prompt = blanked(verses, space) || null;
     if (redMode === "firstWord") prompt = firstWord(verses, space) ? `${firstWord(verses, space)} …` : null;
   }
-  if (eff === "event" && sp.eventMode) {
-    modeLabel = EVENT_MODE_LABEL[sp.eventMode];
-    const [a, b] = eventRange(sp.eventMode, space);
-    if (b > a) ref = `로마서 8:${a}~${b}`;
-  }
   let fullText = verseText(verses, space);
-  if (eff === "event" && sp.eventMode) {
-    const [a, b] = eventRange(sp.eventMode, space);
-    if (b > a)
-      fullText = Array.from({ length: b - a + 1 }, (_, i) => a + i)
-        .map((v) => `${v} ${verseText(verses, v)}`)
-        .join("\n");
+  if (eff === "event") {
+    // 이벤트 칸(🎲): 도착할 때 뽑힌 절들
+    const vs = recitedVerses(s, space);
+    const a = vs[0];
+    const b = vs[vs.length - 1];
+    modeLabel = vs.length > 1 ? `${eventCountLabel(vs.length)}으로 외워 주세요` : "장절만 보고 외워서 암송";
+    ref = vs.length === 0 ? "이벤트 칸" : b > a ? `로마서 8:${a}~${b}` : `로마서 8:${a}`;
+    fullText = vs.map((v) => `${v} ${verseText(verses, v)}`).join("\n");
   }
   const typeLabel = SPACE_LABEL[sp.type];
   return { ref, space, typeLabel, type: sp.type, modeLabel, prompt, fullText };
@@ -78,7 +75,7 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
     case "star_recite":
       return `${name} 팀, 스타를 사려면 8:${ctx.starAt}절을 암송하세요`;
     case "recite":
-      return `${name} 팀, 8:${ctx.landed}절 암송!`;
+      return `${name} 팀, 8:${reciteLabel(s, ctx.landed ?? 0)} 암송!`;
     case "resolve":
       if (ctx.reciteResult) return `${name} 팀 암송 성공!`;
       return `${name} 팀, 아쉽지만 실패`;
@@ -87,8 +84,3 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
   }
 }
 
-/** 이벤트 칸에서 이어서 암송할 절 범위 */
-export function eventRange(mode: "twoVerses" | "threeVerses", space: number): [number, number] {
-  if (mode === "twoVerses") return space < 39 ? [space, space + 1] : [space - 1, space];
-  return [Math.max(1, space - 1), Math.min(39, space + 1)];
-}
