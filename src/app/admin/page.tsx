@@ -204,7 +204,7 @@ function ControlTab({ game, admin, goSettings }: { game: GameData; admin: Admin;
               {info?.name}
             </div>
             <div className="text-sm text-slate-500">
-              위치 {team.pos === 0 ? "출발" : `${team.pos}절`} · ⭐{team.stars} · 🪙 {team.talents} · 아이템{" "}
+              위치 {team.pos === 0 ? "출발" : `${team.pos}절`} · ⭐{team.stars} · 달란트 {team.talents} · 아이템{" "}
               {team.items.length ? team.items.map((i) => ITEMS[i]?.name ?? i).join(", ") : "없음"}
             </div>
           </div>
@@ -396,7 +396,7 @@ function PhaseControls({ game, admin }: { game: GameData; admin: Admin }) {
       return (
         <div className="flex flex-col gap-3">
           <div className="rounded-2xl bg-orange-50 border-2 border-orange-200 p-3">
-            <div className="font-display text-xl mb-1">🏪 상점 (보유 {team.items.length}/{state.settings.inventoryLimit}, 🪙 {team.talents})</div>
+            <div className="font-display text-xl mb-1">🏪 상점 (보유 {team.items.length}/{state.settings.inventoryLimit}, 달란트 {team.talents})</div>
             <div className="text-sm text-slate-500 mb-2">원하는 만큼 산 뒤 “나가기”를 누르면 남은 칸을 계속 이동합니다. (남은 {ctx.remaining}칸)</div>
             <div className="flex flex-wrap gap-2">
               {ITEM_IDS.map((id) => {
@@ -488,7 +488,7 @@ function PreStart({ game, admin, goSettings }: { game: GameData; admin: Admin; g
         onClick={() => {
           void askConfirm(`${teams.length}팀으로 게임을 시작할까요?\n순서: ${ordered.map((t) => t.name).join(" → ")}`, { okLabel: "시작" }).then(
             (ok) => {
-              if (ok) void admin.send({ type: "start_game", payload: { teamIds: ordered.map((t) => t.id), settings, seed: newSeed() } });
+              if (ok) void admin.send({ type: "start_game", payload: { teamIds: ordered.map((t) => t.id), settings, seed: newSeed(), v: 2 } });
             },
           );
         }}
@@ -786,7 +786,7 @@ function OverrideTab({ game, admin }: { game: GameData; admin: Admin }) {
         </select>
         {t && (
           <div className="text-sm text-slate-600">
-            위치 {t.pos === 0 ? "출발" : `${t.pos}절`} · ⭐{t.stars} · 🪙 {t.talents} · {t.items.map((i) => ITEMS[i]?.name ?? i).join(", ") || "아이템 없음"}
+            위치 {t.pos === 0 ? "출발" : `${t.pos}절`} · ⭐{t.stars} · 달란트 {t.talents} · {t.items.map((i) => ITEMS[i]?.name ?? i).join(", ") || "아이템 없음"}
           </div>
         )}
         <Row label="달란트">
@@ -949,7 +949,7 @@ function LogTab({ game }: { game: GameData }) {
               <div key={id} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
                 <TeamAvatar team={teamById[id]} size={28} />
                 <span className="flex-1">{teamName(teamById, id)}</span>
-                <span className="font-display text-xl">🪙 {state.teams[id].talents}</span>
+                <span className="font-display text-xl">{state.teams[id].talents} 달란트</span>
                 <button className={`${btn} py-1 ${ok ? "bg-green-500 text-white" : "bg-white border"}`} onClick={() => mark(id)}>
                   {ok ? "✓ 실물 일치" : "실물 확인"}
                 </button>

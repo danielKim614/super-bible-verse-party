@@ -88,7 +88,7 @@ export function phaseHeadline(s: GameState, teamById: Record<string, TeamInfo>):
 }
 
 /** 이벤트 칸에서 이어서 암송할 절 범위 */
-function eventRange(mode: "twoVerses" | "threeVerses", space: number): [number, number] {
+export function eventRange(mode: "twoVerses" | "threeVerses", space: number): [number, number] {
   if (mode === "twoVerses") return space < 39 ? [space, space + 1] : [space - 1, space];
   return [Math.max(1, space - 1), Math.min(39, space + 1)];
 }

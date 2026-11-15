@@ -156,6 +156,10 @@ body {
 @keyframes card-shine { 0% { transform: translateX(0) skewX(-20deg); } 100% { transform: translateX(450%) skewX(-20deg); } }
 .animate-card-shine { animation: card-shine 1.4s ease-in-out 0.3s both; }
 
+/* 해프닝 슬롯: 한 칸씩 위에서 툭 내려옴 */
+@keyframes slot-tick { 0% { transform: translateY(-26px); opacity: 0.2; } 100% { transform: translateY(0); opacity: 1; } }
+.animate-slot-tick { animation: slot-tick 0.12s ease-out both; }
+
 /* 새 별 등장: 번쩍이며 커졌다 자리 잡음 */
 @keyframes star-spawn {
   0% { transform: scale(0) rotateY(0deg); opacity: 0; }
@@ -248,7 +252,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pop, .animate-bob, .animate-ufo, .animate-ufo-fly, .animate-ufo-shake, .animate-shop-alert, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-drum-shake, .animate-drum-bounce, .animate-spot-left, .animate-spot-right, .animate-confetti, .animate-winner-glow, .animate-gameover-in, .animate-podium-rise, .animate-card-shine, .animate-start-ring, .animate-start-spark, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
+  .animate-pop, .animate-bob, .animate-ufo, .animate-ufo-fly, .animate-ufo-shake, .animate-shop-alert, .animate-ping-slow, .animate-spin-slow, .animate-star, .animate-star-spin, .animate-twinkle, .animate-dash, .animate-fork-pick, .animate-fork-drop, .animate-pulse-fast, .animate-toast-in, .animate-drum-shake, .animate-drum-bounce, .animate-spot-left, .animate-spot-right, .animate-confetti, .animate-winner-glow, .animate-gameover-in, .animate-podium-rise, .animate-slot-tick, .animate-card-shine, .animate-start-ring, .animate-start-spark, .animate-die-travel, .animate-die-tumble, .animate-die-settle, .animate-dim-in, .animate-star-spawn, .animate-starfx-spin, .animate-starfx-fade, .animate-starfx-glow, .animate-starfx-rays, .animate-starfx-particle { animation: none; }
 }
 
 /* 출발 표시 사라짐: 살짝 부풀었다가 작아지며 사라지고, 링과 반짝이가 퍼짐 */

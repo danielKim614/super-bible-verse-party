@@ -154,7 +154,9 @@ export default function JoinPage() {
         </div>
         {state.started && state.phase !== "ended" && (
           <div className="ml-auto font-display text-lg whitespace-nowrap">
-            {state.turn}/{state.settings.totalTurns}턴 {isBoost(state) && <span className="text-red-500 whitespace-nowrap">🔥 보상 2배</span>}
+            <span className="text-xs tracking-wider text-white/60 mr-1">{state.turn >= state.settings.totalTurns ? "LAST ROUND" : "ROUND"}</span>
+            <span className="text-yellow-300">{state.turn}</span>
+            <span className="text-white/50 text-sm">/{state.settings.totalTurns}</span> {isBoost(state) && <span className="text-red-500 whitespace-nowrap">🔥 보상 2배</span>}
           </div>
         )}
         <button
@@ -186,7 +188,7 @@ export default function JoinPage() {
           {myState && (
             <div className="glass p-3 flex items-center justify-around font-display text-2xl">
               <span>⭐ {myState.stars}</span>
-              <span className="text-amber-200">🪙 {myState.talents}</span>
+              <span className="text-amber-200">{myState.talents} <span className="text-base">달란트</span></span>
               <span className="flex gap-1.5">
                 {myState.items.length === 0 && <span className="text-sm text-white/40">아이템 없음</span>}
                 {myState.items.map((i, k) => (

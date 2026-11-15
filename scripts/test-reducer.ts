@@ -402,3 +402,12 @@ console.log("✅ 39 merge ok");
   assert.ok(dests.size > 10, `warp destinations too few: ${dests.size}`);
   console.log("✅ warp pipe goes to any other space:", dests.size, "different spaces");
 }
+
+// 예전(환급 1이 기본이던 때) 시작한 게임은 환급 3으로, v:2로 시작한 게임은 설정값 그대로
+{
+  const old = replay([{ id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS, itemRefund: 1 }, seed: 1 } }] as GameEvent[]);
+  assert.equal(old.settings.itemRefund, 3);
+  const v2 = replay([{ id: 1, seq: 1, voided: false, type: "start_game", payload: { teamIds: ["A", "B"], settings: { ...DEFAULT_SETTINGS, itemRefund: 1 }, seed: 1, v: 2 } }] as GameEvent[]);
+  assert.equal(v2.settings.itemRefund, 1);
+  console.log("✅ old games refund 3");
+}

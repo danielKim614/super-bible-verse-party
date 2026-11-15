@@ -64,7 +64,7 @@ export type OverrideAction =
   | { action: "endGame" };
 
 export type GameEventBody =
-  | { type: "start_game"; payload: { teamIds: string[]; settings: Settings; seed: number } }
+  | { type: "start_game"; payload: { teamIds: string[]; settings: Settings; seed: number; v?: number } } // v: 설정 버전(2부터 환급 기본 3)
   | { type: "use_item"; payload: { item: ItemId; face?: number; seed?: number } } // face: 선택 다이스로 고정할 눈
   | { type: "roll"; payload: { value: number; faces?: number[] } } // value: 이동 칸 수(합계), faces: 각 주사위 눈
   | { type: "choose_path"; payload: { option: number; label?: string } }

@@ -1,6 +1,7 @@
 "use client";
 
 import { splitSum } from "./DieBadge";
+import { SpaceRevealFx, useSpaceReveal } from "./SpaceReveal";
 import { useEffect, useMemo, useRef, useState, memo } from "react";
 import { BOARD_H, BOARD_W, FORKS, ROUTE_D, SHOP_AT, SHOP_POS, SPACES, SPACE_BY_ID, T_POS, type RouteId, type SpaceType } from "@/game/board";
 import { currentTeamId, diceCount } from "@/game/reducer";
@@ -324,11 +325,14 @@ export function Board({
   teamById,
   highlightTeam,
   compact = false,
+  onRevealChange,
 }: {
   state: GameState;
   teamById: Record<string, TeamInfo>;
   highlightTeam?: string;
   compact?: boolean;
+  /** 이벤트·해프닝 공개 연출 중인지 알려 줌 (메인 화면에서 결과 스포일러를 잠시 숨기려고) */
+  onRevealChange?: (revealing: boolean) => void;
 }) {
   const forkFlash = useForkFlash(state);
   const dice = useDiceRoll(state);
@@ -346,6 +350,10 @@ export function Board({
   );
   const startMark = useStartMark(state, shown);
   const warp = useWarpFx(state);
+  // 이벤트·해프닝 칸 도착 연출 (주사위·파이프 연출이 끝나고 말이 도착한 뒤)
+  const spaceReveal = useSpaceReveal(state, shown, !!warp || !!dice);
+  const revealing = spaceReveal?.type === "happening" || spaceReveal?.type === "pending";
+  useEffect(() => onRevealChange?.(revealing), [revealing, onRevealChange]);
   const shopMove = useShopMove(state.shopAt ?? SHOP_AT);
   const shopFlying = shopMove.phase === "fly";
   const shopSpace = SPACE_BY_ID[shopMove.at] ?? SPACE_BY_ID[SHOP_AT];
@@ -701,6 +709,9 @@ export function Board({
             </g>
           );
         })()}
+
+      {/* 이벤트·해프닝 칸 도착: 무슨 이벤트/해프닝인지 */}
+      {spaceReveal && spaceReveal.type !== "pending" && <SpaceRevealFx key={spaceReveal.key} info={spaceReveal} />}
 
       {/* 주사위 아이템 사용 중: 굴리기 전까지 화면 가운데에 주사위가 준비된 채로 떠 있음 */}
       {!dice && state.phase === "pre_roll" && state.ctx.rollMode !== "normal" && !state.paused && (

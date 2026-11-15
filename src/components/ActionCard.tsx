@@ -25,11 +25,14 @@ export function ActionCard({
   teamById,
   verses,
   size = "lg",
+  hideHappening = false,
 }: {
   state: GameState;
   teamById: Record<string, TeamInfo>;
   verses: VerseMap;
   size?: "lg" | "sm";
+  /** 보드에서 해프닝 공개 연출 중이면 결과 줄을 잠시 숨김 */
+  hideHappening?: boolean;
 }) {
   const tid = currentTeamId(state);
   const team = tid ? teamById[tid] : undefined;
@@ -81,7 +84,7 @@ export function ActionCard({
         </div>
       )}
 
-      {state.phase === "recite" && ctx.happening && (
+      {state.phase === "recite" && ctx.happening && !hideHappening && (
         <div className={`mt-3 rounded-2xl bg-cyan-300/20 border border-cyan-200/40 px-4 py-2 font-display animate-pop ${big ? "text-2xl" : "text-base"}`}>
           ❔ {ctx.happening.text}
         </div>

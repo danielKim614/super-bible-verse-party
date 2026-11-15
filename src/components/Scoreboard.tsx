@@ -102,34 +102,37 @@ export function Scoreboard({
   );
 }
 
-/** 펼친 팀 정보: 보유 아이템(누르고 있으면 설명) + 팀원 */
+/** 펼친 팀 정보: 보유 아이템(아이콘·이름·설명) + 팀원 */
 function TeamDetail({ items, list, color }: { items: ItemId[]; list: MemberInfo[]; color?: string }) {
-  const [tip, setTip] = useState<ItemId | null>(null);
-  const tipDef = tip && items.includes(tip) ? ITEMS[tip] : null;
   return (
-    <div className="px-4 pb-3 pt-1 pl-12 flex flex-col gap-2.5">
+    <div className="px-4 pb-3 pt-1 pl-12 flex flex-col gap-3">
       <div>
-        <div className="text-xs font-bold text-white/50 mb-1">
-          아이템
-        </div>
+        <div className="text-xs font-bold text-white/50 mb-1.5">아이템</div>
         {items.length === 0 ? (
           <div className="text-sm text-white/50">없음</div>
         ) : (
-          <ul className="flex flex-wrap gap-1.5">
-            {items.map((id) => (
-              <ItemBadge key={id} id={id} active={tip === id} onTip={setTip} />
-            ))}
+          // 많아야 3개라 설명까지 늘 보여 준다 (누르거나 올려야 보이는 방식 대신)
+          <ul className="flex flex-col gap-1.5">
+            {items.map((id) => {
+              const def = ITEMS[id];
+              if (!def) return null;
+              return (
+                <li key={id} className="flex items-center gap-2.5 rounded-xl bg-white/[0.07] border border-white/10 px-2 py-1.5">
+                  <span className="inline-flex w-8 h-8 shrink-0 rounded-lg bg-white/15 items-center justify-center">
+                    <ItemIcon id={id} size={20} />
+                  </span>
+                  <span className="min-w-0 leading-tight">
+                    <span className="block text-sm font-bold">{def.name}</span>
+                    <span className="block text-xs text-white/65">{def.desc}</span>
+                  </span>
+                </li>
+              );
+            })}
           </ul>
-        )}
-        {tipDef && (
-          <div role="tooltip" className="mt-2 rounded-xl bg-white text-slate-800 text-sm px-3 py-2 shadow-lg animate-toast-in">
-            <b className="mr-1.5">{tipDef.name}</b>
-            {tipDef.desc}
-          </div>
         )}
       </div>
       <div>
-        <div className="text-xs font-bold text-white/50 mb-1">
+        <div className="text-xs font-bold text-white/50 mb-1.5">
           팀원 <span className="font-normal">{list.length}명</span>
         </div>
         {list.length === 0 ? (
@@ -145,31 +148,5 @@ function TeamDetail({ items, list, color }: { items: ItemId[]; list: MemberInfo[
         )}
       </div>
     </div>
-  );
-}
-
-/** 아이템 뱃지: 누르고 있는 동안(마우스는 올려 둔 동안) 설명이 보이고, 손을 떼면 사라짐 */
-function ItemBadge({ id, active, onTip }: { id: ItemId; active: boolean; onTip: (id: ItemId | null) => void }) {
-  const def = ITEMS[id];
-  if (!def) return null;
-  const show = () => onTip(id);
-  const hide = () => onTip(null);
-  return (
-    <li
-      className="select-none [-webkit-touch-callout:none] touch-manipulation"
-      onPointerDown={show}
-      onPointerEnter={(e) => e.pointerType === "mouse" && show()}
-      onPointerUp={(e) => e.pointerType !== "mouse" && hide()}
-      onPointerLeave={hide}
-      onPointerCancel={hide}
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      <span className={`inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-0.5 text-sm border transition-all ${active ? "bg-white/25 border-white/60 scale-105" : "bg-white/10 border-white/20"}`}>
-        <span className="inline-flex w-6 h-6 rounded-full bg-white/15 items-center justify-center">
-          <ItemIcon id={id} size={16} />
-        </span>
-        {def.name}
-      </span>
-    </li>
   );
 }

@@ -33,7 +33,18 @@ type Toast = FeedEntry & { key: string; leaving: false | "pushed" | "expired" };
  * 새로 생긴 피드 항목을 한 자리에 하나씩 띄움 (Undo로 사라진 항목은 무시).
  * 다음 알림이 위에서 내려오면 지금 알림은 아래로 밀려나며 흐려져 사라진다.
  */
-export function FeedToasts({ state, teamById, big = true }: { state: GameState; teamById: Record<string, TeamInfo>; big?: boolean }) {
+export function FeedToasts({
+  state,
+  teamById,
+  big = true,
+  hold = false,
+}: {
+  state: GameState;
+  teamById: Record<string, TeamInfo>;
+  big?: boolean;
+  /** true인 동안은 새 알림을 대기열에 모아 두기만 함 (해프닝 공개 연출 중 스포일러 방지) */
+  hold?: boolean;
+}) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const seen = useRef<Set<string> | null>(null);
   const queue = useRef<Toast[]>([]);
@@ -41,6 +52,8 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
   const pumpTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const counter = useRef(0);
+  const holdRef = useRef(hold);
+  holdRef.current = hold;
 
   const later = (fn: () => void, ms: number) => {
     const t = setTimeout(() => {
@@ -76,12 +89,17 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
     if (pumpTimer.current) return;
     const next = () => {
       pumpTimer.current = null;
+      if (holdRef.current) {
+        pumpTimer.current = setTimeout(next, 250);
+        return;
+      }
       const t = queue.current.shift();
       if (!t) return;
       show(t);
       if (queue.current.length) pumpTimer.current = setTimeout(next, GAP_MS);
     };
-    const wait = Math.max(0, lastShown.current + GAP_MS - Date.now());
+    // 최소 0.15초: 같은 순간에 시작한 해프닝 공개(hold)가 먼저 반영되도록
+    const wait = Math.max(150, lastShown.current + GAP_MS - Date.now());
     pumpTimer.current = setTimeout(next, wait);
   };
 
@@ -120,6 +138,9 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
     return { t, y };
   });
 
+  // 게임이 끝나면(커튼·시상식) 알림은 띄우지 않는다
+  if (state.phase === "ended") return null;
+
   return (
     <div className="pointer-events-none relative w-full" style={{ height: MAX_VISIBLE * slot }}>
       {placed.map(({ t: f, y }) => (
@@ -141,7 +162,7 @@ export function FeedToasts({ state, teamById, big = true }: { state: GameState; 
             {f.amount !== undefined && (
               <span>
                 {f.amount > 0 ? "+" : ""}
-                {f.amount} 🪙
+                {f.amount} 달란트
               </span>
             )}
           </div>

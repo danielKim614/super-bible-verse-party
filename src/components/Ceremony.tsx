@@ -18,24 +18,41 @@ export function Ceremony({ state, teamById, big = true }: { state: GameState; te
 
   if (step === 0) return <GameOverCurtain big={big} />;
 
+  const stepsLabel = ["환급", ...c.awards.map((a) => a.title), "최종 순위"];
+  // 참가자 폰: 환급·보너스 스타 공개 중에는 앞 화면을 보도록 안내, 최종 순위는 공개된 뒤 폰에도 보여 줌
+  if (!big && step <= n + 1) return <WatchScreen label={stepsLabel[step - 1]} step={step} total={stepsLabel.length} />;
+
   const awardsShown = c.awards.slice(0, Math.max(0, Math.min(step - 1, n)));
   const ranking = finalRanking(state);
   const refunds = Object.entries(c.refunds).filter(([, v]) => v > 0);
 
-  const stepsLabel = ["환급", ...c.awards.map((a) => a.title), "최종 순위"];
-
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-3xl ring-1 ring-amber-200/25 text-white bg-[radial-gradient(ellipse_at_50%_-10%,#3d3fa3_0%,#1b2063_45%,#0a0d2a_100%)]">
-      <StageBackdrop />
-      <div className={`relative h-full overflow-auto ${big ? "px-10 py-7" : "p-4"}`}>
+    <div
+      className={`relative w-full overflow-hidden rounded-3xl ring-1 ring-amber-200/25 text-white bg-[radial-gradient(ellipse_at_50%_-10%,#3d3fa3_0%,#1b2063_45%,#0a0d2a_100%)] ${big ? "h-full" : "min-h-[calc(100dvh-104px)]"}`}
+    >
+      <StageBackdrop beams={big} />
+      <div className={`relative h-full overflow-auto ${big ? "px-10 py-7" : "px-4 py-5"}`}>
         <header className="text-center">
-          <div className={`text-amber-100/70 tracking-[0.35em] ${big ? "text-base" : "text-[11px]"}`}>2026 더드림 성경 암송 파티</div>
+          <div className={`text-amber-100/70 ${big ? "text-base tracking-[0.35em]" : "text-xs tracking-[0.15em]"}`}>2026 더드림 성경 암송 파티</div>
           <h2 className={`font-display flex items-center justify-center gap-3 ${big ? "text-6xl mt-1" : "text-3xl"}`}>
             <span aria-hidden className="animate-bob inline-block">🏆</span>
             <span className="bg-gradient-to-b from-yellow-50 via-yellow-300 to-amber-500 bg-clip-text text-transparent drop-shadow-[0_4px_0_rgba(0,0,0,0.35)]">시상식</span>
           </h2>
-          {/* 진행 단계 */}
-          <ol className={`mt-3 flex flex-wrap justify-center items-center gap-1.5 ${big ? "text-sm" : "text-[10px]"}`}>
+          {/* 진행 단계: 폰에서는 점 + 지금 단계 이름만 */}
+          {!big && (
+            <div className="mt-2 flex flex-col items-center gap-1.5">
+              <span className="flex items-center gap-1.5" aria-hidden>
+                {stepsLabel.map((label, k) => (
+                  <span
+                    key={label}
+                    className={`block rounded-full ${step === k + 1 ? "w-5 h-2 bg-amber-300" : step > k + 1 ? "w-2 h-2 bg-amber-300/60" : "w-2 h-2 bg-white/25"}`}
+                  />
+                ))}
+              </span>
+              <span className="text-xs text-amber-200">{stepsLabel[Math.min(stepsLabel.length, Math.max(1, step)) - 1]}</span>
+            </div>
+          )}
+          <ol className={`mt-3 flex-wrap justify-center items-center gap-1.5 text-sm ${big ? "flex" : "hidden"}`}>
             {stepsLabel.map((label, k) => {
               const at = k + 1; // 1: 환급, 2..n+1: 보너스, n+2: 최종
               const done = step > at;
@@ -65,7 +82,7 @@ export function Ceremony({ state, teamById, big = true }: { state: GameState; te
                 </div>
                 <div className={`font-display text-amber-200 ${big ? "text-4xl mt-2" : "text-xl mt-1"}`}>남은 아이템 환급</div>
                 <p className={`text-white/85 ${big ? "text-2xl mt-2" : "text-sm mt-1"}`}>
-                  남은 아이템은 1개당 {state.settings.itemRefund} 🪙 로 바꿔 드려요
+                  남은 아이템은 1개당 {state.settings.itemRefund} 달란트로 바꿔 드려요
                 </p>
                 <div className={`flex flex-wrap justify-center gap-3 ${big ? "mt-6" : "mt-3"}`}>
                   {refunds.length === 0 && <p className="text-white/60">환급할 아이템이 없어요</p>}
@@ -73,7 +90,7 @@ export function Ceremony({ state, teamById, big = true }: { state: GameState; te
                     <div key={id} className="animate-pop flex items-center gap-2 rounded-2xl bg-white/10 border border-white/15 px-4 py-2" style={{ animationDelay: `${k * 90}ms` }}>
                       <TeamAvatar team={teamById[id]} size={big ? 48 : 28} />
                       <span className={`font-display ${big ? "text-2xl" : "text-base"}`}>{teamById[id]?.name}</span>
-                      <span className={`font-display text-amber-200 ${big ? "text-3xl" : "text-lg"}`}>+{v} 🪙</span>
+                      <span className={`font-display text-amber-200 ${big ? "text-3xl" : "text-lg"}`}>+{v} 달란트</span>
                     </div>
                   ))}
                 </div>
@@ -96,25 +113,7 @@ export function Ceremony({ state, teamById, big = true }: { state: GameState; te
         {showFinal && reveal !== "suspense" && (
           <div className={big ? "mt-6" : "mt-4"}>
             <h3 className={`font-display text-center text-amber-100 ${big ? "text-4xl mb-2" : "text-2xl mb-3"} ${reveal === "reveal" ? "animate-reveal-title" : ""}`}>최종 순위</h3>
-            {big ? (
-              <Podium ranking={ranking} teamById={teamById} reveal={reveal === "reveal"} />
-            ) : (
-              <ol className="flex flex-col gap-2">
-                {ranking.map((r, k) => (
-                  <li
-                    key={r.id}
-                    className={`animate-pop flex items-center gap-3 rounded-2xl px-3 py-2 ${r.rank === 1 ? "bg-gradient-to-r from-yellow-200 to-amber-400 text-indigo-950 animate-winner-glow" : "bg-white/10"}`}
-                    style={reveal === "reveal" ? { animationDelay: `${k * 110}ms` } : undefined}
-                  >
-                    <span className="font-display text-xl w-7 text-center">{r.rank === 1 ? "👑" : r.rank}</span>
-                    <TeamAvatar team={teamById[r.id]} size={32} />
-                    <span className="font-display flex-1 truncate">{teamById[r.id]?.name}</span>
-                    <span className="font-display">⭐ {r.stars}</span>
-                    <span className="font-display opacity-80">🪙 {r.talents}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <Podium ranking={ranking} teamById={teamById} reveal={reveal === "reveal"} small={!big} />
           </div>
         )}
       </div>
@@ -129,11 +128,15 @@ export function Ceremony({ state, teamById, big = true }: { state: GameState; te
 }
 
 /** 무대 배경: 반짝이는 별, 위에서 내리쬐는 금빛 조명, 바닥 빛 */
-function StageBackdrop() {
+function StageBackdrop({ beams = true }: { beams?: boolean }) {
   return (
     <div className="absolute inset-0 pointer-events-none" aria-hidden>
+      {beams && (
+        <>
       <div className="absolute -top-10 left-[12%] w-[38%] h-[85%] origin-top -rotate-12 bg-gradient-to-b from-amber-200/25 via-amber-200/5 to-transparent [clip-path:polygon(42%_0,58%_0,100%_100%,0_100%)]" />
       <div className="absolute -top-10 right-[12%] w-[38%] h-[85%] origin-top rotate-12 bg-gradient-to-b from-sky-200/20 via-sky-200/5 to-transparent [clip-path:polygon(42%_0,58%_0,100%_100%,0_100%)]" />
+        </>
+      )}
       <div className="absolute bottom-[-18%] left-1/2 -translate-x-1/2 w-[90%] h-[40%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(253,224,71,0.18),transparent_70%)]" />
       {Array.from({ length: 46 }, (_, k) => (
         <span
@@ -200,7 +203,17 @@ const PODIUM: Record<number, { h: number; block: string; text: string }> = {
 };
 
 /** 최종 순위: 1~3위는 시상대(2위·1위·3위 순), 나머지는 아래 줄 */
-function Podium({ ranking, teamById, reveal }: { ranking: ReturnType<typeof finalRanking>; teamById: Record<string, TeamInfo>; reveal: boolean }) {
+function Podium({
+  ranking,
+  teamById,
+  reveal,
+  small = false,
+}: {
+  ranking: ReturnType<typeof finalRanking>;
+  teamById: Record<string, TeamInfo>;
+  reveal: boolean;
+  small?: boolean;
+}) {
   const top = ranking.slice(0, 3);
   const rest = ranking.slice(3);
   const slots = [top[1], top[0], top[2]].map((r, k) => ({ r, place: [2, 1, 3][k] }));
@@ -208,55 +221,84 @@ function Podium({ ranking, teamById, reveal }: { ranking: ReturnType<typeof fina
   const delay = (place: number) => (reveal ? { 3: 150, 2: 450, 1: 850 }[place] ?? 0 : 0);
   return (
     <div>
-      <div className="flex items-end justify-center gap-5 pt-14">
+      <div className={`flex items-end justify-center ${small ? "gap-2 pt-10" : "gap-5 pt-14"}`}>
         {slots.map(({ r, place }) => {
-          if (!r) return <div key={place} className="w-56" />;
+          if (!r) return <div key={place} className={small ? "w-[31%]" : "w-56"} />;
           const style = PODIUM[Math.min(3, r.rank)] ?? PODIUM[3];
           const first = r.rank === 1;
+          const h = small ? Math.round(style.h * 0.55) : style.h;
           return (
-            <div key={r.id} className="w-56 flex flex-col items-center animate-podium-rise" style={{ animationDelay: `${delay(place)}ms` }}>
-              <div className="relative flex flex-col items-center">
+            <div key={r.id} className={`${small ? "w-[31%]" : "w-56"} flex flex-col items-center animate-podium-rise`} style={{ animationDelay: `${delay(place)}ms` }}>
+              <div className="relative flex flex-col items-center w-full">
                 {first && (
-                  <span className="absolute -top-12 text-5xl animate-bob" aria-hidden>
+                  <span className={`absolute animate-bob ${small ? "-top-8 text-3xl" : "-top-12 text-5xl"}`} aria-hidden>
                     👑
                   </span>
                 )}
                 <div className={first ? "rounded-[28%] animate-winner-glow" : ""}>
-                  <TeamAvatar team={teamById[r.id]} size={first ? 96 : 76} />
+                  <TeamAvatar team={teamById[r.id]} size={small ? (first ? 56 : 46) : first ? 96 : 76} />
                 </div>
-                <div className={`font-display mt-2 text-center leading-tight ${first ? "text-4xl text-yellow-200" : "text-3xl"}`}>{teamById[r.id]?.name}</div>
-                <div className="font-display text-xl mt-1 mb-2 flex gap-3">
+                <div
+                  className={`font-display mt-1.5 text-center leading-tight w-full truncate ${small ? (first ? "text-lg text-yellow-200" : "text-base") : first ? "text-4xl text-yellow-200" : "text-3xl"}`}
+                >
+                  {teamById[r.id]?.name}
+                </div>
+                <div className={`font-display flex flex-wrap justify-center ${small ? "text-xs gap-x-1.5 mt-0.5 mb-1.5" : "text-xl gap-3 mt-1 mb-2"}`}>
                   <span className="text-yellow-300">⭐ {r.stars}</span>
-                  <span className="text-amber-100/80">🪙 {r.talents}</span>
+                  <span className="text-amber-100/80">{r.talents} 달란트</span>
                 </div>
               </div>
               <div
-                className={`w-full rounded-t-2xl bg-gradient-to-b ${style.block} ${style.text} flex items-start justify-center pt-3 shadow-[inset_0_2px_0_rgba(255,255,255,0.6),0_10px_30px_rgba(0,0,0,0.35)]`}
-                style={{ height: style.h }}
+                className={`w-full ${small ? "rounded-t-xl pt-1.5" : "rounded-t-2xl pt-3"} bg-gradient-to-b ${style.block} ${style.text} flex items-start justify-center shadow-[inset_0_2px_0_rgba(255,255,255,0.6),0_10px_30px_rgba(0,0,0,0.35)]`}
+                style={{ height: h }}
               >
-                <span className="font-display text-6xl drop-shadow-[0_2px_0_rgba(255,255,255,0.4)]">{r.rank}</span>
+                <span className={`font-display drop-shadow-[0_2px_0_rgba(255,255,255,0.4)] ${small ? "text-3xl" : "text-6xl"}`}>{r.rank}</span>
               </div>
             </div>
           );
         })}
       </div>
       {rest.length > 0 && (
-        <ol className="mt-5 mx-auto max-w-4xl grid grid-cols-2 gap-3">
+        <ol className={`mx-auto grid ${small ? "mt-3 grid-cols-1 gap-1.5" : "mt-5 max-w-4xl grid-cols-2 gap-3"}`}>
           {rest.map((r, k) => (
             <li
               key={r.id}
-              className="animate-pop flex items-center gap-3 rounded-2xl bg-white/10 border border-white/10 px-4 py-2"
+              className={`animate-pop flex items-center rounded-2xl bg-white/10 border border-white/10 ${small ? "gap-2 px-3 py-1.5" : "gap-3 px-4 py-2"}`}
               style={reveal ? { animationDelay: `${1100 + k * 90}ms` } : undefined}
             >
-              <span className="font-display text-3xl w-9 text-center text-white/60">{r.rank}</span>
-              <TeamAvatar team={teamById[r.id]} size={44} />
-              <span className="font-display text-2xl flex-1 truncate">{teamById[r.id]?.name}</span>
-              <span className="font-display text-xl text-yellow-300">⭐ {r.stars}</span>
-              <span className="font-display text-xl text-amber-100/80">🪙 {r.talents}</span>
+              <span className={`font-display text-center text-white/60 ${small ? "text-lg w-6" : "text-3xl w-9"}`}>{r.rank}</span>
+              <TeamAvatar team={teamById[r.id]} size={small ? 30 : 44} />
+              <span className={`font-display flex-1 truncate ${small ? "text-base" : "text-2xl"}`}>{teamById[r.id]?.name}</span>
+              <span className={`font-display text-yellow-300 ${small ? "text-sm" : "text-xl"}`}>⭐ {r.stars}</span>
+              <span className={`font-display text-amber-100/80 ${small ? "text-sm" : "text-xl"}`}>{r.talents} 달란트</span>
             </li>
           ))}
         </ol>
       )}
+    </div>
+  );
+}
+
+/** 참가자 폰: 시상식 진행 중 안내 */
+function WatchScreen({ label, step, total }: { label: string; step: number; total: number }) {
+  return (
+    <div className="relative w-full overflow-hidden rounded-3xl ring-1 ring-amber-200/25 text-white bg-[radial-gradient(ellipse_at_50%_-10%,#3d3fa3_0%,#1b2063_45%,#0a0d2a_100%)] min-h-[calc(100dvh-104px)] flex flex-col items-center justify-center text-center px-6">
+      <StageBackdrop beams={false} />
+      <div className="relative flex flex-col items-center">
+        <div className="text-xs text-amber-100/70 tracking-[0.15em]">2026 더드림 성경 암송 파티</div>
+        <div className="mt-4 text-7xl animate-bob" aria-hidden>
+          🏆
+        </div>
+        <div className="mt-5 font-display text-3xl bg-gradient-to-b from-yellow-50 via-yellow-300 to-amber-500 bg-clip-text text-transparent">시상식 진행 중이에요</div>
+        <div className="mt-3 font-display text-xl text-white">정면에 있는 화면을 봐 주세요 👀</div>
+        <div className="mt-8 flex items-center gap-1.5" aria-hidden>
+          {Array.from({ length: total }, (_, k) => (
+            <span key={k} className={`block rounded-full ${step === k + 1 ? "w-5 h-2 bg-amber-300" : step > k + 1 ? "w-2 h-2 bg-amber-300/60" : "w-2 h-2 bg-white/25"}`} />
+          ))}
+        </div>
+        <div className="mt-2 text-sm text-amber-200">지금: {label}</div>
+        <div className="mt-6 text-xs text-white/50">최종 순위가 발표되면 여기에도 보여 드려요</div>
+      </div>
     </div>
   );
 }
@@ -303,12 +345,12 @@ function Curtains({ mode }: { mode: "close" | "open" | "closed" }) {
 /** 게임이 끝나면: 커튼이 쳐지고 "게임 종료!" (운영자가 다음을 누르면 시상식) */
 function GameOverCurtain({ big }: { big: boolean }) {
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-3xl bg-[#0a0f2e] ring-1 ring-white/10 text-white">
+    <div className={`relative w-full overflow-hidden rounded-3xl bg-[#0a0f2e] ring-1 ring-white/10 text-white ${big ? "h-full" : "h-[calc(100dvh-104px)] min-h-[420px]"}`}>
       <Curtains mode="close" />
       <div className="absolute inset-0 z-40 flex flex-col items-center justify-center text-center animate-gameover-in" style={{ animationDelay: `${CURTAIN_MS - 200}ms` }}>
         <div className={`font-display text-yellow-300 drop-shadow-[0_6px_0_rgba(0,0,0,0.45)] ${big ? "text-9xl" : "text-5xl"}`}>게임 종료!</div>
         <div className={`mt-6 font-display text-white/95 drop-shadow-[0_3px_0_rgba(0,0,0,0.4)] ${big ? "text-4xl" : "text-xl"}`}>모두 수고하셨어요 🙌</div>
-        <div className={`mt-3 text-white/80 ${big ? "text-2xl" : "text-base"}`}>잠시 후 시상식이 시작됩니다</div>
+        <div className={`mt-3 text-white/80 ${big ? "text-2xl" : "text-base"}`}>{big ? "잠시 후 시상식이 시작됩니다" : "잠시 후 정면 화면에서 시상식이 시작돼요"}</div>
       </div>
     </div>
   );

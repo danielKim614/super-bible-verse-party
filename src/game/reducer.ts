@@ -198,6 +198,8 @@ export function applyEvent(prev: GameState, ev: GameEvent | (GameEventBody & { s
     const { teamIds, settings, seed } = ev.payload;
     s.started = true;
     s.settings = { ...DEFAULT_SETTINGS, ...settings };
+    // 환급 기본값이 1이던 때 시작한 게임은 3으로 맞춘다 (규칙 변경: 남은 아이템 1개당 3달란트)
+    if (!ev.payload.v && s.settings.itemRefund === 1) s.settings.itemRefund = DEFAULT_SETTINGS.itemRefund;
     s.teamIds = teamIds;
     for (const id of teamIds) {
       s.teams[id] = {
