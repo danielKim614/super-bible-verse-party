@@ -166,7 +166,7 @@ function EventCard({ space }: { space: number }) {
         );
       })}
       <text textAnchor="middle" y={104} fontSize={20} fill="#d1fae5">
-        한 사람이 {verses.length}절을 이어서 암송해요
+        {verses.length}절을 연속으로 외워 주세요
       </text>
     </g>
   );
